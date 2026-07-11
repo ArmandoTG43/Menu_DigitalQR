@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
-import dj_database_url  # <-- NUEVO: para usar DATABASE_URL
+import dj_database_url  # <-- NUEVO: para base de datos desde URL
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,56 +21,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Cargar variables de entorno desde .env (solo para desarrollo local)
 load_dotenv()
 
-# --- Claves de API (DeepSeek, Stripe, Email) ---
-# Es recomendable que todas estas claves las manejes con variables de entorno
-# para no exponerlas en el código. Te dejo algunos ejemplos.
+# --- Claves API (DeepSeek, Stripe, etc.) ---
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 DEEPSEEK_API_URL = os.getenv('DEEPSEEK_API_URL')
 
-# Stripe (mueve estas claves a variables de entorno en producción)
-STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', 'pk_test_...')
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_...')
-
-# Email (mueve usuario y contraseña a variables de entorno)
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'armandotoaquiza2000@gmail.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'fczm edob hxwi hikm')
-
-# --- Seguridad y hosts ---
-# SECURITY WARNING: keep the secret key used in production secret!
-# Lee la clave secreta desde variable de entorno, o usa un valor por defecto solo para desarrollo
+# --- Seguridad: SECRET_KEY y DEBUG desde variables de entorno ---
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure---z7)g!2)!8-55f)uhc3!9%etn7bn+9@-g++r8j^3b(jm+wgjq')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'  # Por defecto False en producción
 
-# SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True en desarrollo, False en producción (por defecto False)
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+# --- Hosts permitidos: desde variable de entorno o lista por defecto ---
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
+# Para producción, debes poner tu dominio de Render: 'tusistema.onrender.com'
 
-# ALLOWED_HOSTS: se lee desde variable de entorno, separado por comas
-# Ejemplo: 'miapp.onrender.com,www.midominio.com'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
-# Si no se define, permitir localhost para desarrollo (opcional)
-if not ALLOWED_HOSTS or ALLOWED_HOSTS == ['']:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
-
-# Para CSRF con dominios de Render y ngrok (en desarrollo)
+# Para ngrok (solo desarrollo) - en producción no se usan
 CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.app',
     'https://*.ngrok.io',
-]
-# Añadir dinámicamente el dominio de Render si está definido en ALLOWED_HOSTS
-for host in ALLOWED_HOSTS:
-    if host.endswith('.onrender.com'):
-        CSRF_TRUSTED_ORIGINS.append(f'https://{host}')
-        CSRF_TRUSTED_ORIGINS.append(f'http://{host}')  # por si acaso
+] if DEBUG else []  # Solo si DEBUG=True
 
-# Configuración para proxy SSL (necesario si usas ngrok)
+# Para que funcione con proxy (como ngrok)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-# En producción con Render, estas dos líneas son seguras, pero si usas HTTP local, desactívalas.
-# Para que funcione tanto en local como en producción, puedes condicionarlas:
-if DEBUG:
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
 
 # --- Modelo de usuario personalizado ---
 AUTH_USER_MODEL = 'Menud.Usuario'
@@ -80,7 +52,7 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'menu'
 LOGOUT_REDIRECT_URL = 'login'
 
-# --- Configuración de correo (con variables de entorno) ---
+# --- Email (SMTP) ---
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -102,10 +74,14 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
-# --- Middleware (se agrega WhiteNoise) ---
+# --- Stripe ---
+STRIPE_PUBLIC_KEY = os.getenv('STRIPE_PUBLIC_KEY', 'pk_test_51TMHB455FOVHRRBJo8ZCwWKtgJbwBvGkoRsWvBieB8PU25540YlSMlpHxy4R7VFloDTCDH39R1tkzYU0TUPZ4Avs00OjaCooCp')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_51TMHB455FOVHRRBJsgqC2z1ZDGQlfCnhvWjygCUBLKGWxhh5wEWhUTdQEt7x5ZxpPpBb5rxBMFaBRL0mDpkaprbq00k8wNffJG')
+
+# --- Middleware (con WhiteNoise para archivos estáticos) ---
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # <-- NUEVO: justo después de Security
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # <--- NUEVO: justo después de Security
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -133,45 +109,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Sistema.wsgi.application'
 
-# --- Base de datos (PostgreSQL) ---
-# Render inyecta automáticamente DATABASE_URL, pero también podemos usar variable de entorno.
-# Si estamos en local y no tenemos DATABASE_URL, usamos la configuración manual.
-DATABASE_URL = os.getenv('DATABASE_URL')
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True
-        )
-    }
-else:
-    # Configuración para desarrollo local (postgresql local)
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'menudVirtual_db',
-            'USER': 'postgres',
-            'PASSWORD': 'luisTg_17',
-            'HOST': 'localhost',
-            'PORT': '5432',
-        }
-    }
+# --- Base de datos: usa DATABASE_URL si existe, sino la configuración local ---
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL', 'postgresql://postgres:luisTg_17@localhost:5432/menudVirtual_db'),
+        conn_max_age=600,
+        ssl_require=True   # Obligatorio para Render
+    )
+}
 
 # --- Password validation ---
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # --- Internationalization ---
@@ -182,23 +134,18 @@ USE_TZ = True
 
 # --- Static files (CSS, JavaScript, Images) ---
 STATIC_URL = '/static/'
-# Directorio donde se recopilarán los archivos estáticos para producción (usado por collectstatic)
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-# Directorios adicionales donde Django busca archivos estáticos (para desarrollo)
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Sistema/static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # <--- NUEVO: para collectstatic
 
-# --- Almacenamiento de archivos estáticos (WhiteNoise) ---
+# --- Almacenamiento de archivos estáticos con WhiteNoise ---
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- Media files (archivos subidos por usuarios) ---
-# En Render, el sistema de archivos es efímero. Para producción, se recomienda usar S3 o Cloudinary.
-# Pero dejamos la configuración local para desarrollo.
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'Sistema/media')
 
 # --- Default primary key field type ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- Base URL para enlaces (ej. para ngrok) ---
-# Puedes usar variable de entorno para definir la URL base en producción.
-BASE_URL = os.getenv('BASE_URL', 'http://localhost:8000')
+# --- URL base para el sitio (usado en plantillas) ---
+BASE_URL = os.getenv('BASE_URL', 'https://ammonium-sliceable-sizzle.ngrok-free.dev')
