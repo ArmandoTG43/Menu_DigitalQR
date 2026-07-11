@@ -1,0 +1,521 @@
+{% extends './plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<!-- BANNER COMO FONDO FIJO -->
+<div id="banner" class="banner full-screen-mode parallax"></div>
+
+<!--  CONTENIDO ENCIMA DEL BANNER -->
+<div class="container content-app">
+   
+    <!-- HEADER -->
+    <div class="menu-header">
+         <h2><i class="fa-solid"></i>PLATOS DEL DÍA</h2>
+
+        <div>
+            <!--  SOLO ADMIN: Botón Agregar -->
+            {% if not request.session.cliente and user.is_authenticated and user.rol == 'admin' %}
+            <a href="{% url 'agregar_producto' %}" class="btn-add">
+                <i class="fa-solid fa-plus"></i> Agregar
+            </a>
+            {% endif %}
+
+            {% if request.session.cliente %}
+            <a href="{% url 'ver_carrito' %}" class="btn-cart">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span class="cart-count" id="cartCount">
+                    {{ total_items|default:0 }}  <!-- 🔥 AQUÍ EL CAMBIO -->
+                </span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- BUSCADOR -->
+    <div class="buscador">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="buscadorInput" placeholder="Buscar por nombre del plato..." autocomplete="off">
+            <button id="limpiarBusqueda" class="btn-clear" style="display: none;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- CATEGORÍAS -->
+    <div class="categorias">
+        <a href="{% url 'menu' %}" class="cat {% if not request.GET.categoria %}active{% endif %}" data-categoria="todos">
+            <i class="fa-solid fa-grid-2"></i> Todos
+        </a>
+
+        {% for cat in categorias %}
+            <a href="?categoria={{ cat.id }}" class="cat {% if request.GET.categoria|stringformat:'s' == cat.id|stringformat:'s' %}active{% endif %}" data-categoria="{{ cat.id }}">
+                <i class="fa-solid "></i> {{ cat.nombre }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- GRID -->
+    <div class="grid-menu" id="gridMenu">
+
+        {% for producto in productos %}
+        <div class="card-app" data-nombre="{{ producto.nombre|lower }}" data-id="{{ producto.id }}">
+
+            <div class="img-box">
+                {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}">
+                {% else %}
+                    <img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}">
+                {% endif %}
+            </div>
+
+            <div class="content">
+
+                <h5><i class="fa-solid fa-utensils"></i> {{ producto.nombre }}</h5>
+
+                <p>{{ producto.descripcion|truncatechars:60 }}</p>
+
+                <div class="precio-acciones">
+                    <div class="acciones">
+                        <!-- SOLO CLIENTE: Agregar al carrito -->
+                        {% if request.session.cliente %}
+                        <form method="POST" action="{% url 'agregar_carrito' producto.id %}">
+                            {% csrf_token %}
+                            <button class="icon-cart">
+                                <i class="fa-solid fa-bag-shopping"></i> 
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        <!-- SOLO ADMIN: Editar y Eliminar -->
+                        {% if not request.session.cliente and user.is_authenticated and user.rol == 'admin' %}
+                        <a href="{% url 'editar_producto' producto.id %}" class="icon-edit">
+                            <i class="fa-solid fa-pencil"></i>
+                        </a>
+
+                        <form method="POST" action="{% url 'eliminar_producto' producto.id %}">
+                            {% csrf_token %}
+                            <button class="icon-btn"
+                                    onclick="return confirm('¿Eliminar producto?')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <div class="price-box">
+                        <i class="fa-solid fa-dollar-sign"></i> {{ producto.precio }}
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+        {% empty %}
+            <p style="color:white;"><i class="fa-solid fa-face-frown"></i> No hay productos disponibles</p>
+        {% endfor %}
+
+    </div>
+
+    <!-- MENSAJE CUANDO NO HAY RESULTADOS -->
+    <div id="sinResultados" class="no-results" style="display: none;">
+        <i class="fa-solid fa-face-frown"></i>
+        <p>No se encontraron platos con ese nombre</p>
+    </div>
+
+</div>
+<br> 
+
+<style>
+body {
+    margin: 0;
+    background: #0b0f1a;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+.content-app {
+    position: relative;
+    z-index: 2;
+    padding-top: 120px;
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-header h2 {
+    color: white;
+    font-size: 20px;
+}
+
+.menu-header h2 i {
+    color: #e76e05;
+    margin-right: 10px;
+}
+
+.btn-add {
+    background: linear-gradient(135deg, #fa0505, #df0635);
+    color: #000;
+    padding: 7px 16px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.btn-add i {
+    margin-right: 5px;
+}
+
+.btn-cart {
+    background: #1f2937;
+    color: white;
+    padding: 9px;
+    border-radius: 50%;
+    margin-left: 8px;
+    font-size: 14px;
+    border: 1px solid #2f3b52;
+    position: relative;
+}
+
+.cart-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e76e05;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 5px;
+    font-size: 10px;
+    min-width: 18px;
+}
+
+.buscador {
+    margin: 20px 0;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 30px;
+    padding: 5px 15px;
+    border: 1px solid #cbd5e1;
+    transition: all 0.3s;
+}
+
+.search-box:focus-within {
+    background: rgba(255,255,255,0.15);
+    border-color: #e76e05;
+}
+
+.search-box i {
+    color: #9ca3af;
+    font-size: 16px;
+}
+
+.search-box input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 12px 10px;
+    color: white;
+    font-size: 14px;
+    outline: none;
+}
+
+.search-box input::placeholder {
+    color: #9ca3af;
+}
+
+.btn-clear {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+    transition: 0.3s;
+}
+
+.btn-clear:hover {
+    color: #e76e05;
+}
+
+.categorias {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.cat {
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: #1f2937;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: 13px;
+    white-space: nowrap;
+    transition: 0.2s;
+    border: 1px solid #2b3648;
+}
+
+.cat i {
+    margin-right: 5px;
+    font-size: 12px;
+}
+
+.cat:hover {
+    background: #e76e05;
+    color: black;
+    transform: scale(1.05);
+}
+
+.cat.active {
+    background: #e76e05;
+    color: black;
+}
+
+.grid-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-top: 18px;
+}
+
+.card-app {
+    background: rgba(255,255,255,0.12);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: 0.25s;
+    border: 1px solid #cbd5e1;
+}
+
+.card-app:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+}
+
+.img-box img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+}
+
+.content {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.content h5 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+}
+
+.content h5 i {
+    color: #e76e05;
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+.content p {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.precio-acciones {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.acciones {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+}
+
+.price-box {
+    font-size: 17px;
+    font-weight: bold;
+    color: #f11414;
+    margin: 0;
+}
+
+.price-box i {
+    font-size: 14px;
+    margin-right: 3px;
+}
+
+.icon-cart,
+.icon-btn {
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-size: 20px;
+    transition: 0.3s;
+}
+
+.icon-cart {
+    color: #22c55e;
+}
+
+.icon-cart:hover {
+    color: #16a34a;
+    transform: scale(1.15);
+}
+
+.icon-edit {
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-size: 20px;
+    text-decoration: none;
+    transition: 0.3s;
+    color: #facc15;
+}
+
+.icon-edit:hover {
+    color: #eab308;
+    transform: scale(1.15);
+}
+
+.icon-btn {
+    color: #ef4444;
+    font-size: 20px;
+    text-decoration: none;
+    transition: 0.3s;
+    margin: 0;
+}
+
+.icon-btn:hover {
+    color: #dc2626;
+    transform: scale(1.15);
+}
+
+.categorias::-webkit-scrollbar {
+    height: 6px;
+}
+
+.categorias::-webkit-scrollbar-thumb {
+    background: #ffffff;
+    border-radius: 10px;
+}
+
+.no-results {
+    text-align: center;
+    color: white;
+    padding: 40px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 20px;
+    margin-top: 20px;
+}
+
+.no-results i {
+    font-size: 48px;
+    color: #e76e05;
+    margin-bottom: 10px;
+}
+
+.no-results p {
+    font-size: 16px;
+    margin: 0;
+}
+
+.card-app {
+    transition: all 0.3s ease;
+}
+
+.card-app.oculto {
+    display: none;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buscadorInput = document.getElementById('buscadorInput');
+    const limpiarBtn = document.getElementById('limpiarBusqueda');
+    const sinResultadosDiv = document.getElementById('sinResultados');
+    let timeoutBuscador;
+
+    function filtrarProductos() {
+        const terminoBusqueda = buscadorInput.value.toLowerCase().trim();
+        const productos = document.querySelectorAll('.card-app');
+        let productosVisibles = 0;
+
+        if (terminoBusqueda.length > 0) {
+            limpiarBtn.style.display = 'flex';
+        } else {
+            limpiarBtn.style.display = 'none';
+        }
+
+        productos.forEach(producto => {
+            const nombreProducto = producto.getAttribute('data-nombre');
+            
+            if (terminoBusqueda === '' || nombreProducto.includes(terminoBusqueda)) {
+                producto.classList.remove('oculto');
+                productosVisibles++;
+            } else {
+                producto.classList.add('oculto');
+            }
+        });
+
+        if (productosVisibles === 0 && terminoBusqueda !== '') {
+            sinResultadosDiv.style.display = 'block';
+        } else {
+            sinResultadosDiv.style.display = 'none';
+        }
+    }
+
+    buscadorInput.addEventListener('input', function() {
+        clearTimeout(timeoutBuscador);
+        timeoutBuscador = setTimeout(filtrarProductos, 300);
+    });
+
+    limpiarBtn.addEventListener('click', function() {
+        buscadorInput.value = '';
+        filtrarProductos();
+        buscadorInput.focus();
+    });
+
+    filtrarProductos();
+
+    // 🔥 ELIMINÉ LA LLAMADA A actualizarContadorCarrito() porque no existe
+
+    const categoriasLinks = document.querySelectorAll('.categorias a');
+    categoriasLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            buscadorInput.value = '';
+            filtrarProductos();
+        });
+    });
+});
+</script>
+
+{% endblock %}

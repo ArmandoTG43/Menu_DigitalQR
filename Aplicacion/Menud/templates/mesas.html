@@ -1,0 +1,227 @@
+{% extends './plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<!--  BANNER FIJO -->
+<div id="banner"></div>
+
+<br><br><br><br><br><br>
+
+<div class="container">
+
+    <!-- FORMULARIO -->
+    <div class="form-mesa">
+        <form method="POST">
+            {% csrf_token %}
+
+            <input type="number" name="numero" placeholder="Número de mesa" required>
+
+            <button type="submit">
+                Crear Mesa
+            </button>
+
+        </form>
+    </div>
+
+    <!-- GRID -->
+    <div class="grid-mesas">
+
+        {% for mesa in mesas %}
+        <div class="card-mesa">
+
+            <h4>Mesa {{ mesa.numero }}</h4>
+
+            <!-- QR -->
+            <div class="qr-box">
+                {% if mesa.qr_codigo %}
+                    <img src="{{ mesa.qr_codigo.url }}">
+                {% else %}
+                    <span>Sin QR</span>
+                {% endif %}
+            </div>
+
+            <p>Escanea para ver el menú</p>
+
+            <!-- BOTONES -->
+            <div class="acciones">
+
+                <a href="{% url 'descargar_qr' mesa.id %}" class="btn-download">
+                    Descargar
+                </a>
+
+                <a href="{% url 'eliminar_mesa' mesa.id %}" 
+                   class="icon-btn"
+                   onclick="return confirm('¿Eliminar mesa?')">
+                    <i class="fa-solid fa-trash"></i>
+                </a>
+
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+</div>
+<br>
+<style>
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+/* contenido encima */
+.container {
+    position: relative;
+    z-index: 2;
+}
+</style>
+<style>
+
+body {
+    background: linear-gradient(135deg, #0f172a, #111827);
+    min-height:100vh;
+}
+
+/* HEADER */
+.header-mesas {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header-mesas h2 {
+    margin: 0;
+}
+
+.header-mesas span {
+    background: #28a745;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+
+/* FORMULARIO */
+.form-mesa {
+    background:rgba(255,255,255,0.12);
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 25px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    border: 1px solid #cbd5e1;
+}
+
+
+.form-mesa form {
+    display: flex;
+    gap: 10px;
+    
+}
+
+.form-mesa input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #cf3535;
+}
+
+.form-mesa button {
+    background: linear-gradient(135deg, #fa0505, #efc8d1);
+    color:white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 10px;
+}
+
+/* GRID */
+.grid-mesas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+/* CARD */
+.card-mesa {
+    background:rgba(255,255,255,0.12);
+    border-radius: 18px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #cbd5e1;
+    transition: 0.3s;
+}
+
+.card-mesa:hover {
+    transform: translateY(-5px);
+    
+}
+
+/* QR */
+.qr-box {
+    background:rgba(255,255,255,0.12);
+    padding: 10px;
+    border-radius: 12px;
+    margin: 10px 0;
+}
+
+.qr-box img {
+    width: 150px;
+}
+
+/* TEXTO */
+.card-mesa p {
+    font-size: 13px;
+    color: rgb(255, 253, 253);
+}
+
+/* BOTONES */
+.acciones {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-download {
+    background: linear-gradient(135deg, #ffffff, #df0635);
+    color: #000;
+    padding: 7px 16px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* DELETE */
+.icon-btn{
+    color:#ef4444;
+    font-size:20px;
+    text-decoration:none;
+    transition:0.3s;
+    margin:0 5px;
+}
+
+.icon-btn:hover{
+    color:#dc2626;
+    transform:scale(1.15);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .form-mesa form {
+        flex-direction: column;
+    }
+}
+
+</style>
+
+{% endblock %}

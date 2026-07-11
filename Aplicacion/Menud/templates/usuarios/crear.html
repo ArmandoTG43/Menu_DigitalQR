@@ -1,0 +1,266 @@
+{% extends 'plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<br><br><br>
+<div id="banner"></div>
+<div class="form-wrapper">
+
+    <div class="form-card">
+
+        <!-- TÍTULO -->
+        <div class="form-header">
+            <h2><i class="fa-regular fa-user-plus"></i> Crear Usuario</h2>
+            <p>Registra un nuevo usuario en el sistema</p>
+        </div>
+
+        <!-- FORMULARIO -->
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- ===== CAMPOS ===== -->
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label><i class="fa-regular fa-user"></i> Usuario</label>
+                    <input type="text" name="username" placeholder="Ej: juan.perez" required>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fa-regular fa-envelope"></i> Correo</label>
+                    <input type="email" name="email" placeholder="correo@ejemplo.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fa-regular fa-lock"></i> Contraseña</label>
+                    <input type="password" name="password" placeholder="• • • • • •" required>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fa-regular fa-badge-check"></i> Rol</label>
+                    <select name="rol" required>
+                        <option value="cocinero">Cocinero</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- ===== BOTONES ===== -->
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    <i class="fa-regular fa-floppy-disk"></i> Guardar
+                </button>
+                <a href="{% url 'lista_usuarios' %}" class="btn-cancel">
+                    <i class="fa-regular fa-xmark"></i> Cancelar
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- ========== ESTILOS ========== -->
+<style>
+    /* ----- BANNER ----- */
+    body {
+        background: #f0f2f8;
+        min-height: 100vh;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        z-index: 1;
+        filter: brightness(0.60);
+    }
+
+    /* ----- CONTENEDOR ----- */
+    .form-wrapper {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 30px 15px;
+    }
+
+    /* ----- TARJETA ----- */
+    .form-card {
+        width: 100%;
+        max-width: 620px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 28px;
+        padding: 40px 35px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15),
+                    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        animation: fadeUp 0.6s ease;
+    }
+
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ----- HEADER ----- */
+    .form-header {
+        text-align: center;
+        margin-bottom: 28px;
+    }
+
+    .form-header h2 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .form-header h2 i {
+        color: #6c63ff;
+        margin-right: 10px;
+    }
+
+    .form-header p {
+        color: #6b7280;
+        font-size: 14px;
+        margin: 6px 0 0;
+    }
+
+    /* ----- GRID ----- */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px 20px;
+        margin-bottom: 8px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        letter-spacing: 0.3px;
+    }
+
+    .form-group label i {
+        color: #6c63ff;
+        width: 18px;
+        margin-right: 4px;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        height: 48px;
+        padding: 0 16px;
+        background: #f8f9fc;
+        border: 2px solid #e5e7eb;
+        border-radius: 14px;
+        font-size: 14px;
+        color: #1f2937;
+        transition: 0.25s;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #6c63ff;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.10);
+    }
+
+    .form-group input::placeholder {
+        color: #9ca3af;
+    }
+
+    /* ----- BOTONES ----- */
+    .form-actions {
+        display: flex;
+        gap: 14px;
+        margin-top: 30px;
+    }
+
+    .btn-save,
+    .btn-cancel {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 20px;
+        border-radius: 16px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: 0.25s;
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .btn-save {
+        background: #6c63ff;
+        color: white;
+        box-shadow: 0 4px 14px rgba(108, 99, 255, 0.30);
+    }
+
+    .btn-save:hover {
+        background: #5a52d5;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(108, 99, 255, 0.35);
+    }
+
+    .btn-cancel {
+        background: #f3f4f6;
+        color: #4b5563;
+        border: 2px solid #e5e7eb;
+    }
+
+    .btn-cancel:hover {
+        background: #fee2e2;
+        border-color: #f87171;
+        color: #b91c1c;
+    }
+
+    /* ----- RESPONSIVE ----- */
+    @media (max-width: 600px) {
+        .form-card {
+            padding: 28px 18px;
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .form-actions {
+            flex-direction: column;
+        }
+        .form-header h2 {
+            font-size: 22px;
+        }
+    }
+</style>
+
+{% endblock %}

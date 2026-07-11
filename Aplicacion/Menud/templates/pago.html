@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago - Freedom Lounge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #fff;
+            padding: 40px;
+            width: 420px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: fadeIn 0.8s ease;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(20px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .detalle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .total {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5364;
+            text-align: center;
+            margin: 20px 0;
+        }
+        select, button {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+        button {
+            background: #00c853;
+            color: white;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #00a844;
+        }
+        .lock {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Realizar Pago</h2>
+    <div class="detalle">Pedido #{{ pedido.id }} - Mesa {{ pedido.mesa.numero }}</div>
+    <div class="total">Total: ${{ pedido.total }}</div>
+
+    <form method="post" action="{% url 'confirmar_pago' %}">
+        {% csrf_token %}
+        <input type="hidden" name="pedido_id" value="{{ pedido.id }}">
+
+        <label for="metodo">Selecciona método de pago:</label>
+        <select name="metodo" id="metodo" required>
+            <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+            <option value="efectivo"> Efectivo (en el local)</option>
+            <option value="transferencia"> Transferencia Bancaria</option>
+        </select>
+
+        <button type="submit"> Pagar ahora</button>
+    </form>
+
+    <div class="lock">Pago real con bancos</div>
+</div>
+</body>
+</html>

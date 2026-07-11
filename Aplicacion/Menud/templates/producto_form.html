@@ -1,0 +1,544 @@
+{% extends './plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<div id="banner"></div>
+<br><br><br><br><br>
+<div class="container">
+    <div class="form-card">
+        <div class="form-header">
+            <h2> NUEVO MENÚ</h2>
+            <p>Completa la información del menú</p>
+        </div>
+        <form id="form-menu" method="POST" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" 
+                           name="nombre" 
+                           id="id_nombre" 
+                           placeholder="Pizza Margherita, Hamburguesa Clásica..."
+                           value="{{ form.nombre.value|default:'' }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Precio ($)</label>
+                    <input type="number" 
+                           name="precio" 
+                           id="id_precio" 
+                           step="0.01" 
+                           placeholder="15.99"
+                           value="{{ form.precio.value|default:'' }}">
+                </div>
+
+                <div class="form-group full">
+                    <label>Descripción</label>
+                    <textarea name="descripcion" 
+                              id="id_descripcion" 
+                              placeholder="Describe el plato..."
+                              rows="3">{{ form.descripcion.value|default:'' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select name="categoria" id="id_categoria">
+                        <option value="">Selecciona una categoría</option>
+                        {% for categoria in form.categoria.field.queryset %}
+                            <option value="{{ categoria.id }}" 
+                                    {% if form.categoria.value == categoria.id %}selected{% endif %}>
+                                {{ categoria.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group full">
+                    <label>Imagen</label>
+                    <input type="file" name="imagen" id="file-input" accept="image/*">
+
+                    <div class="drop-zone" id="drop-zone">
+                        <p id="drop-text">Arrastra tu imagen aquí o <span>haz clic</span></p>
+                        <small id="drop-subtext">PNG, JPG (máx 2MB)</small>
+                    </div>
+
+                    <div class="preview-box">
+                        <img id="preview-img"
+                             src="{% if form.instance.imagen %}{{ form.instance.imagen.url }}{% else %}{% static 'img/default.png' %}{% endif %}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">Guardar Producto</button>
+                <a href="{% url 'menu' %}" class="btn-cancel">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+.container {
+    position: relative;
+    z-index: 2;
+}
+
+body {
+    background: #f5f6fb;
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.form-card {
+    max-width: 650px;
+    margin: auto;
+    background: #ffffff;
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.form-header h2 {
+    font-size: 28px;
+    margin-bottom: 5px;
+    color: #15151e;
+    font-weight: 700;
+}
+
+.form-header p {
+    font-size: 14px;
+    color: #777;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.full {
+    grid-column: span 2;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #0e0e10;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    background: #f2f2f7;
+    border: 2px solid #a8a8ec;
+    border-radius: 16px;
+    padding: 16px 18px;
+    font-size: 15px;
+    color: #333;
+    transition: all .3s ease;
+}
+
+.form-group input,
+.form-group select {
+    height: 60px;
+}
+
+.form-group textarea {
+    min-height: 120px;
+    resize: none;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #999;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: #6c6ce7;
+    box-shadow: 0 0 0 4px rgba(108,108,231,.15);
+    outline: none;
+}
+
+.form-actions {
+    margin-top: 25px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.btn-save {
+    background: #4d4ca5;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.btn-save:hover {
+    background: #3d3c90;
+}
+
+.btn-cancel {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: .3s;
+}
+
+.btn-cancel:hover {
+    background: #b52a37;
+}
+
+.drop-zone {
+    margin-top: 10px;
+    padding: 25px;
+    border: 2px dashed #a8a8ec;
+    border-radius: 16px;
+    text-align: center;
+    background: #f2f2f7;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.drop-zone:hover {
+    border-color: #6c6ce7;
+    background: #ececff;
+}
+
+.drop-zone.dragover {
+    border-color: #6c6ce7;
+    background: #ececff;
+}
+
+.preview-box {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.preview-box img {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 16px;
+    border: 2px solid #a8a8ec;
+}
+
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 18px;
+}
+
+@media (max-width: 600px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .full {
+        grid-column: span 1;
+    }
+
+    .form-card {
+        padding: 20px;
+    }
+}
+
+/* ERRORES */
+.error {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.2rem rgba(220,53,69,.25) !important;
+}
+
+.error-message {
+    color: #dc3545 !important;
+    font-size: .85rem;
+    display: block;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+#drop-zone.error {
+    border-color: #dc3545 !important;
+    background-color: #f8d7da !important;
+}
+</style>
+
+<script>
+// ============================================================
+// VALIDACIÓN COMPLETA CON JAVASCRIPT PURO (SIN JQUERY)
+// ============================================================
+document.addEventListener("DOMContentLoaded", function() {
+
+    // ---------- DROPZONE PARA IMAGEN ----------
+    const dropZone = document.getElementById("drop-zone");
+    const dropText = document.getElementById("drop-text");
+    const dropSubtext = document.getElementById("drop-subtext");
+    const fileInput = document.getElementById("file-input");
+    const preview = document.getElementById("preview-img");
+
+    if (dropZone && fileInput && preview) {
+        dropZone.addEventListener("click", () => fileInput.click());
+
+        fileInput.addEventListener("change", function() {
+            handleFile(this.files[0]);
+        });
+
+        dropZone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+            dropText.innerHTML = "Suelta la imagen aquí 👇";
+            dropSubtext.innerHTML = "Se está cargando...";
+        });
+
+        dropZone.addEventListener("dragleave", () => {
+            dropZone.classList.remove("dragover");
+            dropText.innerHTML = 'Arrastra tu imagen aquí o <span>haz clic</span>';
+            dropSubtext.innerHTML = "PNG, JPG (máx 2MB)";
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+            const file = e.dataTransfer.files[0];
+            fileInput.files = e.dataTransfer.files;
+            handleFile(file);
+            dropText.innerHTML = "Imagen cargada ✔";
+            dropSubtext.innerHTML = file.name;
+        });
+
+        function handleFile(file) {
+            if (!file) return;
+            if (!file.type.startsWith("image/")) {
+                alert("Solo imágenes");
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                alert("Máx 2MB");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => preview.src = e.target.result;
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // ---------- VALIDACIÓN DEL FORMULARIO ----------
+    const form = document.getElementById("form-menu");
+    if (!form) return;
+
+    // Prevenir envíos duplicados
+    let isSubmitting = false;
+
+    form.addEventListener("submit", function(e) {
+        // Si ya se está enviando, evitar doble clic
+        if (isSubmitting) {
+            e.preventDefault();
+            return;
+        }
+
+        // Limpiar errores previos
+        clearErrors();
+
+        let isValid = true;
+        let firstErrorElement = null;
+
+        // 1. Validar NOMBRE (obligatorio, min 3, max 100)
+        const nombre = document.getElementById("id_nombre");
+        const nombreVal = nombre.value.trim();
+        if (nombreVal.length === 0) {
+            showError(nombre, "El nombre es obligatorio.");
+            isValid = false;
+            if (!firstErrorElement) firstErrorElement = nombre;
+        } else if (nombreVal.length < 3) {
+            showError(nombre, "El nombre debe tener al menos 3 caracteres.");
+            isValid = false;
+            if (!firstErrorElement) firstErrorElement = nombre;
+        } else if (nombreVal.length > 100) {
+            showError(nombre, "El nombre no puede superar los 100 caracteres.");
+            isValid = false;
+            if (!firstErrorElement) firstErrorElement = nombre;
+        }
+
+        // 2. Validar PRECIO (obligatorio, >0)
+        const precio = document.getElementById("id_precio");
+        const precioVal = parseFloat(precio.value);
+        if (isNaN(precioVal) || precioVal <= 0) {
+            showError(precio, "El precio debe ser un número mayor a 0.");
+            isValid = false;
+            if (!firstErrorElement) firstErrorElement = precio;
+        }
+
+        // 3. Validar CATEGORÍA (obligatoria)
+        const categoria = document.getElementById("id_categoria");
+        if (categoria.value === "") {
+            showError(categoria, "Debes seleccionar una categoría.");
+            isValid = false;
+            if (!firstErrorElement) firstErrorElement = categoria;
+        }
+
+        // 4. Validar DESCRIPCIÓN (obligatoria y máximo 500 caracteres)
+        const descripcion = document.getElementById("id_descripcion");
+        const descVal = descripcion.value.trim();
+        if (descVal.length === 0) {
+            showError(descripcion, "La descripción es obligatoria.");
+            isValid = false;
+            if (!firstErrorElement) firstErrorElement = descripcion;
+        } else if (descVal.length > 500) {
+            showError(descripcion, "La descripción no puede superar los 500 caracteres.");
+            isValid = false;
+            if (!firstErrorElement) firstErrorElement = descripcion;
+        }
+
+        // 5. Validar IMAGEN (si se selecciona, validar formato y tamaño)
+        const imagen = document.getElementById("file-input");
+        if (imagen.files && imagen.files.length > 0) {
+            const file = imagen.files[0];
+            const ext = file.name.split('.').pop().toLowerCase();
+            const validExts = ['jpg', 'jpeg', 'png', 'gif'];
+            if (!validExts.includes(ext)) {
+                showError(imagen, "Formato no permitido. Usa JPG, JPEG, PNG o GIF.");
+                isValid = false;
+                if (!firstErrorElement) firstErrorElement = imagen;
+            } else if (file.size > 2 * 1024 * 1024) {
+                showError(imagen, "La imagen no debe superar los 2MB.");
+                isValid = false;
+                if (!firstErrorElement) firstErrorElement = imagen;
+            }
+        }
+
+        // Si hay errores, evitar el envío y enfocar el primer campo con error
+        if (!isValid) {
+            e.preventDefault();
+            isSubmitting = false; // permitir reintento
+            if (firstErrorElement) {
+                firstErrorElement.focus({ preventScroll: true });
+                // Scroll suave al campo
+                firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        } else {
+            // Todo válido: deshabilitar botón para evitar doble envío
+            isSubmitting = true;
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "Guardando...";
+            }
+            // El formulario se envía normalmente
+        }
+    });
+
+    // ---------- FUNCIONES AUXILIARES ----------
+    function showError(element, message) {
+        element.classList.add("error");
+        let parent = element.parentNode;
+
+        // Para el campo de imagen, el mensaje va después del drop-zone
+        if (element.id === "file-input") {
+            const dropZoneEl = document.getElementById("drop-zone");
+            let errorSpan = dropZoneEl.parentNode.querySelector(".error-message");
+            if (!errorSpan) {
+                errorSpan = document.createElement("span");
+                errorSpan.className = "error-message";
+                dropZoneEl.parentNode.appendChild(errorSpan);
+            }
+            errorSpan.textContent = message;
+            dropZoneEl.classList.add("error");
+        } else {
+            let errorSpan = parent.querySelector(".error-message");
+            if (!errorSpan) {
+                errorSpan = document.createElement("span");
+                errorSpan.className = "error-message";
+                parent.appendChild(errorSpan);
+            }
+            errorSpan.textContent = message;
+        }
+    }
+
+    function clearErrors() {
+        // Quitar clase error de todos los campos
+        document.querySelectorAll(".error").forEach(el => {
+            if (el.tagName !== "SPAN") {
+                el.classList.remove("error");
+            }
+        });
+        // Eliminar mensajes de error
+        document.querySelectorAll(".error-message").forEach(el => el.remove());
+        // Quitar clase error del drop-zone si la tiene
+        const dropZoneEl = document.getElementById("drop-zone");
+        if (dropZoneEl) dropZoneEl.classList.remove("error");
+        // Habilitar botón nuevamente si estaba deshabilitado
+        const btn = document.querySelector('button[type="submit"]');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Guardar Producto";
+        }
+        isSubmitting = false;
+    }
+
+    // Limpiar errores al escribir en un campo (para mejorar UX)
+    document.querySelectorAll("#form-menu input, #form-menu select, #form-menu textarea").forEach(input => {
+        input.addEventListener("input", function() {
+            this.classList.remove("error");
+            // Si es el input file, también quitamos error del drop-zone
+            if (this.id === "file-input") {
+                const dropZoneEl = document.getElementById("drop-zone");
+                if (dropZoneEl) dropZoneEl.classList.remove("error");
+            }
+            const parent = this.parentNode;
+            const msg = parent.querySelector(".error-message");
+            if (msg) msg.remove();
+        });
+
+        // También al cambiar (para selects y archivos)
+        input.addEventListener("change", function() {
+            // Repetir la misma limpieza
+            this.classList.remove("error");
+            if (this.id === "file-input") {
+                const dropZoneEl = document.getElementById("drop-zone");
+                if (dropZoneEl) dropZoneEl.classList.remove("error");
+            }
+            const parent = this.parentNode;
+            const msg = parent.querySelector(".error-message");
+            if (msg) msg.remove();
+        });
+    });
+
+});
+</script>
+
+{% endblock %}

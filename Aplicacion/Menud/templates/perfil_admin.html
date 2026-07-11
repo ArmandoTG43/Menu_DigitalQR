@@ -1,0 +1,222 @@
+{% extends './plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<!--  BANNER FIJO -->
+<div id="banner"></div>
+
+<br><br><br><br><br><br>
+
+<div class="container">
+
+    <!-- GRID -->
+    <div class="profile-grid">
+
+        <!-- PERFIL PRINCIPAL -->
+        <div class="profile-card">
+
+            <div class="avatar">
+                {% if perfil.foto %}
+                    <img src="{{ perfil.foto.url }}">
+                {% else %}
+                    <img src="{% static 'img/default.png' %}">
+                {% endif %}
+            </div>
+
+            <h3>{{ perfil.usuario.username }}</h3>
+            <p>{{ perfil.usuario.email }}</p>
+
+            <!-- ========== BADGE DINÁMICO ========== -->
+            <span class="badge">
+                {% if perfil.rol %}
+                    {{ perfil.rol|capfirst }}
+                {% elif user.rol %}
+                    {{ user.rol|capfirst }}
+                {% else %}
+                    Usuario
+                {% endif %}
+            </span>
+
+            <a href="{% url 'editar_perfil' %}" class="btn-edit">
+                Editar perfil
+            </a>
+
+        </div>
+
+        <!-- INFO CARDS -->
+        <div class="info-card">
+            <span>EMAIL</span>
+            <p>{{ perfil.usuario.email }}</p>
+        </div>
+
+        <div class="info-card">
+            <span>TELEFONO</span>
+            <p>{{ perfil.telefono|default:"No registrado" }}</p>
+        </div>
+
+        <div class="info-card">
+            <span>DIRECCIÓN</span>
+            <p>{{ perfil.direccion|default:"No registrada" }}</p>
+        </div>
+
+        <div class="info-card">
+            <span>CREADO</span>
+            <p>{{ perfil.fecha_creacion }}</p>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= CSS ================= -->
+<style>
+
+/*  BANNER FIJO */
+#banner{
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+/* CONTENIDO ENCIMA DEL BANNER */
+.container{
+    position: relative;
+    z-index: 2;
+}
+
+body{
+    background: linear-gradient(135deg, #0f172a, #020617);
+    min-height:100vh;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.menu-header{
+    margin-bottom:15px;
+}
+
+.menu-header h2{
+    color:white;
+    font-weight:700;
+    font-size:22px;
+}
+
+.profile-grid{
+    display:grid;
+    grid-template-columns:1.5fr 1fr 1fr;
+    gap:16px;
+}
+
+/* ===== CARD DE PERFIL MÁS PEQUEÑO ===== */
+.profile-card{
+    grid-row: span 2;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:18px;
+    padding: 15px;          /* Antes 20px */
+    text-align:center;
+    transition: all 0.25s ease;
+    box-shadow: 0 5px 15px beige;
+}
+
+.profile-card:hover{
+    transform: translateY(-4px);
+}
+
+/* Avatar más pequeño */
+.avatar img{
+    width: 70px;           /* Antes 100px */
+    height: 70px;
+    border-radius:50%;
+    object-fit:cover;
+    border:2px solid rgba(34,197,94,0.6);
+    padding:3px;
+    background:#020617;
+}
+
+/* Nombre más pequeño */
+.profile-card h3{
+    color:white;
+    margin-top: 8px;       /* Antes 10px */
+    font-size: 16px;       /* Antes 18px */
+}
+
+.profile-card p{
+    color:rgba(255,255,255,0.6);
+    font-size: 12px;       /* Antes 13px */
+    margin-bottom: 4px;
+}
+
+.badge{
+    display:inline-block;
+    margin-top: 6px;       /* Antes 8px */
+    padding: 3px 8px;      /* Antes 4px 10px */
+    border-radius:14px;
+    background: rgba(34,197,94,0.15);
+    color:#22c55e;
+    font-size: 10px;       /* Antes 11px */
+    font-weight:600;
+}
+
+/* Botón Editar más pequeño */
+.btn-edit{
+    display:block;
+    margin-top: 8px;       /* Antes 12px */
+    padding: 6px 10px;     /* Antes 8px */
+    border-radius:10px;
+    background: #22c55e;
+    color:white;
+    text-decoration:none;
+    font-weight: 500;      /* Antes 600 */
+    font-size: 12px;       /* Antes 13px */
+    transition: 0.2s;
+}
+
+.btn-edit:hover{
+    background: #16a34a;
+    transform: scale(1.02);
+}
+
+/* Info cards ajustados (opcional) */
+.info-card{
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(12px);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:14px;
+    padding: 12px;         /* Antes 14px */
+    color:white;
+    box-shadow: 0 5px 15px beige;
+}
+
+.info-card span{
+    font-size: 11px;       /* Antes 12px */
+    color:rgba(255,255,255,0.5);
+}
+
+.info-card p{
+    margin-top: 3px;       /* Antes 4px */
+    font-size: 13px;       /* Antes 14px */
+    font-weight:600;
+}
+
+@media(max-width:768px){
+    .profile-grid{
+        grid-template-columns:1fr;
+    }
+
+    .profile-card{
+        grid-row:auto;
+    }
+}
+
+</style>
+
+{% endblock %}

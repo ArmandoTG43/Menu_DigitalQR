@@ -1,0 +1,374 @@
+{% extends 'plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+<br><br><br><br>
+
+<!-- ========== BANNER FIJO ========== -->
+<div id="banner"></div>
+
+<!-- ========== CONTENIDO PRINCIPAL ========== -->
+<div class="table-wrapper">
+
+    <div class="table-card">
+
+        <!-- HEADER -->
+        <div class="table-header">
+            <div class="header-left">
+                <h2><i class="fa-regular "></i> Gestión de Usuarios</h2>
+                <p>Listado de todos los usuarios registrados en el sistema</p>
+            </div>
+            <a href="{% url 'crear_usuario' %}" class="btn-add">
+                <i class="fa-regular fa-plus"></i> Nuevo Usuario
+            </a>
+        </div>
+
+        <!-- TABLA -->
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Fecha Registro</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td><span class="user-badge">{{ usuario.username }}</span></td>
+                        <td>{{ usuario.email }}</td>
+                        <td>
+                            <span class="rol-badge {% if usuario.rol == 'admin' %}rol-admin{% else %}rol-cocinero{% endif %}">
+                                {{ usuario.get_rol_display }}
+                            </span>
+                        </td>
+                        <td>{{ usuario.date_joined|date:"d/m/Y" }}</td>
+                        <td class="acciones">
+                            <a href="{% url 'editar_usuario' usuario.id %}" class="btn-edit" title="Editar">
+                                <i class="fa-regular fa-pen-to-square"></i>
+                            </a>
+                            <a href="{% url 'eliminar_usuario' usuario.id %}" class="btn-delete" title="Eliminar">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty-row">
+                            <i class="fa-regular fa-user-slash"></i> No hay usuarios registrados
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PIE DE TABLA (contador) -->
+        <div class="table-footer">
+            <span>Total: <strong>{{ usuarios.count }}</strong> usuarios</span>
+        </div>
+
+    </div>
+</div>
+
+<!-- ========== ESTILOS ========== -->
+<style>
+    /* ----- BANNER ----- */
+    body {
+        background: #f0f2f8;
+        min-height: 100vh;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        z-index: 1;
+        filter: brightness(0.60);
+    }
+
+    /* ----- CONTENEDOR ----- */
+    .table-wrapper {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        padding: 40px 15px;
+    }
+
+    /* ----- TARJETA ----- */
+    .table-card {
+        width: 100%;
+        max-width: 1000px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 28px;
+        padding: 35px 35px 25px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15),
+                    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        animation: fadeUp 0.6s ease;
+    }
+
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ----- HEADER ----- */
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .header-left h2 {
+        font-size: 26px;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .header-left h2 i {
+        color: #6c63ff;
+        margin-right: 10px;
+    }
+
+    .header-left p {
+        color: #6b7280;
+        font-size: 14px;
+        margin: 4px 0 0;
+    }
+
+    .btn-add {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: #6c63ff;
+        color: #fff;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        box-shadow: 0 4px 14px rgba(108, 99, 255, 0.30);
+        transition: 0.25s;
+        white-space: nowrap;
+    }
+
+    .btn-add:hover {
+        background: #5a52d5;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(108, 99, 255, 0.35);
+        color: #fff;
+    }
+
+    .btn-add i {
+        font-size: 16px;
+    }
+
+    /* ----- TABLA ----- */
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        min-width: 600px;
+    }
+
+    thead {
+        background: #f8f9fc;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    thead th {
+        padding: 16px 18px;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        letter-spacing: 0.3px;
+        font-size: 13px;
+        text-transform: uppercase;
+    }
+
+    tbody tr {
+        border-bottom: 1px solid #f1f2f6;
+        transition: background 0.2s;
+    }
+
+    tbody tr:hover {
+        background: #f8f9fc;
+    }
+
+    tbody td {
+        padding: 14px 18px;
+        color: #1f2937;
+        vertical-align: middle;
+    }
+
+    /* ----- BADGES ----- */
+    .user-badge {
+        font-weight: 600;
+        color: #1a1a2e;
+    }
+
+    .rol-badge {
+        display: inline-block;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+    }
+
+    .rol-admin {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .rol-cocinero {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    /* ----- ACCIONES ----- */
+    .acciones {
+        text-align: center;
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        text-decoration: none;
+        transition: 0.25s;
+        font-size: 15px;
+        border: 1px solid transparent;
+    }
+
+    .btn-edit {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .btn-edit:hover {
+        background: #c7d2fe;
+        transform: scale(1.08);
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .btn-delete:hover {
+        background: #fecaca;
+        transform: scale(1.08);
+    }
+
+    /* ----- EMPTY ROW ----- */
+    .empty-row {
+        text-align: center;
+        padding: 40px 20px !important;
+        color: #9ca3af;
+        font-size: 16px;
+    }
+
+    .empty-row i {
+        font-size: 24px;
+        display: block;
+        margin-bottom: 8px;
+        color: #d1d5db;
+    }
+
+    /* ----- FOOTER ----- */
+    .table-footer {
+        margin-top: 20px;
+        text-align: right;
+        font-size: 14px;
+        color: #6b7280;
+        padding: 0 6px;
+    }
+
+    .table-footer strong {
+        color: #1a1a2e;
+    }
+
+    /* ----- RESPONSIVE ----- */
+    @media (max-width: 768px) {
+        .table-card {
+            padding: 20px 15px;
+        }
+        .table-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .btn-add {
+            justify-content: center;
+        }
+        .header-left h2 {
+            font-size: 22px;
+        }
+        .acciones {
+            gap: 4px;
+        }
+        .btn-edit,
+        .btn-delete {
+            width: 32px;
+            height: 32px;
+            font-size: 13px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .table-card {
+            padding: 15px 10px;
+        }
+        thead th,
+        tbody td {
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+        .rol-badge {
+            font-size: 11px;
+            padding: 3px 10px;
+        }
+    }
+</style>
+
+{% endblock %}

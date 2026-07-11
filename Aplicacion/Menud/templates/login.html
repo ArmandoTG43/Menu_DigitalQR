@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="shortcut icon" href="{% static 'tema/food-funday-master/images/rest.ico' %}">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+
+body{
+    height:100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}") no-repeat center/cover;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:50px;
+}
+
+.left {
+    color: rgb(255, 255, 255);
+    max-width: 500px;
+}
+
+.left h1 {
+    font-size: 60px;
+}
+
+.left p {
+    margin-top: 25px;
+}
+
+.login-card{
+    width:350px;
+    backdrop-filter: blur(15px);
+    background: rgba(255,255,255,0.15);
+    border-radius:20px;
+    padding:30px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    color:white;
+}
+
+.logo{
+    width:60px;height:60px;background:#e60023;
+    border-radius:50%;display:flex;justify-content:center;
+    align-items:center;margin:0 auto 15px;
+}
+.logo img{
+    width:50px;
+    height:50px;
+    object-fit:contain;
+}
+
+.login-card h2{text-align:center;margin-bottom:20px;}
+
+.input-group{margin-bottom:15px;}
+
+.input-group input{
+    width:100%;padding:12px;border:none;
+    border-bottom:1px solid white;
+    background:transparent;color:white;
+}
+
+.input-group input::placeholder{color:#ddd;}
+
+.input-group input:focus{
+    outline:none;border-bottom:1px solid #ff4b2b;
+}
+
+.btn-login{
+    width:100%;background:#e60023;color:white;
+    border:none;padding:12px;border-radius:8px;
+    margin-top:10px;cursor:pointer;
+}
+
+.btn-register{
+    width:100%;margin-top:10px;padding:12px;
+    border:1px solid white;background:transparent;
+    color:white;border-radius:8px;cursor:pointer;
+}
+
+.google-btn{
+    width:100%;margin-top:15px;padding:10px;
+    background:white;color:black;border:none;
+    border-radius:8px;cursor:pointer;
+}
+
+.forgot{
+    text-align:right;
+    font-size:13px;
+    margin-top:5px;
+}
+
+.forgot a{
+    color:#fff;
+    text-decoration:none;
+}
+
+.forgot a:hover{
+    text-decoration:underline;
+}
+
+.error{
+    background:#ffdddd;color:#900;
+    padding:10px;border-radius:8px;
+    margin-bottom:10px;text-align:center;
+}
+
+@media(max-width:900px){
+    body{flex-direction:column;}
+    .left{display:none;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="left">
+    <h1>EL RESTAURANTE</h1>
+    <h1>"FREEDOM LOUNGE LATACUNGA"</h1>
+    <p>Pedidos en tiempo real | Delivery</p>
+</div>
+
+<div class="login-card">
+
+    <div class="logo">
+        <img src="{% static 'img/sellos.png' %}" alt="Logo">
+    </div>
+
+    <h2>Login</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="error">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="input-group">
+            <input type="text" name="username" placeholder="Usuario" required>
+        </div>
+
+        <div class="input-group">
+            <input type="password" name="password" placeholder="Contraseña" required>
+        </div>
+
+        <!-- OLVIDASTE CONTRASEÑA -->
+        <div class="forgot">
+            <a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button class="btn-login">Ingresar</button>
+
+        <!-- REGISTRO -->
+        <a href="{% url 'registro' %}">
+            <button type="button" class="btn-register">Registrarse</button>
+        </a>
+
+    </form>
+
+</div>
+
+</body>
+</html>

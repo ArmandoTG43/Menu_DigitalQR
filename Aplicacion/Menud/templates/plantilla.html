@@ -1,0 +1,611 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <!-- Basic -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- Mobile Metas -->
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1, user-scalable=0">
+
+    <!-- Site Metas -->
+    <title>MENUD DIGITAL</title>
+
+    <!-- Site Icons -->
+    <link rel="shortcut icon" href="{% static 'tema/food-funday-master/images/rest.ico' %}">
+    <link rel="apple-touch-icon" href="{% static 'tema/food-funday-master/images/apple-touch-icon.png' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/additional-methods.min.js"></script>
+
+    <!-- iziToast -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.css" />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'tema/food-funday-master/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'tema/food-funday-master/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'tema/food-funday-master/css/responsive.css' %}">
+    <link rel="stylesheet" href="{% static 'tema/food-funday-master/css/colors/orange.css' %}">
+
+    <script src="{% static 'tema/food-funday-master/js/modernizer.js' %}"></script>
+
+</head>
+
+<body>
+
+<div id="loader">
+    <div id="status"></div>
+</div>
+
+<div id="site-header">
+<header id="header" class="header-block-top">
+<div class="container">
+<div class="row">
+<div class="main-menu">
+
+<nav class="navbar navbar-default" id="mainNav">
+
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+
+        <div class="logo">
+            <br>
+            <a class="navbar-brand js-scroll-trigger logo-header" href="{% url 'home' %}" 
+            style="
+                font-size: 28px; 
+                font-weight: 700;
+                font-family: 'Poppins', sans-serif;
+                color: hsl(11, 90%, 51%);
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                text-decoration: none;
+            ">
+                FREEDOM
+                <span style="display: block; font-size: 12px; color: #666; letter-spacing: 1px;">
+                LOUNGE-LATACUNGA
+                </span>
+            </a>
+        </div>
+    </div>
+
+    <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav navbar-right">
+
+            <!-- Home para todos -->
+            <li class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                <a href="{% url 'home' %}">Home</a>
+            </li>
+
+            <!-- Menú para admin y cocinero -->
+            {% if not request.session.cliente %}
+                {% if user.rol == 'admin' or user.rol == 'cocinero' %}
+                <li><a href="{% url 'menu' %}">Menú</a></li>
+                {% endif %}
+            {% endif %}
+
+            <!-- Menú y Carrito para cliente QR -->
+            {% if request.session.cliente %}
+                <li><a href="{% url 'menu_cliente' request.session.mesa_id %}">Menú</a></li>
+                <li><a href="{% url 'ver_carrito' %}">Carrito</a></li>
+            {% endif %}
+
+            <!-- Mesas: SOLO ADMIN -->
+            {% if not request.session.cliente and user.rol == 'admin' %}
+                <li><a href="{% url 'lista_mesas' %}">Mesas</a></li>
+            {% endif %}
+
+            <!-- Cocina: ADMIN y COCINERO -->
+            {% if not request.session.cliente %}
+                {% if user.rol == 'admin' or user.rol == 'cocinero' %}
+                <li><a href="{% url 'cocina' %}">Cocina</a></li>
+                {% endif %}
+            {% endif %}
+
+            <!-- Reportes: SOLO ADMIN -->
+            {% if not request.session.cliente and user.rol == 'admin' %}
+                <li><a href="{% url 'dashboard' %}">Reportes</a></li>
+            {% endif %}
+
+            <!-- Contacto para todos -->
+            <li><a href="{% url 'contacto' %}">Contactos</a></li>
+            <!-- Asistente Virtual (visible para todos) -->
+            </a></li>
+            <!-- Usuarios: SOLO ADMIN -->
+            {% if not request.session.cliente and user.rol == 'admin' %}
+                <li><a href="{% url 'lista_usuarios' %}">Usuarios</a></li>
+            {% endif %}
+
+            <!-- Seguimiento pedido cliente -->
+            {% if request.session.pedido_id %}
+                <li>
+                    <a href="{% url 'seguimiento_pedido' request.session.pedido_id %}">
+                        Mi Pedido
+                    </a>
+                </li>
+            {% endif %}
+
+            <!-- Mi Perfil para admin y cocinero -->
+            {% if not request.session.cliente %}
+                {% if user.rol == 'admin' or user.rol == 'cocinero' %}
+                    <li><a href="{% url 'perfil_admin' %}">Mi Perfil</a></li>
+                {% endif %}
+                <!-- Cerrar sesión para admin y cocinero -->
+                <li><a href="{% url 'logout' %}" class="btn-logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Cerrar sesión
+                </a></li>
+            {% endif %}
+
+        </ul>
+    </div>
+
+</nav>
+
+</div>
+</div>
+</div>
+</header>
+</div>
+
+<!-- CONTENIDO -->
+{% block contenido %}
+{% endblock %}
+
+<div id="chatbotFloat">
+    <button class="chatbot-toggle" id="chatbotToggle">
+        <img src="{% static 'img/avatar.png' %}" alt="Asistente">
+        <span class="chatbot-badge">●</span>
+    </button>
+
+    <!-- VENTANA DEL CHAT -->
+    <div class="chatbot-window" id="chatbotWindow">
+        <!-- HEADER -->
+        <div class="chatbot-header">
+            <div class="chatbot-avatar">
+                <img src="{% static 'img/avatar.png' %}" alt="Asistente">
+            </div>
+            <div class="chatbot-title">
+                <h3>LoungeBot</h3>
+                <p>Online</p>
+            </div>
+            <button class="chatbot-close" id="chatbotClose">✕</button>
+        </div>
+
+        <!-- MENSAJES -->
+        <div class="chatbot-messages" id="chatbotMessages">
+            <!-- Mensaje de bienvenida con diseño CEDIA -->
+            <div class="chatbot-msg bot">
+                <div class="msg-avatar">
+                    <img src="{% static 'img/avatar.png' %}" alt="Bot">
+                </div>
+                <div class="msg-bubble" style="font-size: 15px; font-weight: 500;">
+                    Hola <strong>Bienvenida</strong> ¿Cómo estás?
+                </div>
+            </div>
+        </div>
+
+        <!-- OPCIONES RÁPIDAS (botones de estado de ánimo + otros) -->
+        <div class="chatbot-opciones" id="chatbotOpciones">
+            <button class="chatbot-opcion" data-pregunta="¿Qué platos recomiendas?"> Recomendaciones</button>
+            <button class="chatbot-opcion" data-pregunta="¿Tienen opciones vegetarianas?">Vegetariano</button>
+            <button class="chatbot-opcion" data-pregunta="¿Cuánto cuesta el Menú Infantil?">Menú Infantil</button>
+            <button class="chatbot-opcion" data-pregunta="¿Tienen promociones hoy?"> Promociones</button>
+        </div>
+
+        <!-- INPUT -->
+        <div class="chatbot-input">
+            <input type="text" id="chatbotInput" placeholder="Escribe tu pregunta...">
+            <button id="chatbotSend">➤</button>
+        </div>
+    </div>
+</div>
+<!-- ========================================== -->
+
+<!-- JS -->
+<script src="{% static 'tema/food-funday-master/js/all.js' %}"></script>
+<script src="{% static 'tema/food-funday-master/js/bootstrap.min.js' %}"></script>
+<script src="{% static 'tema/food-funday-master/js/custom.js' %}"></script>
+
+{% if messages %}
+    {% for mensaje in messages %}
+        <script>
+            iziToast.success({
+                title: 'Confirmación',
+                message:'{{ mensaje }}',
+                position: 'topRight'
+            });
+        </script>
+    {% endfor %}
+{% endif %}
+
+<style>
+.error { color:red; font-weight:bold; }
+input.error, select.error { border:2px solid red; }
+
+.btn-logout{
+    color:rgb(230, 8, 8);
+    padding:10px 18px;
+    border-radius:12px;
+    text-decoration:none;
+    font-weight:600;
+    transition:0.3s;
+}
+
+.btn-logout:hover{
+    transform:translateY(-2px);
+}
+
+/* ===== ESTILOS DEL CHATBOT FLOTANTE ===== */
+#chatbotFloat {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 9999;
+}
+
+.chatbot-toggle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    background: #6c63ff;
+    cursor: pointer;
+    box-shadow: 0 6px 25px rgba(108, 99, 255, 0.4);
+    transition: 0.3s;
+    padding: 0;
+    overflow: hidden;
+}
+
+.chatbot-toggle:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 35px rgba(108, 99, 255, 0.5);
+}
+
+.chatbot-toggle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.chatbot-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    color: #22c55e;
+    font-size: 18px;
+}
+
+.chatbot-window {
+    position: absolute;
+    bottom: 85px;
+    right: 0;
+    width: 32vi0px;
+    height: 420px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.25);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+}
+
+.chatbot-window.open {
+    display: flex;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chatbot-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 18px;
+    background: #6c63ff;
+    color: white;
+}
+
+.chatbot-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid white;
+}
+
+.chatbot-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chatbot-title h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.chatbot-title p {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.chatbot-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.chatbot-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8f9fc;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chatbot-msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.chatbot-msg.user {
+    flex-direction: row-reverse;
+}
+
+.chatbot-msg.user .msg-bubble {
+    background: #6c63ff;
+    color: white;
+}
+
+.msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.msg-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.msg-bubble {
+    padding: 10px 14px;
+    border-radius: 16px 16px 16px 4px;
+    max-width: 80%;
+    font-size: 14px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    color: #1f2937;
+    line-height: 1.5;
+}
+
+.chatbot-msg.user .msg-bubble {
+    border-radius: 16px 16px 4px 16px;
+}
+
+.chatbot-opciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 5px 10px;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+}
+
+.chatbot-opcion {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #6c63ff;
+    background: white;
+    color: #6c63ff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.chatbot-opcion:hover {
+    background: #6c63ff;
+    color: white;
+}
+
+.chatbot-input {
+    display: flex;
+    gap: 8px;
+    padding: 10px 15px;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+}
+
+.chatbot-input input {
+    flex: 1;
+    height: 40px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 0 14px;
+    font-size: 14px;
+}
+
+.chatbot-input input:focus {
+    outline: none;
+    border-color: #6c63ff;
+}
+
+.chatbot-input button {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    background: #6c63ff;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.chatbot-input button:hover {
+    background: #5a52d5;
+}
+
+@media (max-width: 600px) {
+    .chatbot-window {
+        width: 320px;
+        height: 420px;
+        right: -10px;
+    }
+    .chatbot-toggle {
+        width: 60px;
+        height: 60px;
+    }
+}
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ========== MENÚ ACTIVO ==========
+        var currentUrl = window.location.pathname;
+        var menuItems = document.querySelectorAll('.navbar-nav li');
+        
+        menuItems.forEach(function(item) {
+            var link = item.querySelector('a');
+            if (link && link.getAttribute('href')) {
+                var href = link.getAttribute('href');
+                if (currentUrl === href || (href !== '/' && currentUrl.startsWith(href))) {
+                    item.classList.add('active');
+                }
+            }
+        });
+
+        // ========== CHATBOT FLOTANTE ==========
+        const toggle = document.getElementById('chatbotToggle');
+        const windowChat = document.getElementById('chatbotWindow');
+        const closeBtn = document.getElementById('chatbotClose');
+        const input = document.getElementById('chatbotInput');
+        const sendBtn = document.getElementById('chatbotSend');
+        const messages = document.getElementById('chatbotMessages');
+
+        // Abrir/Cerrar
+        toggle.addEventListener('click', function() {
+            windowChat.classList.toggle('open');
+        });
+
+        closeBtn.addEventListener('click', function() {
+            windowChat.classList.remove('open');
+        });
+
+        // Enviar mensaje
+        function enviarMensaje(texto) {
+            if (!texto || texto.trim() === '') return;
+
+            // Mensaje del usuario
+            const userDiv = document.createElement('div');
+            userDiv.className = 'chatbot-msg user';
+            userDiv.innerHTML = `
+                <div class="msg-avatar"><img src="{% static 'img/sellos.png' %}" alt="User"></div>
+                <div class="msg-bubble">${texto}</div>
+            `;
+            messages.appendChild(userDiv);
+            messages.scrollTop = messages.scrollHeight;
+
+            input.value = '';
+
+            // "Escribiendo..."
+            const waiting = document.createElement('div');
+            waiting.className = 'chatbot-msg bot';
+            waiting.id = 'waitingMsg';
+            waiting.innerHTML = `
+                <div class="msg-avatar"><img src="{% static 'img/avatar.png' %}" alt="Bot"></div>
+                <div class="msg-bubble"> Escribiendo...</div>
+            `;
+            messages.appendChild(waiting);
+            messages.scrollTop = messages.scrollHeight;
+
+            // Llamar a la API
+            fetch('/chat/asistente/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ mensaje: texto })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const waitingEl = document.getElementById('waitingMsg');
+                if (waitingEl) waitingEl.remove();
+
+                const botDiv = document.createElement('div');
+                botDiv.className = 'chatbot-msg bot';
+                botDiv.innerHTML = `
+                    <div class="msg-avatar"><img src="{% static 'img/avatar.png' %}" alt="Bot"></div>
+                    <div class="msg-bubble">${data.respuesta || ' Lo siento, no pude procesar tu pregunta. ¿Puedes intentar de nuevo?'}</div>
+                `;
+                messages.appendChild(botDiv);
+                messages.scrollTop = messages.scrollHeight;
+            })
+            .catch(() => {
+                const waitingEl = document.getElementById('waitingMsg');
+                if (waitingEl) waitingEl.remove();
+                const botDiv = document.createElement('div');
+                botDiv.className = 'chatbot-msg bot';
+                botDiv.innerHTML = `
+                    <div class="msg-avatar"><img src="{% static 'img/avatar.png' %}" alt="Bot"></div>
+                    <div class="msg-bubble">🤖 Error de conexión. Por favor, intenta de nuevo más tarde.</div>
+                `;
+                messages.appendChild(botDiv);
+                messages.scrollTop = messages.scrollHeight;
+            })
+            
+        }
+
+        sendBtn.addEventListener('click', function() {
+            enviarMensaje(input.value.trim());
+        });
+
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                enviarMensaje(input.value.trim());
+            }
+        });
+
+        // Opciones rápidas (incluye botones de estado de ánimo)
+        document.querySelectorAll('.chatbot-opcion').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const pregunta = this.getAttribute('data-pregunta');
+                enviarMensaje(pregunta);
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,225 @@
+{% extends 'plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<br><br>
+<div id="banner"></div>
+<div class="modal-wrapper">
+
+    <div class="modal-card">
+
+        <!-- ICONO DE ALERTA -->
+        <div class="modal-icon">
+            <i class="fa-regular fa-triangle-exclamation"></i>
+        </div>
+
+        <!-- TÍTULO -->
+        <h2>Eliminar Usuario</h2>
+
+        <!-- MENSAJE -->
+        <p class="modal-message">
+            ¿Estás seguro de que deseas eliminar a
+            <strong>{{ usuario.username }}</strong>?
+            <br>
+            <span class="warning-text">Esta acción no se puede deshacer.</span>
+        </p>
+
+        <!-- FORMULARIO -->
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- ===== BOTONES ===== -->
+            <div class="modal-actions">
+                <button type="submit" class="btn-delete">
+                    <i class="fa-regular fa-trash-can"></i> Sí, Eliminar
+                </button>
+                <a href="{% url 'lista_usuarios' %}" class="btn-cancel">
+                    <i class="fa-regular "></i> Cancelar
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- ========== ESTILOS ========== -->
+<style>
+    /* ----- BANNER ----- */
+    body {
+        background: #f0f2f8;
+        min-height: 100vh;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    #banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        z-index: 1;
+        filter: brightness(0.60);
+    }
+
+    /* ----- CONTENEDOR ----- */
+    .modal-wrapper {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 30px 15px;
+    }
+
+    /* ----- TARJETA (MODAL) ----- */
+    .modal-card {
+        width: 100%;
+        max-width: 480px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 28px;
+        padding: 40px 35px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15),
+                    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+        text-align: center;
+        animation: fadeUp 0.6s ease;
+    }
+
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ----- ICONO ----- */
+    .modal-icon {
+        width: 80px;
+        height: 80px;
+        background: #fee2e2;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 36px;
+        color: #b91c1c;
+        box-shadow: 0 4px 15px rgba(185, 28, 28, 0.15);
+    }
+
+    /* ----- TÍTULO ----- */
+    .modal-card h2 {
+        font-size: 26px;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0 0 12px;
+        letter-spacing: -0.5px;
+    }
+
+    /* ----- MENSAJE ----- */
+    .modal-message {
+        font-size: 16px;
+        color: #4b5563;
+        line-height: 1.6;
+        margin-bottom: 28px;
+    }
+
+    .modal-message strong {
+        color: #1a1a2e;
+        font-weight: 700;
+    }
+
+    .warning-text {
+        display: block;
+        margin-top: 6px;
+        font-size: 14px;
+        color: #b91c1c;
+        font-weight: 500;
+    }
+
+    /* ----- BOTONES ----- */
+    .modal-actions {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+    }
+
+    .btn-delete,
+    .btn-cancel {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 20px;
+        border-radius: 16px;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: 0.25s;
+        text-decoration: none;
+        text-align: center;
+        max-width: 180px;
+    }
+
+    .btn-delete {
+        background: #b91c1c;
+        color: white;
+        box-shadow: 0 4px 14px rgba(185, 28, 28, 0.30);
+    }
+
+    .btn-delete:hover {
+        background: #991b1b;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(185, 28, 28, 0.35);
+    }
+
+    .btn-cancel {
+        background: #f3f4f6;
+        color: #4b5563;
+        border: 2px solid #e5e7eb;
+    }
+
+    .btn-cancel:hover {
+        background: #e5e7eb;
+        border-color: #9ca3af;
+        transform: translateY(-2px);
+    }
+
+    /* ----- RESPONSIVE ----- */
+    @media (max-width: 520px) {
+        .modal-card {
+            padding: 30px 18px;
+        }
+        .modal-actions {
+            flex-direction: column;
+            align-items: center;
+        }
+        .btn-delete,
+        .btn-cancel {
+            max-width: 100%;
+            width: 100%;
+        }
+        .modal-card h2 {
+            font-size: 22px;
+        }
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            font-size: 28px;
+        }
+    }
+</style>
+
+{% endblock %}

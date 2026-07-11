@@ -1,0 +1,15 @@
+{% extends './plantilla.html' %}
+
+{% block contenido %}
+
+<div class="container">
+    <h2>¿Eliminar {{ producto.nombre }}?</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        <button class="btn btn-danger">Sí, eliminar</button>
+        <a href="{% url 'menu' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,434 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registro - Freedom Lounge</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="shortcut icon" href="{% static 'tema/food-funday-master/images/rest.ico' %}">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+/* FONDO */
+body{
+    height:100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}") no-repeat center/cover;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+/* CARD */
+.card{
+    width:400px;
+    backdrop-filter: blur(18px);
+    background: rgba(255,255,255,0.12);
+    border-radius:20px;
+    padding:35px;
+    box-shadow:0 15px 40px rgba(0,0,0,0.3);
+    color:white;
+    animation:fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn{
+    from{opacity:0; transform:translateY(30px);}
+    to{opacity:1; transform:translateY(0);}
+}
+
+/* LOGO */
+.logo{
+    width:65px;
+    height:65px;
+    background:#e60023;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin:0 auto 15px;
+    font-size:22px;
+    font-weight:bold;
+}
+.logo img{
+    width:50px;
+    height:50px;
+    object-fit:contain;
+}
+
+/* TITULO */
+.card h2{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+/* INPUT */
+.input-group{
+    position:relative;
+    margin-bottom:18px;
+}
+
+.input-group i{
+    position:absolute;
+    left:10px;
+    top:50%;
+    transform:translateY(-50%);
+    opacity:0.7;
+}
+
+.input-group input, .input-group select{
+    width:100%;
+    padding:12px 12px 12px 35px;
+    border:none;
+    border-bottom:1px solid white;
+    background:rgba(0,0,0,0.3);
+    color:white;
+    border-radius:8px;
+}
+
+.input-group select option{
+    background:#333;
+    color:white;
+}
+
+.input-group input::placeholder{
+    color:#ddd;
+}
+
+.input-group input:focus, .input-group select:focus{
+    outline:none;
+    border-bottom:1px solid #ff4b2b;
+}
+
+/* OJO PASSWORD */
+.toggle-pass{
+    position:absolute;
+    right:10px;
+    top:50%;
+    transform:translateY(-50%);
+    cursor:pointer;
+    background:rgba(0,0,0,0.3);
+    padding:5px 8px;
+    border-radius:20px;
+    font-size:12px;
+}
+
+/* VALIDACIÓN (tus estilos originales) */
+.valid{
+    font-size:12px;
+    color:#00ffcc;
+    margin-top:-10px;
+    margin-bottom:10px;
+}
+
+.invalid{
+    font-size:12px;
+    color:#ff6b6b;
+    margin-top:-10px;
+    margin-bottom:10px;
+}
+
+/* BOTÓN */
+.btn{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    margin-top:10px;
+    background:#e60023;
+    color:white;
+    font-size:15px;
+    transition:0.3s;
+}
+
+.btn:hover{
+    background:#c4001d;
+    transform:scale(1.03);
+}
+.btn:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+    transform:none;
+}
+
+/* LINK */
+.link{
+    text-align:center;
+    margin-top:12px;
+    font-size:14px;
+}
+
+.link a{
+    color:white;
+    text-decoration:none;
+}
+
+.link a:hover{
+    text-decoration:underline;
+}
+
+/* MENSAJES DJANGO */
+.error{
+    background:#ffdddd;
+    color:#900;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:10px;
+    text-align:center;
+}
+
+.success{
+    background:#ddffdd;
+    color:#060;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:10px;
+    text-align:center;
+}
+
+.info-badge{
+    background:rgba(0,0,0,0.5);
+    padding:8px;
+    border-radius:8px;
+    margin-bottom:15px;
+    text-align:center;
+    font-size:12px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<div class="logo">
+    <img src="{% static 'img/sellos.png' %}" alt="Logo">
+</div>
+
+<h2>Crear Cuenta</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<form method="POST" id="formRegistro" novalidate>
+    {% csrf_token %}
+
+    <!-- Usuario -->
+    <div class="input-group">
+        <i></i>
+        <input type="text" name="username" id="username" placeholder="Nombre de usuario" required autocomplete="off">
+    </div>
+    <div id="msg-username" class="valid" style="display:none;"></div>
+
+    <!-- Email -->
+    <div class="input-group">
+        <i></i>
+        <input type="email" name="email" id="email" placeholder="Correo electrónico" required autocomplete="off">
+    </div>
+    <div id="msg-email" class="valid" style="display:none;"></div>
+
+    <!-- Contraseña -->
+    <div class="input-group">
+        <i></i>
+        <input type="password" id="pass1" name="password1" placeholder="Contraseña" required>
+        <span class="toggle-pass" onclick="togglePass('pass1')">👁</span>
+    </div>
+    <div id="msg-pass1" class="valid" style="display:none;"></div>
+
+    <!-- Confirmar -->
+    <div class="input-group">
+        <i></i>
+        <input type="password" id="pass2" name="password2" placeholder="Confirmar contraseña" required>
+        <span class="toggle-pass" onclick="togglePass('pass2')">👁</span>
+    </div>
+    <div id="msg-pass2" class="valid" style="display:none;"></div>
+
+    <!-- Rol -->
+    <div class="input-group">
+        <i></i>
+        <select name="rol" id="rol" required>
+            <option value="" disabled selected>Selecciona un rol</option>
+            <option value="admin"> Administrador</option>
+            <option value="cocinero"> Cocinero</option>
+        </select>
+    </div>
+    <div id="msg-rol" class="valid" style="display:none;"></div>
+
+    <button class="btn" id="btnRegistro" disabled>Registrarse</button>
+
+</form>
+
+<div class="link">
+    ¿Ya tienes cuenta? 
+    <a href="{% url 'login' %}">Iniciar sesión</a>
+</div>
+
+</div>
+
+<script>
+
+// MOSTRAR / OCULTAR PASSWORD
+function togglePass(id){
+    const input = document.getElementById(id);
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+}
+
+// ---- VALIDACIONES ----
+const username = document.getElementById('username');
+const email    = document.getElementById('email');
+const pass1    = document.getElementById('pass1');
+const pass2    = document.getElementById('pass2');
+const rol      = document.getElementById('rol');
+
+const msgUser  = document.getElementById('msg-username');
+const msgEmail = document.getElementById('msg-email');
+const msgPass1 = document.getElementById('msg-pass1');
+const msgPass2 = document.getElementById('msg-pass2');
+const msgRol   = document.getElementById('msg-rol');
+const btnReg   = document.getElementById('btnRegistro');
+
+function setMensaje(el, texto, tipo) {
+    el.textContent = texto;
+    el.style.display = 'block';
+    el.className = tipo; // 'valid' o 'invalid'
+    if (texto === '') el.style.display = 'none';
+}
+
+// Validar usuario
+function validarUsuario() {
+    const val = username.value.trim();
+    const regex = /^[a-zA-Z0-9_]{3,20}$/;
+    let ok = true;
+    let msg = '';
+    if (val.length === 0) {
+        ok = false; msg = ' Usuario obligatorio.';
+    } else if (!regex.test(val)) {
+        ok = false; msg = ' 3-20 caracteres, solo letras, números y _';
+    } else {
+        msg = '✔ Usuario válido';
+    }
+    setMensaje(msgUser, msg, ok ? 'valid' : 'invalid');
+    return ok;
+}
+
+// Validar email
+function validarEmail() {
+    const val = email.value.trim();
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    let ok = true;
+    let msg = '';
+    if (val.length === 0) {
+        ok = false; msg = ' Correo obligatorio.';
+    } else if (!regex.test(val)) {
+        ok = false; msg = ' Introduce un email válido.';
+    } else {
+        msg = '✔ Correo válido';
+    }
+    setMensaje(msgEmail, msg, ok ? 'valid' : 'invalid');
+    return ok;
+}
+
+// Validar contraseña (mínimo 8 caracteres, una mayúscula, una minúscula, un número)
+function validarPass1() {
+    const val = pass1.value;
+    let ok = true;
+    let msg = '';
+    if (val.length === 0) {
+        ok = false; msg = ' Contraseña obligatoria.';
+    } else if (val.length < 8) {
+        ok = false; msg = ' Mínimo 8 caracteres.';
+    } else if (!/[A-Z]/.test(val) || !/[a-z]/.test(val)) {
+        ok = false; msg = ' Debe tener mayúscula y minúscula.';
+    } else if (!/[0-9]/.test(val)) {
+        ok = false; msg = ' Debe tener al menos un número.';
+    } else {
+        msg = '✔ Contraseña segura';
+    }
+    setMensaje(msgPass1, msg, ok ? 'valid' : 'invalid');
+    return ok;
+}
+
+// Validar confirmación
+function validarPass2() {
+    const p1 = pass1.value;
+    const p2 = pass2.value;
+    let ok = true;
+    let msg = '';
+    if (p2.length === 0) {
+        ok = false; msg = ' Confirma tu contraseña.';
+    } else if (p1 !== p2) {
+        ok = false; msg = '✖ Las contraseñas no coinciden.';
+    } else {
+        msg = '✔ Coinciden';
+    }
+    setMensaje(msgPass2, msg, ok ? 'valid' : 'invalid');
+    return ok;
+}
+
+// Validar rol
+function validarRol() {
+    const val = rol.value;
+    let ok = true;
+    let msg = '';
+    if (!val) {
+        ok = false; msg = ' Selecciona un rol.';
+    } else {
+        msg = '✔ Rol seleccionado';
+    }
+    setMensaje(msgRol, msg, ok ? 'valid' : 'invalid');
+    return ok;
+}
+
+// Validación global (habilita/deshabilita botón)
+function validarTodo() {
+    const u = validarUsuario();
+    const e = validarEmail();
+    const p1 = validarPass1();
+    const p2 = validarPass2();
+    const r = validarRol();
+    const ok = u && e && p1 && p2 && r;
+    btnReg.disabled = !ok;
+    return ok;
+}
+
+// Eventos en tiempo real
+username.addEventListener('input', validarTodo);
+email.addEventListener('input', validarTodo);
+pass1.addEventListener('input', validarTodo);
+pass2.addEventListener('input', validarTodo);
+rol.addEventListener('change', validarTodo);
+
+// Validar al enviar
+document.getElementById('formRegistro').addEventListener('submit', function(e) {
+    if (!validarTodo()) {
+        e.preventDefault();
+        alert('Corrige los errores antes de enviar.');
+        // Enfocar el primer campo con error (los mensajes con clase 'invalid' están visibles)
+        const firstError = document.querySelector('.invalid');
+        if (firstError) {
+            const input = firstError.closest('.card').querySelector('input, select');
+            if (input) input.focus();
+        }
+    }
+});
+
+// Inicializar
+validarTodo();
+
+</script>
+
+</body>
+</html>

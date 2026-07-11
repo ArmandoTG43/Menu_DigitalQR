@@ -1,0 +1,392 @@
+{% extends './plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<div id="banner"></div>
+
+<br><br><br><br><br>
+
+<div class="container">
+
+    <h2 class="title"><i class="fa-solid fa-bag-shopping"></i> Mi Pedido</h2>
+
+    {% if productos %}
+
+    <div class="grid-carrito">
+
+        <!-- LISTA -->
+        <div>
+
+            {% for item in productos %}
+            <div class="item-card">
+
+                <!-- IMAGEN -->
+                <div class="item-img">
+                    {% if item.imagen %}
+                        <img src="{{ item.imagen }}">
+                    {% else %}
+                        <img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}">
+                    {% endif %}
+                </div>
+
+                <!-- INFO -->
+                <div class="item-info">
+                    <h5><i class="fa-solid fa-utensils"></i> {{ item.nombre }}</h5>
+                    <p class="desc">
+                        {{ item.descripcion }}
+                    </p>
+
+                    <!-- CONTROLES -->
+                    <div class="cantidad">
+                        <a href="{% url 'restar_carrito' item.id %}" class="btn-restar">
+                            <i class="fa-solid fa-minus"></i>
+                        </a>
+
+                        <span>{{ item.cantidad }}</span>
+
+                        <a href="{% url 'agregar_carrito' item.id %}" class="btn-sumar">
+                            <i class="fa-solid fa-plus"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- DERECHA -->
+                <div class="item-right">
+                    <span class="subtotal">
+                        <i class="fa-solid fa-dollar-sign"></i> {{ item.subtotal }}
+                    </span>
+
+                    <a href="{% url 'eliminar_carrito' item.id %}" class="icon-btn">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </a>
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+
+        <!-- RESUMEN -->
+        <div class="resumen">
+
+            <h4><i class="fa-solid"></i> Resumen</h4>
+
+            <div class="fila">
+                <span><i class="fa-solid "></i> Subtotal</span>
+                <strong><i class="fa-solid fa-dollar-sign"></i> {{ total }}</strong>
+            </div>
+
+            <div class="fila total">
+                <span><i class="fa-solid "></i> Total</span>
+                <h4><i class="fa-solid fa-dollar-sign"></i> {{ total }}</h4>
+            </div>
+
+            <form method="POST" action="{% url 'confirmar_pedido' %}">
+                {% csrf_token %}
+
+                <button class="btn-pagar">
+                    <i class="fa-solid fa-credit-card"></i> Pagar
+                </button>
+            </form>
+
+            <a href="{% url 'menu' %}" class="btn-volver">
+                <i class="fa-solid fa-cart-plus"></i> Seguir comprando
+            </a>
+
+        </div>
+
+    </div>
+
+    {% else %}
+        <div class="empty">
+            <i class="fa-solid fa-cart-circle-xmark"></i>
+            <p> TU CARRITO ESTÁ VACÍO</p>
+            <p>Agrega productos para empezar</p>
+
+            <a href="{% url 'menu' %}" class="btn-pagar">
+                <i class="fa-solid "></i> Ver Menú
+            </a>
+        </div>
+
+    {% endif %}
+
+</div>
+
+<!-- BANNER -->
+<style>
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+/* contenido encima del banner */
+.container {
+    position: relative;
+    z-index: 2;
+}
+</style>
+
+<!-- CSS ORIGINAL + ICONOS -->
+<style>
+
+body {
+    background: linear-gradient(135deg, #d0d5df, #111827);
+    min-height:100vh;
+}
+
+/* TITULO */
+.title {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #ddd;
+}
+
+.title i {
+    color: #e76e05;
+    margin-right: 10px;
+}
+
+/* GRID */
+.grid-carrito {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+}
+
+.desc{
+    font-size:12px;
+    color:#ccc;
+    margin:4px 0;
+}
+
+/* ITEM */
+.item-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: rgba(255,255,255,0.12);
+    padding: 15px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #cbd5e1;
+}
+
+/* IMAGEN */
+.item-img img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+/* INFO */
+.item-info {
+    flex: 1;
+    color: #dc3545;
+}
+
+.item-info h5 {
+    margin: 0;
+    color: #dc3545;
+    font-size: 20px;
+}
+
+.item-info h5 i {
+    color: #e76e05;
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.item-info p {
+    color: rgb(253, 252, 252);
+    margin: 5px 0;
+}
+
+.item-info p i {
+    color: #22c55e;
+    margin-right: 5px;
+}
+
+/* CANTIDAD */
+.cantidad {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: turquoise;
+}
+
+.btn-restar, .btn-sumar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.btn-restar {
+    background: #ffc107;
+    color: #fbf3f3;
+}
+
+.btn-sumar {
+    background: #28a745;
+    color: white;
+}
+
+.btn-restar i, .btn-sumar i {
+    font-size: 12px;
+}
+
+/* DERECHA */
+.item-right {
+    text-align: right;
+    color: #fbf3f3;
+}
+
+.subtotal {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.subtotal i {
+    color: #22c55e;
+    margin-right: 3px;
+}
+
+/* DELETE */
+.icon-btn {
+    color: #ef4444;
+    font-size: 20px;
+    text-decoration: none;
+    transition: 0.3s;
+    margin: 0 5px;
+    display: inline-block;
+}
+
+.icon-btn:hover {
+    color: #dc2626;
+    transform: scale(1.15);
+}
+
+/* RESUMEN */
+.resumen {
+    background: rgba(239, 228, 228, 0.12);
+    padding: 20px;
+    color: #f7e9e9;
+    border-radius: 15px;
+    height: fit-content;
+    box-shadow: 0 5px 15px beige;
+}
+
+.resumen h4 i {
+    color: #e76e05;
+    margin-right: 8px;
+}
+
+.fila {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: #f7e9e9;
+}
+
+.fila i {
+    color: #e76e05;
+    margin-right: 5px;
+}
+
+.total {
+    margin-top: 10px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
+
+/* BOTONES */
+.btn-pagar {
+    width: 100%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: 0.3s;
+    box-shadow: 0 10px 25px rgba(34,197,94,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-pagar:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    box-shadow: 0 15px 30px rgba(34,197,94,0.45);
+}
+
+.btn-volver {
+    width: 100%;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: 0.3s;
+    box-shadow: 0 10px 25px rgba(59,130,246,0.35);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-volver:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 15px 30px rgba(59,130,246,0.45);
+}
+
+/* VACIO */
+.empty {
+    text-align: center;
+    margin-top: 50px;
+    color: #ddd;
+}
+
+.empty i {
+    font-size: 64px;
+    color: #e76e05;
+    margin-bottom: 20px;
+    display: block;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    .grid-carrito {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>
+
+{% endblock %}
