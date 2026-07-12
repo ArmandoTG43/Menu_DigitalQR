@@ -70,7 +70,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'Aplicacion.Menud',
+    'cloudinary',
+    'cloudinary_storage',
 ]
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'tu_cloud_name',
+    'API_KEY': 'tu_api_key',
+    'API_SECRET': 'tu_api_secret',
+}
 
 SITE_ID = 1
 
