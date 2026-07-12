@@ -137,7 +137,7 @@ USE_TZ = True
 
 # --- Static files (CSS, JavaScript, Images) ---
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'sistema/static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Sistema/static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # <--- NUEVO: para collectstatic
 
 # --- Almacenamiento de archivos estáticos con WhiteNoise ---
