@@ -18,9 +18,9 @@
 
             <div class="avatar">
                 {% if perfil.foto %}
-                    <img src="{{ perfil.foto.url }}">
+                    <img src="{% static 'productos/' %}{{ perfil.foto.name|cut:'productos/' }}" alt="Perfil">
                 {% else %}
-                    <img src="{% static 'img/default.png' %}">
+                    <img src="{% static 'img/default.png' %}" alt="Perfil">
                 {% endif %}
             </div>
 
