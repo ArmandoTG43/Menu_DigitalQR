@@ -64,7 +64,7 @@
 
             <div class="img-box">
                 {% if producto.imagen %}
-                    <img src="{% static 'productos/' %}{{ producto.imagen.name|cut:'productos/' }}" alt="{{ producto.nombre }}">
+                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
                 {% else %}
                     <img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}" alt="Sin imagen">
                 {% endif %}

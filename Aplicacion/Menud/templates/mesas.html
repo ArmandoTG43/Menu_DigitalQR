@@ -35,7 +35,7 @@
             <!-- QR -->
             <div class="qr-box">
                 {% if mesa.qr_codigo %}
-                    <img src="{% static 'qr/' %}{{ mesa.qr_codigo.name|cut:'qr/' }}" alt="QR Mesa">
+                    <img src="{{ mesa.qr_codigo.url }}" alt="QR Mesa">
                 {% else %}
                     <span>Sin QR</span>
                 {% endif %}
