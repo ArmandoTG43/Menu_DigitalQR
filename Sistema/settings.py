@@ -145,7 +145,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # --- Media files (archivos subidos por usuarios) ---
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'sistema/static')  # <--- NUEVO: para archivos subidos
+MEDIA_ROOT = os.path.join(BASE_DIR, 'sistema/media')  # <--- NUEVO: para archivos subidos
 
 # --- Default primary key field type ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
