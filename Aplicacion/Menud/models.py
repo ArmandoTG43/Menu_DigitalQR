@@ -65,20 +65,36 @@ class Mesa(models.Model):
 
     def save(self, *args, **kwargs):
         creating = self.pk is None
+
         super().save(*args, **kwargs)
-        
+
         if creating and not self.qr_codigo:
-            # 👇 CAMBIA ESTO - Usa la URL de ngrok
-            # Si quieres que funcione con cualquier URL dinámicamente:
             from django.conf import settings
-            base_url = getattr(settings, 'BASE_URL', 'https://ammonium-sliceable-sizzle.ngrok-free.dev')
+
+            base_url = getattr(
+                settings,
+                'BASE_URL',
+                'https://menu-digitalqr.onrender.com'
+            )
+
             url = f"{base_url}/menu/{self.id}/"
-            
+
             qr = qrcode.make(url)
+
             buffer = BytesIO()
             qr.save(buffer, format='PNG')
+
+            # ESTA LÍNEA ES LA QUE FALTABA
+            buffer.seek(0)
+
             file_name = f"mesa_{self.numero}.png"
-            self.qr_codigo.save(file_name, File(buffer), save=False)
+
+            self.qr_codigo.save(
+                file_name,
+                File(buffer),
+                save=False
+            )
+
             super().save(update_fields=['qr_codigo'])
 
 # -------------------
