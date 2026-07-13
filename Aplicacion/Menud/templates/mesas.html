@@ -33,13 +33,19 @@
             <h4>Mesa {{ mesa.numero }}</h4>
 
             <!-- QR -->
+            {% for mesa in mesas %}
             <div class="qr-box">
+
+                <h3>Mesa {{ mesa.numero }}</h3>
+
                 {% if mesa.qr_codigo %}
-                    <img src="{{ mesa.qr_codigo.url }}" alt="QR Mesa">
+                    <img src="{{ mesa.qr_codigo.url }}" alt="QR Mesa {{ mesa.numero }}">
                 {% else %}
                     <span>Sin QR</span>
                 {% endif %}
+
             </div>
+            {% endfor %}
 
             <p>Escanea para ver el menú</p>
 
