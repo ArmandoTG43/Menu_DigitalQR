@@ -13,19 +13,23 @@
     <div class="menu-header">
          <h2><i class="fa-solid"></i>PLATOS DEL DÍA</h2>
 
-        <div>
+        <div class="btn-group-header ">
             <!--  SOLO ADMIN: Botón Agregar -->
             {% if not request.session.cliente and user.is_authenticated and user.rol == 'admin' %}
             <a href="{% url 'agregar_producto' %}" class="btn-add">
                 <i class="fa-solid fa-plus"></i> Agregar
             </a>
+            <a href="{% url 'lista_promociones' %}" class="btn-add">
+                <i class="fa-solid fa-plus"></i> Promociones
+            </a>
+
             {% endif %}
 
             {% if request.session.cliente %}
             <a href="{% url 'ver_carrito' %}" class="btn-cart">
                 <i class="fa-solid fa-cart-shopping"></i>
                 <span class="cart-count" id="cartCount">
-                    {{ total_items|default:0 }}  <!-- 🔥 AQUÍ EL CAMBIO -->
+                    {{ total_items|default:0 }}  
                 </span>
             </a>
             {% endif %}
@@ -242,6 +246,11 @@ body {
 
 .search-box input::placeholder {
     color: #9ca3af;
+}
+.btn-group-header {
+    display: flex;        
+    align-items: center;  
+    gap: 12px;           
 }
 
 .btn-clear {

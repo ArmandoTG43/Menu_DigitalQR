@@ -901,9 +901,7 @@ def chat_asistente(request):
 
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
-# ====================
-# PROMOCIONES (ADMIN)
-# ====================
+
 
 @admin_required
 def lista_promociones(request):
@@ -962,17 +960,18 @@ def editar_promocion(request, id):
     })
 
 @admin_required
+@admin_required
 def eliminar_promocion(request, id):
     promocion = get_object_or_404(Promocion, id=id)
     if request.method == 'POST':
         promocion.delete()
         messages.success(request, 'Promoción eliminada')
         return redirect('lista_promociones')
-    return render(request, 'promociones/eliminar.html', {'promocion': promocion})
+    # Si es GET, también elimina (para que funcione con el enlace directo)
+    promocion.delete()
+    messages.success(request, 'Promoción eliminada')
+    return redirect('lista_promociones')
 
-# ====================
-# PROMOCIONES (CLIENTE)
-# ====================
 
 def promociones_cliente(request):
     ahora = timezone.now()

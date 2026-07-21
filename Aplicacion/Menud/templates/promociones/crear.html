@@ -1,0 +1,301 @@
+{% extends 'plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+<br><br><br><br>
+<div id="banner"></div>
+
+<div class="container" style="padding-top: 40px;">
+    
+    <div class="form-header">
+        <h2><i class="fa-solid fa-plus-circle"></i> Nueva Promoción</h2>
+        <p>Registra una nueva promoción para tus clientes</p>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="nombre"> Nombre de la Promoción</label>
+                <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej: 2x1 en Hamburguesas" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="descripcion"> Descripción</label>
+                <textarea name="descripcion" id="descripcion" class="form-control" rows="3" placeholder="Describe la promoción..."></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tipo_descuento"> Tipo de Descuento</label>
+                    <select name="tipo_descuento" id="tipo_descuento" class="form-control" required>
+                        <option value="porcentaje">Porcentaje (%)</option>
+                        <option value="fijo">Monto Fijo ($)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="valor_descuento"> Valor del Descuento</label>
+                    <input type="number" name="valor_descuento" id="valor_descuento" class="form-control" step="0.01" placeholder="0.00" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="fecha_inicio">Fecha de Inicio</label>
+                    <input type="datetime-local" name="fecha_inicio" id="fecha_inicio" class="form-control" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="fecha_fin"> Fecha de Fin</label>
+                    <input type="datetime-local" name="fecha_fin" id="fecha_fin" class="form-control" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="productos"> Productos Asociados</label>
+                <select name="productos" id="productos" class="form-control" multiple>
+                    {% for producto in productos %}
+                        <option value="{{ producto.id }}">{{ producto.nombre }} - ${{ producto.precio }}</option>
+                    {% endfor %}
+                </select>
+                <small>Mantén presionado <strong>Ctrl</strong> para seleccionar múltiples productos</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="imagen"> Imagen de la Promoción</label>
+                <input type="file" name="imagen" id="imagen" class="form-control-file" accept="image/*">
+                <small>Formatos: JPG, PNG, GIF (máx 2MB)</small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Promoción
+                </button>
+                <a href="{% url 'lista_promociones' %}" class="btn-cancel">
+                    <i class="fa-solid fa-xmark"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+
+.container {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+
+/* ===== HEADER ===== */
+.form-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.form-header h2 {
+    color: white;
+    font-size: 30px;
+    margin: 0;
+}
+
+.form-header h2 i {
+    color: #e76e05;
+    margin-right: 10px;
+}
+
+.form-header p {
+    color: #9ca3af;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+/* ===== TARJETA ===== */
+.form-card {
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 35px;
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+}
+
+/* ===== CAMPOS ===== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #f59e0b;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.form-control::placeholder {
+    color: rgba(255,255,255,0.4);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #e76e05;
+    box-shadow: 0 0 0 3px rgba(231,110,5,0.15);
+    background: rgba(255,255,255,0.12);
+}
+
+.form-control option {
+    background: #1a1a2e;
+    color: white;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+select[multiple].form-control {
+    min-height: 120px;
+}
+/* 🔥 ARREGLA EL SELECT - QUE NO SE CORTA EL TEXTO */
+select.form-control {
+    min-width: 200px;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 14px;
+    appearance: auto;
+}
+
+select.form-control option {
+    background: #1a1a2e;
+    color: white;
+    padding: 8px 12px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.form-control-file {
+    width: 100%;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    font-size: 14px;
+}
+
+small {
+    display: block;
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* ===== BOTONES ===== */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.btn-save {
+    flex: 1;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(34,197,94,0.3);
+}
+
+.btn-cancel {
+    flex: 1;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 14px 20px;
+    border-radius: 14px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-cancel:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .form-card {
+        padding: 20px;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+{% endblock %}

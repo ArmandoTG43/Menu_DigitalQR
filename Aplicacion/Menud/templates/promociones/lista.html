@@ -1,0 +1,225 @@
+{% extends 'plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<div id="banner"></div>
+
+<div class="container">
+    <br><br><br><br>
+    
+    <div class="admin-header">
+        <h2><i class="fa-solid fa-tag"></i> Gestión de Promociones</h2>
+        <a href="{% url 'crear_promocion' %}" class="btn-add">
+            <i class="fa-solid fa-plus"></i> Nueva Promoción
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descuento</th>
+                    <th>Vigencia</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for promo in promociones %}
+                <tr>
+                    <td>{{ promo.nombre }}</td>
+                    <td>
+                        {% if promo.tipo_descuento == 'porcentaje' %}
+                            {{ promo.valor_descuento|floatformat:0 }}%
+                        {% else %}
+                            ${{ promo.valor_descuento|floatformat:2 }}
+                        {% endif %}
+                    </td>
+                    <td>{{ promo.fecha_inicio|date:"d/m/Y" }} - {{ promo.fecha_fin|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if promo.esta_vigente %}
+                            <span class="badge-activo">✅ Activa</span>
+                        {% else %}
+                            <span class="badge-inactivo">❌ Inactiva</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'editar_promocion' promo.id %}" class="btn-edit" title="Editar">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                        <!--  ELIMINAR DIRECTAMENTE (SIN HTML) -->
+                        <a href="{% url 'eliminar_promocion' promo.id %}" 
+                           class="btn-delete" 
+                           title="Eliminar" 
+                           onclick="return confirm('¿Eliminar la promoción {{ promo.nombre }}?')">
+                            <i class="fa-solid fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:30px; color:#9ca3af;">
+                        <i class="fa-regular fa-face-frown"></i> No hay promociones registradas
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========== ESTILOS ========== -->
+<style>
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+.container {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.admin-header h2 {
+    color: white;
+    font-size: 26px;
+    margin: 0;
+}
+
+.admin-header h2 i {
+    color: #e76e05;
+    margin-right: 10px;
+}
+
+.btn-add {
+    background: linear-gradient(135deg, #e76e05, #f59e0b);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-add:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(231,110,5,0.4);
+}
+
+.table-responsive {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    overflow: auto;
+    padding: 15px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    color: white;
+    font-size: 14px;
+}
+
+thead th {
+    text-align: left;
+    padding: 14px 12px;
+    background: rgba(231,110,5,0.25);
+    border-radius: 8px;
+    font-weight: bold;
+    color: #f59e0b;
+}
+
+tbody td {
+    padding: 14px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+tbody tr:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.badge-activo {
+    color: #22c55e;
+    font-weight: bold;
+}
+
+.badge-inactivo {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.btn-edit, .btn-delete {
+    padding: 6px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: 0.3s;
+    display: inline-block;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-edit {
+    color: #facc15;
+    background: rgba(250,204,21,0.1);
+    margin-right: 5px;
+}
+
+.btn-edit:hover {
+    background: rgba(250,204,21,0.2);
+}
+
+.btn-delete {
+    color: #ef4444;
+    background: rgba(239,68,68,0.1);
+}
+
+.btn-delete:hover {
+    background: rgba(239,68,68,0.2);
+}
+
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .table-responsive {
+        padding: 10px;
+    }
+    table {
+        font-size: 12px;
+    }
+    thead th, tbody td {
+        padding: 10px 8px;
+    }
+}
+</style>
+
+{% endblock %}

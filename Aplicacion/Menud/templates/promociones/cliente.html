@@ -7,7 +7,11 @@
 
 <div class="container">
     <br><br><br><br>
-    <h2 class="title"><i class="fa-solid fa-tag"></i> Promociones Activas</h2>
+    
+    <div class="header-cliente">
+        <h2><i class="fa-solid fa-tag"></i> Promociones Activas</h2>
+        <p>¡Aprovecha estas ofertas especiales!</p>
+    </div>
     
     <div class="promociones-grid">
         {% for promo in promociones %}
@@ -52,6 +56,7 @@
         <div class="sin-promociones">
             <i class="fa-regular fa-face-frown"></i>
             <p>No hay promociones activas en este momento</p>
+            <a href="{% url 'menu' %}" class="btn-ver-menu">Ver Menú</a>
         </div>
         {% endfor %}
     </div>
@@ -79,30 +84,42 @@
     padding: 20px;
 }
 
-.title {
+.header-cliente {
     text-align: center;
-    color: white;
-    font-size: 28px;
     margin-bottom: 30px;
 }
 
-.title i {
+.header-cliente h2 {
+    color: white;
+    font-size: 32px;
+    margin: 0;
+}
+
+.header-cliente h2 i {
     color: #e76e05;
     margin-right: 10px;
 }
 
+.header-cliente p {
+    color: #9ca3af;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+/* ===== GRID ===== */
 .promociones-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 25px;
 }
 
+/* ===== TARJETA ===== */
 .promo-card {
-    background: rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.10);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.10);
     transition: 0.3s;
     color: white;
 }
@@ -128,6 +145,7 @@
     color: white;
 }
 
+/* ===== INFO ===== */
 .promo-info {
     padding: 20px;
 }
@@ -191,10 +209,27 @@
     transform: scale(1.02);
 }
 
+.btn-ver-menu {
+    display: inline-block;
+    background: #e76e05;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+    margin-top: 10px;
+}
+
+.btn-ver-menu:hover {
+    background: #f59e0b;
+}
+
 .sin-promociones {
     text-align: center;
     padding: 60px;
     color: #9ca3af;
+    grid-column: 1 / -1;
 }
 
 .sin-promociones i {
@@ -207,9 +242,13 @@
     margin-top: 10px;
 }
 
+/* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
     .promociones-grid {
         grid-template-columns: 1fr;
+    }
+    .header-cliente h2 {
+        font-size: 24px;
     }
 }
 </style>
