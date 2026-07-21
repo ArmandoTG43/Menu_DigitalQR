@@ -101,7 +101,7 @@
             {% if request.session.cliente %}
                 <li><a href="{% url 'menu_cliente' request.session.mesa_id %}">Menú</a></li>
                 <li><a href="{% url 'ver_carrito' %}">Carrito</a></li>
-                
+                <li><a href="{% url 'promociones_cliente' %}">Promociones</a></li>
             {% endif %}
 
             <!-- Mesas: SOLO ADMIN -->
