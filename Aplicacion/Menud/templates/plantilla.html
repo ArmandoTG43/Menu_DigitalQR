@@ -101,6 +101,7 @@
             {% if request.session.cliente %}
                 <li><a href="{% url 'menu_cliente' request.session.mesa_id %}">Menú</a></li>
                 <li><a href="{% url 'ver_carrito' %}">Carrito</a></li>
+                <li><a href="{% url 'promociones_cliente' %}">Promociones</a></li>
             {% endif %}
 
             <!-- Mesas: SOLO ADMIN -->
@@ -118,6 +119,7 @@
             <!-- Reportes: SOLO ADMIN -->
             {% if not request.session.cliente and user.rol == 'admin' %}
                 <li><a href="{% url 'dashboard' %}">Reportes</a></li>
+                <li><a href="{% url 'lista_promociones' %}">Promociones</a></li> 
             {% endif %}
 
             <!-- Contacto para todos -->

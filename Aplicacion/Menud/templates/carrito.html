@@ -82,54 +82,11 @@
                 <h4><i class="fa-solid fa-dollar-sign"></i> {{ total }}</h4>
             </div>
 
-            <!-- 🔥 FORMULARIO CON DOMICILIO Y PERSONALIZADO -->
+            <!-- 🔥 FORMULARIO COMPLETO -->
             <form method="POST" action="{% url 'confirmar_pedido' %}">
                 {% csrf_token %}
 
-                <!-- ========== DOMICILIO ========== -->
-                <div class="domicilio-section">
-                    <h4><i class="fa-solid fa-truck"></i> Opciones de Entrega</h4>
-                    
-                    <div class="opciones-entrega">
-                        <div class="opcion-entrega seleccionada" onclick="seleccionarEntrega('local')">
-                            <input type="radio" name="tipo_entrega" id="entrega_local" value="local" checked>
-                            <label for="entrega_local">
-                                <i class="fa-solid fa-chair"></i> Consumir en el local
-                                <small>Te atenderemos en tu mesa</small>
-                            </label>
-                        </div>
-                        
-                        <div class="opcion-entrega" onclick="seleccionarEntrega('domicilio')">
-                            <input type="radio" name="tipo_entrega" id="entrega_domicilio" value="domicilio">
-                            <label for="entrega_domicilio">
-                                <i class="fa-solid fa-truck-fast"></i> Domicilio
-                                <small>Recibe tu pedido donde estés</small>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div id="formulario-domicilio" style="display: none;">
-                        <div class="form-group">
-                            <label for="direccion">📍 Dirección de entrega</label>
-                            <input type="text" name="direccion" id="direccion" class="form-control" 
-                                   placeholder="Calle, número, referencia">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="hora_entrega">⏰ Hora de entrega</label>
-                            <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
-                            <small>Si no seleccionas hora, lo enviaremos lo más pronto posible</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="instrucciones_domicilio">📝 Instrucciones adicionales</label>
-                            <textarea name="instrucciones_domicilio" id="instrucciones_domicilio" class="form-control" 
-                                      rows="3" placeholder="Ej: Piso, departamento, dejar con el portero..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ========== PLATO PERSONALIZADO ========== -->
+                <!-- ========== 1. PLATO PERSONALIZADO (PRIMERO) ========== -->
                 <div class="personalizado-section">
                     <h4><i class="fa-solid fa-pen-ruler"></i> ¿Quieres un plato personalizado?</h4>
                     
@@ -187,42 +144,85 @@
                     </div>
                 </div>
 
-                <!-- 🔥 BOTÓN DE CONFIRMAR -->
+                <!-- ========== 2. DOMICILIO (DESPUÉS) ========== -->
+                <div class="domicilio-section">
+                    <h4><i class="fa-solid fa-truck"></i> Opciones de Entrega</h4>
+                    
+                    <div class="opciones-entrega">
+                        <div class="opcion-entrega seleccionada" onclick="seleccionarEntrega('local')">
+                            <input type="radio" name="tipo_entrega" id="entrega_local" value="local" checked>
+                            <label for="entrega_local">
+                                <i class="fa-solid fa-chair"></i> Consumir en el local
+                                <small>Te atenderemos en tu mesa</small>
+                            </label>
+                        </div>
+                        
+                        <div class="opcion-entrega" onclick="seleccionarEntrega('domicilio')">
+                            <input type="radio" name="tipo_entrega" id="entrega_domicilio" value="domicilio">
+                            <label for="entrega_domicilio">
+                                <i class="fa-solid fa-truck-fast"></i> Domicilio
+                                <small>Recibe tu pedido donde estés</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="formulario-domicilio" style="display: none;">
+                        <div class="form-group">
+                            <label for="direccion">📍 Ubicación actual</label>
+                            <input type="text" name="direccion" id="direccion" class="form-control" 
+                                   placeholder="Tu ubicación actual (dirección, referencia)">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hora_entrega">⏰ Hora de entrega</label>
+                            <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
+                            <small>Si no seleccionas hora, lo enviaremos lo más pronto posible</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== 3. BOTÓN CONFIRMAR ========== -->
                 <button type="submit" class="btn-pagar">
                     <i class="fa-solid fa-credit-card"></i> Confirmar Pedido
                 </button>
             </form>
 
-            <a href="{% url 'menu' %}" class="btn-volver">
-                <i class="fa-solid fa-cart-plus"></i> Seguir comprando
-            </a>
-
-            <!-- 🔥 Enlace a Plato Personalizado (alternativa) -->
-            <a href="{% url 'pedido_personalizado' %}" class="btn-personalizado-link">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Armar Plato Personalizado
-            </a>
+            <!-- ========== 4. BOTONES DE ACCIÓN ========== -->
+            <div class="botones-accion">
+                <a href="{% url 'menu' %}" class="btn-volver">
+                    <i class="fa-solid fa-cart-plus"></i> Seguir comprando
+                </a>
+                <a href="{% url 'pedido_personalizado' %}" class="btn-personalizado-link">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Arma tu Plato
+                </a>
+            </div>
 
         </div>
 
     </div>
 
     {% else %}
+        <!-- ========== CARRITO VACÍO ========== -->
         <div class="empty">
             <i class="fa-solid fa-cart-circle-xmark"></i>
             <p> TU CARRITO ESTÁ VACÍO</p>
             <p>Agrega productos para empezar</p>
 
-            <a href="{% url 'menu' %}" class="btn-pagar">
-                <i class="fa-solid "></i> Ver Menú
-            </a>
+            <div class="botones-vacio">
+                <a href="{% url 'menu' %}" class="btn-ver-menu">
+                    <i class="fa-solid fa-utensils"></i> Ver Menú
+                </a>
+                <a href="{% url 'pedido_personalizado' %}" class="btn-personalizado-link">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Arma tu Plato
+                </a>
+            </div>
         </div>
-
     {% endif %}
 
 </div>
 
 <style>
-/* ========== TODOS TUS ESTILOS EXISTENTES (NO SE TOCAN) ========== */
+/* ========== TODOS TUS ESTILOS EXISTENTES ========== */
 #banner {
     position: fixed;
     top: 0;
@@ -436,17 +436,20 @@ body {
     box-shadow: 0 15px 30px rgba(34,197,94,0.45);
 }
 
+.botones-accion {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
 .btn-volver {
-    width: 100%;
+    flex: 1;
     background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: white;
-    border: none;
     padding: 14px;
     border-radius: 14px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
-    cursor: pointer;
-    margin-top: 15px;
     transition: 0.3s;
     box-shadow: 0 10px 25px rgba(59,130,246,0.35);
     display: flex;
@@ -462,6 +465,29 @@ body {
     box-shadow: 0 15px 30px rgba(59,130,246,0.45);
 }
 
+.btn-personalizado-link {
+    flex: 1;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: 0.3s;
+    box-shadow: 0 10px 25px rgba(139,92,246,0.35);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-personalizado-link:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    box-shadow: 0 15px 30px rgba(139,92,246,0.45);
+}
+
 .empty {
     text-align: center;
     margin-top: 50px;
@@ -475,7 +501,37 @@ body {
     display: block;
 }
 
-/* ========== NUEVOS ESTILOS (DOMICILIO Y PERSONALIZADO) ========== */
+.botones-vacio {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.btn-ver-menu {
+    background: linear-gradient(135deg, #e76e05, #f59e0b);
+    color: white;
+    padding: 14px 35px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    transition: 0.3s;
+    box-shadow: 0 10px 25px rgba(231,110,5,0.35);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-ver-menu:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, #f59e0b, #e76e05);
+    box-shadow: 0 15px 30px rgba(231,110,5,0.45);
+}
+
+/* ========== ESTILOS DOMICILIO Y PERSONALIZADO ========== */
 .domicilio-section {
     background: rgba(255,255,255,0.05);
     border-radius: 16px;
@@ -655,38 +711,23 @@ body {
     resize: vertical;
 }
 
-.btn-personalizado-link {
-    width: 100%;
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    color: white;
-    border: none;
-    padding: 14px;
-    border-radius: 14px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 10px;
-    transition: 0.3s;
-    box-shadow: 0 10px 25px rgba(139,92,246,0.35);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-}
-
-.btn-personalizado-link:hover {
-    transform: translateY(-3px);
-    background: linear-gradient(135deg, #7c3aed, #6d28d9);
-    box-shadow: 0 15px 30px rgba(139,92,246,0.45);
-}
-
 @media (max-width: 768px) {
     .grid-carrito {
         grid-template-columns: 1fr;
     }
     .opciones-entrega {
         grid-template-columns: 1fr;
+    }
+    .botones-accion {
+        flex-direction: column;
+    }
+    .botones-vacio {
+        flex-direction: column;
+        align-items: center;
+    }
+    .btn-ver-menu, .btn-personalizado-link {
+        width: 100%;
+        justify-content: center;
     }
 }
 </style>
