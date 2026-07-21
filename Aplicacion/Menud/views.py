@@ -7,7 +7,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
-from .models import Categoria, Producto, Mesa, Pedido, DetallePedido, Pago
+from .models import Categoria, PedidoPersonalizado, Producto, Mesa, Pedido, DetallePedido, Pago, Promocion
 from .forms import ProductoForm
 from django.http import JsonResponse
 from django.conf import settings
@@ -412,17 +412,39 @@ def generar_comprobante(request, pedido_id):
     return response
 
 
-
 @cliente_required
 def confirmar_pedido(request):
     carrito = request.session.get('carrito', {})
     mesa_id = request.session.get('mesa_id')
+    
     if not carrito:
-        return redirect('menu_qr', mesa_id=mesa_id)
+        messages.error(request, 'No hay productos en el carrito')
+        return redirect('menu')
+    
     if not mesa_id:
-        return HttpResponse("No se identificó la mesa")
+        messages.error(request, 'No se identificó la mesa')
+        return redirect('login')
+    
     mesa = get_object_or_404(Mesa, id=mesa_id)
-    pedido = Pedido.objects.create(mesa=mesa)
+    tipo_entrega = request.POST.get('tipo_entrega', 'local')
+    direccion = request.POST.get('direccion', '')
+    hora_entrega = request.POST.get('hora_entrega', '')
+    instrucciones_domicilio = request.POST.get('instrucciones_domicilio', '')
+    
+    es_personalizado = request.POST.get('es_personalizado') == '1'
+    base_personalizado = request.POST.get('base_personalizado', '')
+    acompanamientos = request.POST.get('acompanamientos', '')
+    salsas_personalizado = request.POST.get('salsas_personalizado', '')
+    instrucciones_personalizado = request.POST.get('instrucciones_personalizado', '')
+    
+    pedido = Pedido.objects.create(
+        mesa=mesa,
+        es_domicilio=(tipo_entrega == 'domicilio'),
+        direccion_entrega=direccion if tipo_entrega == 'domicilio' else '',
+        hora_entrega=hora_entrega if tipo_entrega == 'domicilio' and hora_entrega else None,
+        instrucciones_adicionales=instrucciones_domicilio if tipo_entrega == 'domicilio' else '',
+        es_personalizado=es_personalizado
+    )
     total = 0
     for id, item in carrito.items():
         producto = Producto.objects.get(id=id)
@@ -432,10 +454,24 @@ def confirmar_pedido(request):
             cantidad=item['cantidad']
         )
         total += producto.precio * item['cantidad']
+    
     pedido.total = total
     pedido.save()
+    
+    if es_personalizado:
+        from .models import PedidoPersonalizado  # Asegúrate de tener el modelo
+        PedidoPersonalizado.objects.create(
+            pedido=pedido,
+            instrucciones=instrucciones_personalizado,
+            base=base_personalizado,
+            acompañamientos=acompanamientos,
+            salsas=salsas_personalizado
+        )
+    
     request.session['pedido_id'] = pedido.id
     request.session['carrito'] = {}
+    
+    messages.success(request, f'¡Pedido #{pedido.id} confirmado exitosamente!')
     return redirect('crear_pago', pedido_id=pedido.id)
 
 @cliente_required
@@ -864,3 +900,141 @@ def chat_asistente(request):
             })
 
     return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+# ====================
+# PROMOCIONES (ADMIN)
+# ====================
+
+@admin_required
+def lista_promociones(request):
+    promociones = Promocion.objects.all().order_by('-created_at')
+    return render(request, 'promociones/lista.html', {'promociones': promociones})
+
+@admin_required
+def crear_promocion(request):
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        descripcion = request.POST.get('descripcion')
+        tipo_descuento = request.POST.get('tipo_descuento')
+        valor_descuento = request.POST.get('valor_descuento')
+        fecha_inicio = request.POST.get('fecha_inicio')
+        fecha_fin = request.POST.get('fecha_fin')
+        productos_ids = request.POST.getlist('productos')
+        
+        promocion = Promocion.objects.create(
+            nombre=nombre,
+            descripcion=descripcion,
+            tipo_descuento=tipo_descuento,
+            valor_descuento=valor_descuento,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            activo=True
+        )
+        promocion.productos.set(productos_ids)
+        
+        messages.success(request, 'Promoción creada exitosamente')
+        return redirect('lista_promociones')
+    
+    productos = Producto.objects.all()
+    return render(request, 'promociones/crear.html', {'productos': productos})
+
+@admin_required
+def editar_promocion(request, id):
+    promocion = get_object_or_404(Promocion, id=id)
+    if request.method == 'POST':
+        promocion.nombre = request.POST.get('nombre')
+        promocion.descripcion = request.POST.get('descripcion')
+        promocion.tipo_descuento = request.POST.get('tipo_descuento')
+        promocion.valor_descuento = request.POST.get('valor_descuento')
+        promocion.fecha_inicio = request.POST.get('fecha_inicio')
+        promocion.fecha_fin = request.POST.get('fecha_fin')
+        promocion.activo = request.POST.get('activo') == 'on'
+        promocion.productos.set(request.POST.getlist('productos'))
+        promocion.save()
+        
+        messages.success(request, 'Promoción actualizada')
+        return redirect('lista_promociones')
+    
+    productos = Producto.objects.all()
+    return render(request, 'promociones/editar.html', {
+        'promocion': promocion,
+        'productos': productos
+    })
+
+@admin_required
+def eliminar_promocion(request, id):
+    promocion = get_object_or_404(Promocion, id=id)
+    if request.method == 'POST':
+        promocion.delete()
+        messages.success(request, 'Promoción eliminada')
+        return redirect('lista_promociones')
+    return render(request, 'promociones/eliminar.html', {'promocion': promocion})
+
+# ====================
+# PROMOCIONES (CLIENTE)
+# ====================
+
+def promociones_cliente(request):
+    ahora = timezone.now()
+    promociones = Promocion.objects.filter(
+        activo=True,
+        fecha_inicio__lte=ahora,
+        fecha_fin__gte=ahora
+    )
+    return render(request, 'promociones/cliente.html', {'promociones': promociones})
+
+# views.py - Agrega esta función
+
+@cliente_required
+def pedido_personalizado(request):
+    if request.method == 'POST':
+        carrito = request.session.get('carrito', {})
+        mesa_id = request.session.get('mesa_id')
+        
+        if not carrito or not mesa_id:
+            messages.error(request, 'No hay productos en el carrito')
+            return redirect('menu')
+        
+        # Obtener datos del formulario
+        instrucciones = request.POST.get('instrucciones', '')
+        base = request.POST.get('base', '')
+        acompañamientos = request.POST.get('acompañamientos', '')
+        salsas = request.POST.get('salsas', '')
+        
+        mesa = get_object_or_404(Mesa, id=mesa_id)
+        pedido = Pedido.objects.create(
+            mesa=mesa,
+            es_personalizado=True,
+            instrucciones_adicionales=instrucciones
+        )
+        
+        # Agregar productos al pedido
+        total = 0
+        for id, item in carrito.items():
+            producto = Producto.objects.get(id=id)
+            DetallePedido.objects.create(
+                pedido=pedido,
+                producto=producto,
+                cantidad=item['cantidad']
+            )
+            total += producto.precio * item['cantidad']
+        
+        # Crear el detalle personalizado
+        PedidoPersonalizado.objects.create(
+            pedido=pedido,
+            instrucciones=instrucciones,
+            base=base,
+            acompañamientos=acompañamientos,
+            salsas=salsas
+        )
+        
+        pedido.total = total
+        pedido.save()
+        
+        request.session['carrito'] = {}
+        request.session['pedido_id'] = pedido.id
+        
+        messages.success(request, '¡Pedido personalizado creado!')
+        return redirect('crear_pago', pedido_id=pedido.id)
+    
+    return render(request, 'pedido_personalizado.html')

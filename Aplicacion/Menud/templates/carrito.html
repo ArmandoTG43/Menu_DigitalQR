@@ -82,16 +82,124 @@
                 <h4><i class="fa-solid fa-dollar-sign"></i> {{ total }}</h4>
             </div>
 
+            <!-- 🔥 FORMULARIO CON DOMICILIO Y PERSONALIZADO -->
             <form method="POST" action="{% url 'confirmar_pedido' %}">
                 {% csrf_token %}
 
-                <button class="btn-pagar">
-                    <i class="fa-solid fa-credit-card"></i> Pagar
+                <!-- ========== DOMICILIO ========== -->
+                <div class="domicilio-section">
+                    <h4><i class="fa-solid fa-truck"></i> Opciones de Entrega</h4>
+                    
+                    <div class="opciones-entrega">
+                        <div class="opcion-entrega seleccionada" onclick="seleccionarEntrega('local')">
+                            <input type="radio" name="tipo_entrega" id="entrega_local" value="local" checked>
+                            <label for="entrega_local">
+                                <i class="fa-solid fa-chair"></i> Consumir en el local
+                                <small>Te atenderemos en tu mesa</small>
+                            </label>
+                        </div>
+                        
+                        <div class="opcion-entrega" onclick="seleccionarEntrega('domicilio')">
+                            <input type="radio" name="tipo_entrega" id="entrega_domicilio" value="domicilio">
+                            <label for="entrega_domicilio">
+                                <i class="fa-solid fa-truck-fast"></i> Domicilio
+                                <small>Recibe tu pedido donde estés</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="formulario-domicilio" style="display: none;">
+                        <div class="form-group">
+                            <label for="direccion">📍 Dirección de entrega</label>
+                            <input type="text" name="direccion" id="direccion" class="form-control" 
+                                   placeholder="Calle, número, referencia">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hora_entrega">⏰ Hora de entrega</label>
+                            <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
+                            <small>Si no seleccionas hora, lo enviaremos lo más pronto posible</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="instrucciones_domicilio">📝 Instrucciones adicionales</label>
+                            <textarea name="instrucciones_domicilio" id="instrucciones_domicilio" class="form-control" 
+                                      rows="3" placeholder="Ej: Piso, departamento, dejar con el portero..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ========== PLATO PERSONALIZADO ========== -->
+                <div class="personalizado-section">
+                    <h4><i class="fa-solid fa-pen-ruler"></i> ¿Quieres un plato personalizado?</h4>
+                    
+                    <div class="personalizado-toggle">
+                        <input type="checkbox" name="es_personalizado" id="es_personalizado" value="1">
+                        <label for="es_personalizado">Sí, quiero armar mi propio plato 🧑‍🍳</label>
+                    </div>
+                    
+                    <div id="formulario-personalizado" style="display: none; margin-top: 15px;">
+                        <div class="form-group">
+                            <label for="base_personalizado">🥩 Base / Proteína</label>
+                            <select name="base_personalizado" id="base_personalizado" class="form-control">
+                                <option value="">Selecciona una base</option>
+                                <option value="Pollo">Pollo a la plancha</option>
+                                <option value="Carne">Carne de res</option>
+                                <option value="Cerdo">Cerdo</option>
+                                <option value="Pescado">Pescado</option>
+                                <option value="Vegetariano">Vegetariano (sin carne)</option>
+                                <option value="Mixto">Mixto (pollo y carne)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="acompanamientos">🥗 Acompañamientos</label>
+                            <select name="acompanamientos" id="acompanamientos" class="form-control" multiple>
+                                <option value="Papas fritas">Papas fritas</option>
+                                <option value="Arroz">Arroz</option>
+                                <option value="Ensalada">Ensalada fresca</option>
+                                <option value="Vegetales salteados">Vegetales salteados</option>
+                                <option value="Puré de papas">Puré de papas</option>
+                                <option value="Frijoles">Frijoles</option>
+                                <option value="Yuca frita">Yuca frita</option>
+                            </select>
+                            <small>Mantén presionado Ctrl para seleccionar múltiples opciones</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="salsas_personalizado">🥫 Salsas</label>
+                            <select name="salsas_personalizado" id="salsas_personalizado" class="form-control" multiple>
+                                <option value="Salsa de tomate">Salsa de tomate</option>
+                                <option value="Salsa picante">Salsa picante</option>
+                                <option value="Mayonesa">Mayonesa</option>
+                                <option value="Mostaza">Mostaza</option>
+                                <option value="Salsa de queso">Salsa de queso</option>
+                                <option value="Ajo y perejil">Ajo y perejil</option>
+                            </select>
+                            <small>Mantén presionado Ctrl para seleccionar múltiples opciones</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="instrucciones_personalizado">📝 Instrucciones especiales</label>
+                            <textarea name="instrucciones_personalizado" id="instrucciones_personalizado" class="form-control" 
+                                      rows="3" placeholder="Ej: Sin sal, bien cocido, sin cebolla, extra picante..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🔥 BOTÓN DE CONFIRMAR -->
+                <button type="submit" class="btn-pagar">
+                    <i class="fa-solid fa-credit-card"></i> Confirmar Pedido
                 </button>
             </form>
 
             <a href="{% url 'menu' %}" class="btn-volver">
                 <i class="fa-solid fa-cart-plus"></i> Seguir comprando
+            </a>
+
+            <!-- 🔥 Enlace a Plato Personalizado (alternativa) -->
+            <a href="{% url 'pedido_personalizado' %}" class="btn-personalizado-link">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Armar Plato Personalizado
             </a>
 
         </div>
@@ -113,8 +221,8 @@
 
 </div>
 
-<!-- BANNER -->
 <style>
+/* ========== TODOS TUS ESTILOS EXISTENTES (NO SE TOCAN) ========== */
 #banner {
     position: fixed;
     top: 0;
@@ -128,22 +236,16 @@
     filter: brightness(0.60);
 }
 
-/* contenido encima del banner */
 .container {
     position: relative;
     z-index: 2;
 }
-</style>
-
-<!-- CSS ORIGINAL + ICONOS -->
-<style>
 
 body {
     background: linear-gradient(135deg, #d0d5df, #111827);
     min-height:100vh;
 }
 
-/* TITULO */
 .title {
     text-align: center;
     margin-bottom: 25px;
@@ -155,7 +257,6 @@ body {
     margin-right: 10px;
 }
 
-/* GRID */
 .grid-carrito {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -168,7 +269,6 @@ body {
     margin:4px 0;
 }
 
-/* ITEM */
 .item-card {
     display: flex;
     align-items: center;
@@ -180,7 +280,6 @@ body {
     border: 1px solid #cbd5e1;
 }
 
-/* IMAGEN */
 .item-img img {
     width: 90px;
     height: 90px;
@@ -188,7 +287,6 @@ body {
     border-radius: 20px;
 }
 
-/* INFO */
 .item-info {
     flex: 1;
     color: #dc3545;
@@ -211,12 +309,6 @@ body {
     margin: 5px 0;
 }
 
-.item-info p i {
-    color: #22c55e;
-    margin-right: 5px;
-}
-
-/* CANTIDAD */
 .cantidad {
     display: flex;
     align-items: center;
@@ -249,7 +341,6 @@ body {
     font-size: 12px;
 }
 
-/* DERECHA */
 .item-right {
     text-align: right;
     color: #fbf3f3;
@@ -266,15 +357,6 @@ body {
     margin-right: 3px;
 }
 
-.resumen h4 {
-    color: #ffffff !important;
-}
-
-.fila.total h4 {
-    color: #ffffff !important;
-}
-
-/* DELETE */
 .icon-btn {
     color: #ef4444;
     font-size: 20px;
@@ -289,7 +371,6 @@ body {
     transform: scale(1.15);
 }
 
-/* RESUMEN */
 .resumen {
     background: rgba(239, 228, 228, 0.12);
     padding: 20px;
@@ -297,6 +378,10 @@ body {
     border-radius: 15px;
     height: fit-content;
     box-shadow: 0 5px 15px beige;
+}
+
+.resumen h4 {
+    color: #ffffff !important;
 }
 
 .resumen h4 i {
@@ -322,7 +407,10 @@ body {
     padding-top: 10px;
 }
 
-/* BOTONES */
+.fila.total h4 {
+    color: #ffffff !important;
+}
+
 .btn-pagar {
     width: 100%;
     background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -374,7 +462,6 @@ body {
     box-shadow: 0 15px 30px rgba(59,130,246,0.45);
 }
 
-/* VACIO */
 .empty {
     text-align: center;
     margin-top: 50px;
@@ -388,13 +475,263 @@ body {
     display: block;
 }
 
-/* RESPONSIVE */
+/* ========== NUEVOS ESTILOS (DOMICILIO Y PERSONALIZADO) ========== */
+.domicilio-section {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 15px 18px;
+    margin: 15px 0;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.domicilio-section h4 {
+    color: #f59e0b;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.opciones-entrega {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.opcion-entrega {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: 0.3s;
+    text-align: center;
+}
+
+.opcion-entrega:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.opcion-entrega input[type="radio"] {
+    display: none;
+}
+
+.opcion-entrega label {
+    cursor: pointer;
+    color: #cbd5e1;
+    font-size: 13px;
+}
+
+.opcion-entrega label i {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.opcion-entrega label small {
+    color: #9ca3af;
+    font-size: 11px;
+    display: block;
+}
+
+.opcion-entrega.seleccionada {
+    border-color: #e76e05;
+    background: rgba(231,110,5,0.1);
+}
+
+.opcion-entrega.seleccionada label {
+    color: white;
+}
+
+#formulario-domicilio {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+#formulario-domicilio .form-group {
+    margin-bottom: 10px;
+}
+
+#formulario-domicilio .form-group label {
+    display: block;
+    color: #f59e0b;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+#formulario-domicilio .form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    font-size: 13px;
+}
+
+#formulario-domicilio .form-control:focus {
+    outline: none;
+    border-color: #e76e05;
+}
+
+#formulario-domicilio textarea.form-control {
+    min-height: 60px;
+    resize: vertical;
+}
+
+#formulario-domicilio small {
+    color: #9ca3af;
+    font-size: 11px;
+}
+
+.personalizado-section {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 15px 18px;
+    margin: 15px 0;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.personalizado-section h4 {
+    color: #f59e0b;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.personalizado-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.personalizado-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #e76e05;
+}
+
+.personalizado-toggle label {
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#formulario-personalizado .form-group {
+    margin-bottom: 10px;
+}
+
+#formulario-personalizado .form-group label {
+    display: block;
+    color: #f59e0b;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+#formulario-personalizado .form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    font-size: 13px;
+}
+
+#formulario-personalizado .form-control:focus {
+    outline: none;
+    border-color: #e76e05;
+}
+
+#formulario-personalizado .form-control[multiple] {
+    min-height: 80px;
+}
+
+#formulario-personalizado small {
+    color: #9ca3af;
+    font-size: 11px;
+}
+
+#formulario-personalizado textarea.form-control {
+    min-height: 60px;
+    resize: vertical;
+}
+
+.btn-personalizado-link {
+    width: 100%;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s;
+    box-shadow: 0 10px 25px rgba(139,92,246,0.35);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-personalizado-link:hover {
+    transform: translateY(-3px);
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    box-shadow: 0 15px 30px rgba(139,92,246,0.45);
+}
+
 @media (max-width: 768px) {
     .grid-carrito {
         grid-template-columns: 1fr;
     }
+    .opciones-entrega {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// ========== SELECCIÓN ENTREGA (DOMICILIO / LOCAL) ==========
+function seleccionarEntrega(tipo) {
+    const local = document.getElementById('entrega_local');
+    const domicilio = document.getElementById('entrega_domicilio');
+    const formulario = document.getElementById('formulario-domicilio');
+    const opciones = document.querySelectorAll('.opcion-entrega');
+    
+    opciones.forEach(el => el.classList.remove('seleccionada'));
+    
+    if (tipo === 'local') {
+        local.checked = true;
+        domicilio.checked = false;
+        formulario.style.display = 'none';
+        document.querySelector('.opcion-entrega:has(#entrega_local)').classList.add('seleccionada');
+    } else {
+        domicilio.checked = true;
+        local.checked = false;
+        formulario.style.display = 'block';
+        document.querySelector('.opcion-entrega:has(#entrega_domicilio)').classList.add('seleccionada');
+    }
 }
 
-</style>
+// ========== MOSTRAR FORMULARIO PERSONALIZADO ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const chkPersonalizado = document.getElementById('es_personalizado');
+    const formPersonalizado = document.getElementById('formulario-personalizado');
+    
+    if (chkPersonalizado) {
+        chkPersonalizado.addEventListener('change', function() {
+            formPersonalizado.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+    
+    // Seleccionar "local" por defecto
+    const local = document.getElementById('entrega_local');
+    if (local) {
+        local.checked = true;
+        document.querySelector('.opcion-entrega:has(#entrega_local)')?.classList.add('seleccionada');
+    }
+});
+</script>
 
 {% endblock %}

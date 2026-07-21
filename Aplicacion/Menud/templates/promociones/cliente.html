@@ -1,0 +1,217 @@
+{% extends 'plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<div id="banner"></div>
+
+<div class="container">
+    <br><br><br><br>
+    <h2 class="title"><i class="fa-solid fa-tag"></i> Promociones Activas</h2>
+    
+    <div class="promociones-grid">
+        {% for promo in promociones %}
+        <div class="promo-card">
+            {% if promo.imagen %}
+            <img src="{{ promo.imagen.url }}" alt="{{ promo.nombre }}">
+            {% else %}
+            <div class="promo-icon"><i class="fa-solid fa-tag"></i></div>
+            {% endif %}
+            
+            <div class="promo-info">
+                <h3>{{ promo.nombre }}</h3>
+                <p>{{ promo.descripcion }}</p>
+                <div class="promo-descuento">
+                    <span class="badge-oferta">
+                        {% if promo.tipo_descuento == 'porcentaje' %}
+                            {{ promo.valor_descuento|floatformat:0 }}% OFF
+                        {% else %}
+                            -${{ promo.valor_descuento|floatformat:2 }}
+                        {% endif %}
+                    </span>
+                </div>
+                <p class="promo-fecha">
+                    <i class="fa-regular fa-clock"></i> 
+                    Válido hasta: {{ promo.fecha_fin|date:"d/m/Y H:i" }}
+                </p>
+                {% if promo.productos.all %}
+                <div class="promo-productos">
+                    <span>Platos:</span>
+                    {% for p in promo.productos.all|slice:":3" %}
+                        <span class="producto-tag">{{ p.nombre }}</span>
+                    {% endfor %}
+                    {% if promo.productos.count > 3 %}
+                        <span class="producto-tag">+{{ promo.productos.count|add:"-3" }} más</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <a href="{% url 'menu' %}" class="btn-promo">Ver Menú</a>
+            </div>
+        </div>
+        {% empty %}
+        <div class="sin-promociones">
+            <i class="fa-regular fa-face-frown"></i>
+            <p>No hay promociones activas en este momento</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+.container {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.title {
+    text-align: center;
+    color: white;
+    font-size: 28px;
+    margin-bottom: 30px;
+}
+
+.title i {
+    color: #e76e05;
+    margin-right: 10px;
+}
+
+.promociones-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.promo-card {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: 0.3s;
+    color: white;
+}
+
+.promo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+.promo-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.promo-icon {
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #e76e05, #f59e0b);
+    font-size: 60px;
+    color: white;
+}
+
+.promo-info {
+    padding: 20px;
+}
+
+.promo-info h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+    color: #f59e0b;
+}
+
+.promo-info p {
+    color: #cbd5e1;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.badge-oferta {
+    display: inline-block;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.promo-fecha {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-top: 10px;
+}
+
+.promo-productos {
+    margin: 12px 0;
+}
+
+.producto-tag {
+    display: inline-block;
+    background: rgba(231,110,5,0.2);
+    color: #f59e0b;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin: 2px;
+}
+
+.btn-promo {
+    display: inline-block;
+    background: #e76e05;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+    margin-top: 10px;
+}
+
+.btn-promo:hover {
+    background: #f59e0b;
+    transform: scale(1.02);
+}
+
+.sin-promociones {
+    text-align: center;
+    padding: 60px;
+    color: #9ca3af;
+}
+
+.sin-promociones i {
+    font-size: 48px;
+    color: #e76e05;
+}
+
+.sin-promociones p {
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+    .promociones-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+{% endblock %}

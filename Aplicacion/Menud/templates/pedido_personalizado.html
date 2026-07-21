@@ -1,0 +1,225 @@
+{% extends 'plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<div id="banner"></div>
+
+<div class="container">
+    <br><br><br><br>
+    <h2 class="title"><i class="fa-solid fa-pen-ruler"></i> Arma tu Plato Personalizado</h2>
+    
+    <div class="personalizado-card">
+        <p class="subtitle">Crea tu plato a tu gusto y nosotros lo preparamos</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="base">🥩 Base / Proteína</label>
+                <select name="base" id="base" class="form-control">
+                    <option value="Pollo">Pollo a la plancha</option>
+                    <option value="Carne">Carne de res</option>
+                    <option value="Cerdo">Cerdo</option>
+                    <option value="Pescado">Pescado</option>
+                    <option value="Vegetariano">Vegetariano (sin carne)</option>
+                    <option value="Otro">Otro (especificar en observaciones)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="acompañamientos">🥗 Acompañamientos</label>
+                <select name="acompañamientos" id="acompañamientos" class="form-control" multiple>
+                    <option value="Papas fritas">Papas fritas</option>
+                    <option value="Arroz">Arroz</option>
+                    <option value="Ensalada">Ensalada fresca</option>
+                    <option value="Vegetales salteados">Vegetales salteados</option>
+                    <option value="Puré de papas">Puré de papas</option>
+                    <option value="Frijoles">Frijoles</option>
+                </select>
+                <small>Mantén presionado Ctrl para seleccionar múltiples opciones</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="salsas">🥫 Salsas</label>
+                <select name="salsas" id="salsas" class="form-control" multiple>
+                    <option value="Salsa de tomate">Salsa de tomate</option>
+                    <option value="Salsa picante">Salsa picante</option>
+                    <option value="Mayonesa">Mayonesa</option>
+                    <option value="Mostaza">Mostaza</option>
+                    <option value="Salsa de queso">Salsa de queso</option>
+                    <option value="Ajo y perejil">Ajo y perejil</option>
+                </select>
+                <small>Mantén presionado Ctrl para seleccionar múltiples opciones</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="instrucciones">📝 Instrucciones especiales</label>
+                <textarea name="instrucciones" id="instrucciones" class="form-control" rows="4" 
+                          placeholder="Ej: Sin sal, bien cocido, sin cebolla, etc."></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn-personalizado">
+                    <i class="fa-solid fa-check"></i> Confirmar Pedido Personalizado
+                </button>
+                <a href="{% url 'ver_carrito' %}" class="btn-cancelar">
+                    <i class="fa-solid fa-arrow-left"></i> Volver al Carrito
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.60);
+}
+
+.container {
+    position: relative;
+    z-index: 2;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.title {
+    text-align: center;
+    color: white;
+    font-size: 28px;
+}
+
+.title i {
+    color: #e76e05;
+    margin-right: 10px;
+}
+
+.personalizado-card {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 35px;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.subtitle {
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 16px;
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #f59e0b;
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #e76e05;
+    box-shadow: 0 0 0 3px rgba(231,110,5,0.2);
+}
+
+.form-control option {
+    background: #1a1a2e;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+small {
+    display: block;
+    color: #9ca3af;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-personalizado {
+    flex: 1;
+    background: linear-gradient(135deg, #e76e05, #f59e0b);
+    color: white;
+    border: none;
+    padding: 14px 25px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-personalizado:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(231,110,5,0.3);
+}
+
+.btn-cancelar {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    padding: 14px 25px;
+    border-radius: 14px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+    border: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-cancelar:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+@media (max-width: 600px) {
+    .personalizado-card {
+        padding: 20px;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+{% endblock %}

@@ -107,7 +107,12 @@ class Pedido(models.Model):
         ('listo', 'Listo'),
         ('entregado', 'Entregado'),
     ]
-
+    es_domicilio = models.BooleanField(default=False)
+    direccion_entrega = models.CharField(max_length=300, blank=True, null=True)
+    hora_entrega = models.TimeField(blank=True, null=True)
+    es_personalizado = models.BooleanField(default=False)
+    instrucciones_adicionales = models.TextField(blank=True, null=True)
+    
     mesa = models.ForeignKey(Mesa, on_delete=models.CASCADE, related_name='pedidos')
     productos = models.ManyToManyField(Producto, through='DetallePedido')
     estado = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')
@@ -153,3 +158,52 @@ class DetallePedido(models.Model):
 
     def __str__(self):
         return f"{self.producto.nombre} x {self.cantidad}"
+    
+# models.py - Agrega esto al final
+
+class Promocion(models.Model):
+    TIPO_DESCUENTO = [
+        ('porcentaje', 'Porcentaje (%)'),
+        ('fijo', 'Monto Fijo ($)'),
+    ]
+    
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField(blank=True, null=True)
+    tipo_descuento = models.CharField(max_length=20, choices=TIPO_DESCUENTO, default='porcentaje')
+    valor_descuento = models.DecimalField(max_digits=10, decimal_places=2)
+    fecha_inicio = models.DateTimeField()
+    fecha_fin = models.DateTimeField()
+    activo = models.BooleanField(default=True)
+    productos = models.ManyToManyField(Producto, related_name='promociones', blank=True)
+    imagen = models.ImageField(upload_to='promociones/', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.nombre
+    
+    def esta_vigente(self):
+        """Verifica si la promoción está vigente"""
+        from django.utils import timezone
+        ahora = timezone.now()
+        return self.activo and self.fecha_inicio <= ahora <= self.fecha_fin
+    
+    def precio_con_descuento(self, precio_original):
+        """Calcula el precio con descuento"""
+        if self.tipo_descuento == 'porcentaje':
+            return precio_original - (precio_original * self.valor_descuento / 100)
+        else:
+            return precio_original - self.valor_descuento
+        
+
+class PedidoPersonalizado(models.Model):
+    """Pedido especial con instrucciones específicas"""
+    pedido = models.OneToOneField(Pedido, on_delete=models.CASCADE, related_name='personalizado')
+    instrucciones = models.TextField()
+    base = models.CharField(max_length=100, blank=True, null=True)
+    acompañamientos = models.TextField(blank=True, null=True)
+    salsas = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Pedido Personalizado #{self.pedido.id}"

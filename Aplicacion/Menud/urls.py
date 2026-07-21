@@ -102,4 +102,13 @@ urlpatterns = [
     path('chat/asistente/', views.chat_asistente, name='chat_asistente'),
 
     path('api/pedido/<int:pedido_id>/', views.api_pedido_detalle, name='api_pedido_detalle'),
+
+    path('promociones/', views.lista_promociones, name='lista_promociones'),
+    path('promociones/crear/', views.crear_promocion, name='crear_promocion'),
+    path('promociones/editar/<int:id>/', views.editar_promocion, name='editar_promocion'),
+    path('promociones/eliminar/<int:id>/', views.eliminar_promocion, name='eliminar_promocion'),
+    path('promociones/cliente/', views.promociones_cliente, name='promociones_cliente'),
+    
+    # PLATO PERSONALIZADO
+    path('pedido-personalizado/', views.pedido_personalizado, name='pedido_personalizado'),
 ]
