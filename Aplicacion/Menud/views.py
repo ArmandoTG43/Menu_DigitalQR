@@ -627,8 +627,11 @@ def confirmar_pedido(request):
     pedido.total = round(total, 2)
     pedido.save()
     
+    # Vaciar el carrito inmediatamente al confirmar el pedido
+    request.session['carrito'] = {}
     request.session['pedido_id'] = pedido.id
     request.session['cliente'] = True
+    request.session.modified = True
     
     messages.success(request, f'✅ Pedido #{pedido.id} confirmado por ${total:.2f}')
     return redirect('crear_pago', pedido_id=pedido.id)
