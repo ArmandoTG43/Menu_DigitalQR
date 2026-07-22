@@ -384,15 +384,68 @@ body {
 
 <script>
 const pedidoId = {{ pedido.id }};
-let yaNotificado = false;
+let ultimoEstado = null;
 let tiempoInicio = new Date();
+
+function sonarChime() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3); // A5
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+    } catch(e) {
+        console.log("Audio non-interactive:", e);
+    }
+}
+
+function notificarCambioEstado(nuevoEstadoTexto) {
+    sonarChime();
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: white;
+        padding: 16px 24px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        z-index: 9999;
+        font-weight: bold;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideDown 0.4s ease;
+    `;
+    notif.innerHTML = `<i class="fa-solid fa-bell fa-bounce" style="font-size:22px;"></i> <span>¡Actualización de tu pedido: <strong>${nuevoEstadoTexto}</strong>!</span>`;
+    document.body.appendChild(notif);
+    
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+    
+    setTimeout(() => {
+        notif.remove();
+    }, 6000);
+}
 
 function actualizarTiempo() {
     const ahora = new Date();
     const diff = Math.floor((ahora - tiempoInicio) / 1000);
     const minutos = Math.floor(diff / 60);
     const segundos = diff % 60;
-    document.getElementById("tiempo").textContent = `${minutos}:${segundos.toString().padStart(2,'0')}`;
+    const elTiempo = document.getElementById("tiempo");
+    if (elTiempo) {
+        elTiempo.textContent = `${minutos}:${segundos.toString().padStart(2,'0')}`;
+    }
 }
 
 setInterval(actualizarTiempo, 1000);
@@ -406,8 +459,6 @@ async function actualizar() {
         }
         
         const pedido = await res.json();
-        console.log("Pedido recibido:", pedido);
-
         if (!pedido || pedido.error) {
             throw new Error(pedido?.error || "Datos inválidos");
         }
@@ -422,31 +473,32 @@ async function actualizar() {
         estadoActual.style.borderColor = "rgba(231,110,5,0.3)";
         mensajeEstado.style.background = "rgba(0,0,0,0.5)";
 
+        let estadoNombre = "";
+
         if (pedido.estado === "pendiente") {
+            estadoNombre = "Pedido Recibido";
             estadoTexto.textContent = " Pedido recibido";
             estadoIcono.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
             document.getElementById("step1").classList.add("active");
             mensajeEstado.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> <span>Tu pedido ha sido recibido. Pronto comenzaremos a prepararlo.</span>';
-            yaNotificado = false;
         } else if (pedido.estado === "en_preparacion") {
+            estadoNombre = "En Preparación 🔪";
             estadoTexto.textContent = " En preparación";
             estadoIcono.innerHTML = '<i class="fa-solid fa-kitchen-set"></i>';
             document.getElementById("step1").classList.add("done");
             document.getElementById("step2").classList.add("active");
-            mensajeEstado.innerHTML = '<i class="fa-solid fa-spinner fa-pulse"></i> <span>Chefs trabajando para ti...</span>';
-            yaNotificado = false;
+            mensajeEstado.innerHTML = '<i class="fa-solid fa-spinner fa-pulse"></i> <span>Chefs trabajando para ti en la cocina...</span>';
         } else if (pedido.estado === "listo") {
+            estadoNombre = "¡Tu Pedido está Listo! 🎉";
             estadoTexto.textContent = " ¡Tu pedido está listo!";
             estadoIcono.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>';
             document.getElementById("step1").classList.add("done");
             document.getElementById("step2").classList.add("done");
             document.getElementById("step3").classList.add("active");
-            mensajeEstado.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> <span>¡Tu pedido está listo para ser entregado!</span>';
-            if (!yaNotificado) {
-                mensajeEstado.style.background = "rgba(34,197,94,0.2)";
-                yaNotificado = true;
-            }
+            mensajeEstado.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> <span>¡Tu pedido está listo para servirse o enviarse!</span>';
+            mensajeEstado.style.background = "rgba(34,197,94,0.2)";
         } else if (pedido.estado === "entregado") {
+            estadoNombre = "Pedido Entregado ✅";
             estadoTexto.textContent = "¡Pedido entregado!";
             estadoIcono.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>';
             document.getElementById("step1").classList.add("done");
@@ -454,28 +506,41 @@ async function actualizar() {
             document.getElementById("step3").classList.add("done");
             estadoActual.style.background = "linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.05))";
             estadoActual.style.borderColor = "rgba(34,197,94,0.3)";
-            mensajeEstado.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> <span>¡Disfruta tu comida! Gracias por preferir Freedom Lounge.</span>';
+            mensajeEstado.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> <span>¡Buen provecho! Gracias por tu preferencia.</span>';
             mensajeEstado.style.background = "rgba(34,197,94,0.2)";
-        } else {
-            estadoTexto.textContent = " Estado desconocido";
-            estadoIcono.innerHTML = '<i class="fa-solid fa-question-circle"></i>';
-            mensajeEstado.innerHTML = '<i class="fa-solid fa-question-circle"></i> <span>Estado del pedido no reconocido.</span>';
         }
+
+        if (ultimoEstado !== null && ultimoEstado !== pedido.estado) {
+            notificarCambioEstado(estadoNombre);
+        }
+        ultimoEstado = pedido.estado;
 
         // PRODUCTOS
         let html = "";
         if (pedido.productos && pedido.productos.length > 0) {
             pedido.productos.forEach(prod => {
+                const subtotal = prod.subtotal ? prod.subtotal.toFixed(2) : (prod.precio * prod.cantidad).toFixed(2);
                 html += `
-                    <div class="producto-item">
-                        <div class="producto-nombre">
-                            <i class="fa-solid fa-utensils"></i>
-                            <span>${prod.nombre}</span>
+                    <div class="producto-item" style="flex-direction:column;align-items:flex-start;gap:4px;padding:12px 0;">
+                        <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                            <div class="producto-nombre">
+                                <i class="fa-solid fa-utensils"></i>
+                                <strong>${prod.nombre}</strong>
+                            </div>
+                            <div class="producto-cantidad">x${prod.cantidad} - $${subtotal}</div>
                         </div>
-                        <div class="producto-cantidad">x${prod.cantidad}</div>
+                        ${prod.descripcion ? `<div style="font-size:12px;color:#cbd5e1;padding-left:28px;">${prod.descripcion}</div>` : ''}
                     </div>
                 `;
             });
+            if (pedido.total) {
+                html += `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:10px;border-top:1px solid rgba(255,255,255,0.2);font-weight:bold;font-size:16px;">
+                        <span>Total del Pedido:</span>
+                        <span style="color:#f59e0b;">$${pedido.total.toFixed(2)}</span>
+                    </div>
+                `;
+            }
         } else {
             html = `<div style="text-align:center;color:#9ca3af;padding:20px;">
                         <i class="fa-solid fa-box-open"></i> No hay productos en este pedido
@@ -487,12 +552,12 @@ async function actualizar() {
         console.error("Error en actualizar():", error);
         document.getElementById("mensaje-estado").innerHTML = `
             <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i>
-            <span>${error.message || "Error al cargar el pedido. Intentando de nuevo..."}</span>
+            <span>${error.message || "Error al cargar el pedido."}</span>
         `;
     }
 }
 
-setInterval(actualizar, 5000);
+setInterval(actualizar, 4000);
 actualizar();
 </script>
 

@@ -468,21 +468,24 @@ async function cargarPedidos() {
             return;
         }
         
-        // Detectar nuevos pedidos
+        const esPrimeraCarga = (idsPedidosPrevios.size === 0);
         const idsActuales = new Set(data.map(p => p.id));
-        const nuevosPedidos = data.filter(p => 
-            !idsPedidosPrevios.has(p.id) && p.estado !== "entregado"
-        );
         
-        if (nuevosPedidos.length > 0) {
-            console.log("Nuevos pedidos detectados:", nuevosPedidos.length);
-            reproducirCampanita();
-            nuevosPedidos.forEach(pedido => {
-                mostrarNotificacion(pedido);
-            });
+        if (!esPrimeraCarga) {
+            const nuevosPedidos = data.filter(p => 
+                !idsPedidosPrevios.has(p.id) && p.estado !== "entregado"
+            );
             
-            if (navigator.vibrate) {
-                navigator.vibrate([200, 100, 200]);
+            if (nuevosPedidos.length > 0) {
+                console.log("Nuevos pedidos detectados:", nuevosPedidos.length);
+                reproducirCampanita();
+                nuevosPedidos.forEach(pedido => {
+                    mostrarNotificacion(pedido);
+                });
+                
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
             }
         }
         
@@ -499,13 +502,8 @@ async function cargarPedidos() {
             }
         });
         
-        console.log("Pedidos activos:", pedidosActivos.length);
-
         const esAdmin = "{{ user.rol }}" === "admin";
 
-        // ====================
-        // PEDIDOS ACTIVOS
-        // ====================
         if (pedidosActivos.length === 0) {
             grid.innerHTML = `
                 <div class="sin-pedidos">
@@ -521,11 +519,16 @@ async function cargarPedidos() {
                     p.productos.forEach(d => {
                         const esPersonalizado = d.nombre && d.nombre.includes('Personalizado');
                         productosHtml += `
-                            <p>
-                                <i class="fa-solid fa-utensils"></i> ${d.nombre} 
-                                <strong>x${d.cantidad}</strong>
-                                ${esPersonalizado ? '<span style="color:#8b5cf6;font-size:11px;"> 🧑‍🍳 Personalizado</span>' : ''}
-                            </p>
+                            <div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px dashed rgba(255,255,255,0.1);">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <span>
+                                        <i class="fa-solid fa-utensils"></i> <strong>${d.nombre}</strong>
+                                        ${esPersonalizado ? '<span style="color:#a855f7;font-size:11px;background:rgba(168,85,247,0.2);padding:2px 6px;border-radius:6px;margin-left:4px;">🧑‍🍳 Personalizado</span>' : ''}
+                                    </span>
+                                    <strong style="color:#f59e0b;">x${d.cantidad} ($${d.subtotal ? d.subtotal.toFixed(2) : (d.precio * d.cantidad).toFixed(2)})</strong>
+                                </div>
+                                ${d.descripcion ? `<div style="font-size:12px;color:#cbd5e1;margin-left:22px;margin-top:2px;"><em>${d.descripcion}</em></div>` : ''}
+                            </div>
                         `;
                     });
                 } else {
@@ -537,31 +540,41 @@ async function cargarPedidos() {
                 else if (p.estado === "en_preparacion") estadoTexto = "🔪 En Preparación";
                 else if (p.estado === "listo") estadoTexto = "✅ Listo";
 
-                // 🔥 Información de domicilio
                 let domicilioHtml = "";
                 if (p.es_domicilio) {
                     domicilioHtml = `
                         <div class="domicilio-info">
-                            <div><i class="fa-solid fa-truck-fast"></i> <strong>🚚 Domicilio</strong></div>
-                            ${p.direccion_entrega ? `<div><i class="fa-solid fa-location-dot"></i> ${p.direccion_entrega}</div>` : ''}
-                            ${p.hora_entrega ? `<div><i class="fa-solid fa-clock"></i> Hora: ${p.hora_entrega}</div>` : ''}
+                            <div><i class="fa-solid fa-truck-fast"></i> <strong>🚚 PEDIDO A DOMICILIO</strong></div>
+                            ${p.direccion_entrega ? `<div><i class="fa-solid fa-location-dot"></i> <strong>Dirección:</strong> ${p.direccion_entrega}</div>` : ''}
+                            ${p.hora_entrega ? `<div><i class="fa-solid fa-clock"></i> <strong>Hora requerida:</strong> ${p.hora_entrega}</div>` : ''}
+                            ${p.instrucciones_adicionales ? `<div><i class="fa-solid fa-comment"></i> <strong>Notas entrega:</strong> ${p.instrucciones_adicionales}</div>` : ''}
                         </div>
                     `;
                 } else {
                     domicilioHtml = `
                         <div class="domicilio-info" style="border-left-color:#22c55e;background:rgba(34,197,94,0.1);">
-                            <div><i class="fa-solid fa-chair" style="color:#22c55e;"></i> <strong style="color:#22c55e;">🪑 Consumir en local</strong></div>
+                            <div><i class="fa-solid fa-chair" style="color:#22c55e;"></i> <strong style="color:#22c55e;">🪑 Consumir en Local (Mesa ${p.mesa})</strong></div>
                         </div>
                     `;
                 }
 
-                // 🔥 Información de personalizado
                 let personalizadoHtml = "";
-                if (p.es_personalizado) {
+                if (p.personalizado) {
+                    const pers = p.personalizado;
                     personalizadoHtml = `
                         <div class="personalizado-info">
-                            <div><i class="fa-solid fa-pen-ruler"></i> <strong>🧑‍🍳 Plato Personalizado</strong></div>
-                            ${p.instrucciones_adicionales ? `<div><i class="fa-solid fa-comment"></i> ${p.instrucciones_adicionales}</div>` : ''}
+                            <div><i class="fa-solid fa-pen-ruler"></i> <strong>🧑‍🍳 Detalle del Plato Personalizado:</strong></div>
+                            ${pers.base ? `<div>• <strong>Base:</strong> ${pers.base}</div>` : ''}
+                            ${pers.acompanamientos ? `<div>• <strong>Acompañamientos:</strong> ${pers.acompanamientos}</div>` : ''}
+                            ${pers.salsas ? `<div>• <strong>Salsas:</strong> ${pers.salsas}</div>` : ''}
+                            ${pers.instrucciones ? `<div>• <strong>Instrucciones:</strong> ${pers.instrucciones}</div>` : ''}
+                        </div>
+                    `;
+                } else if (p.es_personalizado && p.instrucciones_adicionales) {
+                    personalizadoHtml = `
+                        <div class="personalizado-info">
+                            <div><i class="fa-solid fa-pen-ruler"></i> <strong>🧑‍🍳 Instrucciones Especiales:</strong></div>
+                            <div>${p.instrucciones_adicionales}</div>
                         </div>
                     `;
                 }
@@ -569,7 +582,7 @@ async function cargarPedidos() {
                 let boton = "";
                 if (!esAdmin) {
                     if (p.estado === "listo") {
-                        boton = `<a href="/entregar/${p.id}/" class="btn btn-entregar"><i class="fa-solid fa-check-double"></i> Entregar</a>`;
+                        boton = `<a href="/entregar/${p.id}/" class="btn btn-entregar"><i class="fa-solid fa-check-double"></i> Entregar Pedido</a>`;
                     } else {
                         boton = `<a href="/cocina/estado/${p.id}/" class="btn btn-cambiar"><i class="fa-solid fa-arrow-right"></i> Cambiar Estado</a>`;
                     }
@@ -577,15 +590,14 @@ async function cargarPedidos() {
 
                 grid.innerHTML += `
                     <div class="card">
-                        <div class="pedido-id">
-                            <i class="fa-solid fa-receipt"></i> Pedido #${p.id}
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                            <div class="pedido-id" style="margin:0;">
+                                <i class="fa-solid fa-receipt"></i> Pedido #${p.id}
+                            </div>
+                            <span class="badge-entrega ${p.es_domicilio ? 'badge-domicilio' : 'badge-local'}">
+                                ${p.es_domicilio ? '🚚 Domicilio' : `🪑 Mesa ${p.mesa}`}
+                            </span>
                         </div>
-                        <div class="mesa-badge">
-                            <i class="fa-solid fa-chair"></i> Mesa ${p.mesa}
-                        </div>
-                        <span class="badge-entrega ${p.es_domicilio ? 'badge-domicilio' : 'badge-local'}">
-                            ${p.es_domicilio ? '🚚 Domicilio' : '🪑 Local'}
-                        </span>
                         <div class="estado ${p.estado}">
                             ${estadoTexto}
                         </div>
@@ -595,10 +607,10 @@ async function cargarPedidos() {
                             ${productosHtml}
                         </div>
                         <div style="margin-top:10px;font-size:12px;color:#9ca3af;">
-                            <i class="fa-solid fa-clock"></i> ${p.fecha_hora}
+                            <i class="fa-solid fa-clock"></i> Hora pedido: ${p.fecha_hora}
                         </div>
                         <div class="total-pedido">
-                            <i class="fa-solid fa-dollar-sign"></i> Total: $${p.total}
+                            <i class="fa-solid fa-dollar-sign"></i> Total: $${p.total ? p.total.toFixed(2) : '0.00'}
                         </div>
                         ${boton}
                     </div>

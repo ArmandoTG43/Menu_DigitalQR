@@ -344,11 +344,9 @@ def contacto_unificado(request):
 
 @login_required
 def api_pedidos(request):
-    # Verificar autenticación
     if not request.user.is_authenticated:
         return JsonResponse({'error': 'No autenticado'}, status=401)
     
-    # Verificar rol (cocinero o admin)
     if request.user.rol not in ['cocinero', 'admin']:
         return JsonResponse({'error': 'No autorizado'}, status=403)
     
@@ -357,14 +355,36 @@ def api_pedidos(request):
     for p in pedidos:
         productos = []
         for d in p.detallepedido_set.all():
+            precio_unit = float(d.producto.precio)
             productos.append({
                 "nombre": d.producto.nombre,
-                "cantidad": d.cantidad
+                "descripcion": d.producto.descripcion or "",
+                "cantidad": d.cantidad,
+                "precio": precio_unit,
+                "subtotal": round(precio_unit * d.cantidad, 2)
             })
+        
+        pers_data = None
+        if hasattr(p, 'personalizado'):
+            pers = p.personalizado
+            pers_data = {
+                "base": pers.base or "",
+                "acompanamientos": pers.acompañamientos or "",
+                "salsas": pers.salsas or "",
+                "instrucciones": pers.instrucciones or "",
+                "precio_extra": float(pers.precio_extra)
+            }
+
         data.append({
             "id": p.id,
             "mesa": p.mesa.numero,
             "estado": p.estado,
+            "es_domicilio": p.es_domicilio,
+            "direccion_entrega": p.direccion_entrega or "",
+            "hora_entrega": p.hora_entrega.strftime('%H:%M') if p.hora_entrega else "",
+            "instrucciones_adicionales": p.instrucciones_adicionales or "",
+            "es_personalizado": p.es_personalizado,
+            "personalizado": pers_data,
             "productos": productos,
             "total": float(p.total),
             "fecha_hora": p.fecha_hora.strftime('%Y-%m-%d %H:%M:%S')
@@ -373,21 +393,42 @@ def api_pedidos(request):
 
 def api_pedido_detalle(request, pedido_id):
     """
-    API pública para que el cliente vea su pedido.
-    NO requiere autenticación.
+    API pública para que el cliente vea su pedido en tiempo real.
     """
     try:
         pedido = get_object_or_404(Pedido, id=pedido_id)
         productos = []
         for d in pedido.detallepedido_set.all():
+            precio_unit = float(d.producto.precio)
             productos.append({
                 "nombre": d.producto.nombre,
-                "cantidad": d.cantidad
+                "descripcion": d.producto.descripcion or "",
+                "cantidad": d.cantidad,
+                "precio": precio_unit,
+                "subtotal": round(precio_unit * d.cantidad, 2)
             })
+        
+        pers_data = None
+        if hasattr(pedido, 'personalizado'):
+            pers = pedido.personalizado
+            pers_data = {
+                "base": pers.base or "",
+                "acompanamientos": pers.acompañamientos or "",
+                "salsas": pers.salsas or "",
+                "instrucciones": pers.instrucciones or "",
+                "precio_extra": float(pers.precio_extra)
+            }
+
         data = {
             "id": pedido.id,
             "mesa": pedido.mesa.numero,
             "estado": pedido.estado,
+            "es_domicilio": pedido.es_domicilio,
+            "direccion_entrega": pedido.direccion_entrega or "",
+            "hora_entrega": pedido.hora_entrega.strftime('%H:%M') if pedido.hora_entrega else "",
+            "instrucciones_adicionales": pedido.instrucciones_adicionales or "",
+            "es_personalizado": pedido.es_personalizado,
+            "personalizado": pers_data,
             "productos": productos,
             "total": float(pedido.total),
             "fecha_hora": pedido.fecha_hora.strftime('%Y-%m-%d %H:%M:%S')
@@ -426,13 +467,11 @@ def confirmar_pedido(request):
     
     mesa = get_object_or_404(Mesa, id=mesa_id)
     
-    # Obtener datos del formulario
     tipo_entrega = request.POST.get('tipo_entrega', 'local')
     direccion = request.POST.get('direccion', '')
     hora_entrega = request.POST.get('hora_entrega', '')
     instrucciones_domicilio = request.POST.get('instrucciones_domicilio', '')
     
-    # 🔥 CREAR PEDIDO
     pedido = Pedido.objects.create(
         mesa=mesa,
         es_domicilio=(tipo_entrega == 'domicilio'),
@@ -444,31 +483,54 @@ def confirmar_pedido(request):
     total = 0
     categoria_personalizada, _ = Categoria.objects.get_or_create(nombre="Personalizados")
     
-    # 🔥 RECORRER EL CARRITO
+    has_custom = False
     for key, item in carrito.items():
-        print(f"🔍 Procesando item: {key} -> {item}")
-        
         if item.get('es_personalizado'):
-            # 🔥 PLATO PERSONALIZADO
-            producto, created = Producto.objects.get_or_create(
-                nombre=item.get('nombre', 'Plato Personalizado'),
-                defaults={
-                    'descripcion': item.get('descripcion', ''),
-                    'precio': item.get('precio', 0),
-                    'categoria': categoria_personalizada
-                }
+            has_custom = True
+            nombre_base = item.get('base', 'Personalizado')
+            precio_item = float(item.get('precio', 0))
+            desc_item = item.get('descripcion', '')
+            
+            # Crear un producto único para este ítem personalizado
+            producto = Producto.objects.create(
+                nombre=f"Personalizado ({nombre_base})",
+                descripcion=desc_item,
+                precio=precio_item,
+                categoria=categoria_personalizada
             )
             
+            cant = int(item.get('cantidad', 1))
             DetallePedido.objects.create(
                 pedido=pedido,
                 producto=producto,
-                cantidad=item.get('cantidad', 1)
+                cantidad=cant
             )
             
-            total += float(item.get('precio', 0)) * int(item.get('cantidad', 1))
+            total += precio_item * cant
             
+            # Crear PedidoPersonalizado vinculado
+            if not hasattr(pedido, 'personalizado'):
+                acomps = item.get('acompanamientos', [])
+                salsas_list = item.get('salsas', [])
+                if isinstance(acomps, list):
+                    acomps_str = ', '.join(acomps)
+                else:
+                    acomps_str = str(acomps)
+                    
+                if isinstance(salsas_list, list):
+                    salsas_str = ', '.join(salsas_list)
+                else:
+                    salsas_str = str(salsas_list)
+
+                PedidoPersonalizado.objects.create(
+                    pedido=pedido,
+                    base=nombre_base,
+                    acompañamientos=acomps_str,
+                    salsas=salsas_str,
+                    instrucciones=item.get('instrucciones', ''),
+                    precio_extra=float(item.get('precio_extra', 0))
+                )
         else:
-            # 🔥 PRODUCTO NORMAL
             try:
                 producto = Producto.objects.get(id=int(key))
                 cantidad = int(item.get('cantidad', 1))
@@ -479,24 +541,16 @@ def confirmar_pedido(request):
                     cantidad=cantidad
                 )
                 total += float(producto.precio) * cantidad
-            except Producto.DoesNotExist:
-                print(f"⚠️ Producto no encontrado: {key}")
+            except (Producto.DoesNotExist, ValueError):
                 continue
             except Exception as e:
                 print(f"⚠️ Error: {e}")
                 continue
     
-    # 🔥 ACTUALIZAR TOTAL
-    pedido.total = total
+    pedido.es_personalizado = has_custom
+    pedido.total = round(total, 2)
     pedido.save()
     
-    # 🔥 VERIFICAR QUE SE GUARDARON PRODUCTOS
-    print(f"✅ Pedido #{pedido.id} creado con {pedido.detallepedido_set.count()} productos, Total: ${total}")
-    for d in pedido.detallepedido_set.all():
-        print(f"   - {d.producto.nombre} x{d.cantidad}")
-    
-    # Limpiar carrito
-    request.session['carrito'] = {}
     request.session['pedido_id'] = pedido.id
     
     messages.success(request, f'✅ Pedido #{pedido.id} confirmado por ${total:.2f}')
@@ -603,16 +657,22 @@ def confirmar_pago(request):
         metodo = request.POST.get('metodo', 'tarjeta')
         pedido = get_object_or_404(Pedido, id=pedido_id)
 
-        # Crear el pago
-        pago = Pago.objects.create(
+        # Evitar IntegrityError si el pago ya fue creado
+        pago, created = Pago.objects.update_or_create(
             pedido=pedido,
-            metodo=metodo,
-            estado='aprobado',
-            monto=pedido.total,
-            referencia=f"SIM-{pedido.id}-{timezone.now().strftime('%Y%m%d%H%M')}"
+            defaults={
+                'metodo': metodo,
+                'estado': 'aprobado',
+                'monto': pedido.total,
+                'referencia': f"SIM-{pedido.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+            }
         )
 
+        # Vaciar el carrito de la sesión
+        request.session['carrito'] = {}
+        request.session.modified = True
 
+        messages.success(request, f'✅ Pago de ${pedido.total:.2f} verificado exitosamente.')
         return redirect('comprobante_pago', pago_id=pago.id)
 
     return redirect('ver_carrito')
@@ -943,66 +1003,124 @@ def lista_promociones(request):
 
 @admin_required
 def crear_promocion(request):
+    productos = Producto.objects.all()
     if request.method == 'POST':
-        nombre = request.POST.get('nombre')
-        descripcion = request.POST.get('descripcion')
-        tipo_descuento = request.POST.get('tipo_descuento')
-        valor_descuento = request.POST.get('valor_descuento')
-        fecha_inicio = request.POST.get('fecha_inicio')
-        fecha_fin = request.POST.get('fecha_fin')
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        tipo_descuento = request.POST.get('tipo_descuento', 'porcentaje')
+        valor_descuento_raw = request.POST.get('valor_descuento', '0')
+        fecha_inicio_raw = request.POST.get('fecha_inicio', '')
+        fecha_fin_raw = request.POST.get('fecha_fin', '')
         productos_ids = request.POST.getlist('productos')
-        
+
+        if not nombre:
+            messages.error(request, "El nombre de la promoción es obligatorio.")
+            return render(request, 'promociones/crear.html', {'productos': productos})
+
+        try:
+            valor_descuento = float(valor_descuento_raw)
+            if valor_descuento <= 0:
+                messages.error(request, "El valor del descuento debe ser mayor a 0.")
+                return render(request, 'promociones/crear.html', {'productos': productos})
+            if tipo_descuento == 'porcentaje' and valor_descuento > 100:
+                messages.error(request, "El porcentaje de descuento no puede exceder el 100%.")
+                return render(request, 'promociones/crear.html', {'productos': productos})
+        except ValueError:
+            messages.error(request, "Ingresa un valor de descuento numérico válido.")
+            return render(request, 'promociones/crear.html', {'productos': productos})
+
+        if not fecha_inicio_raw or not fecha_fin_raw:
+            messages.error(request, "Las fechas de inicio y fin son obligatorias.")
+            return render(request, 'promociones/crear.html', {'productos': productos})
+
+        if fecha_fin_raw <= fecha_inicio_raw:
+            messages.error(request, "La fecha de fin debe ser posterior a la fecha de inicio.")
+            return render(request, 'promociones/crear.html', {'productos': productos})
+
         promocion = Promocion.objects.create(
             nombre=nombre,
             descripcion=descripcion,
             tipo_descuento=tipo_descuento,
             valor_descuento=valor_descuento,
-            fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin,
+            fecha_inicio=fecha_inicio_raw,
+            fecha_fin=fecha_fin_raw,
             activo=True
         )
+        if 'imagen' in request.FILES:
+            promocion.imagen = request.FILES['imagen']
+            promocion.save()
+
         promocion.productos.set(productos_ids)
-        
-        messages.success(request, 'Promoción creada exitosamente')
+        messages.success(request, '✅ Promoción creada exitosamente.')
         return redirect('lista_promociones')
     
-    productos = Producto.objects.all()
     return render(request, 'promociones/crear.html', {'productos': productos})
 
 @admin_required
 def editar_promocion(request, id):
     promocion = get_object_or_404(Promocion, id=id)
+    productos = Producto.objects.all()
+
     if request.method == 'POST':
-        promocion.nombre = request.POST.get('nombre')
-        promocion.descripcion = request.POST.get('descripcion')
-        promocion.tipo_descuento = request.POST.get('tipo_descuento')
-        promocion.valor_descuento = request.POST.get('valor_descuento')
-        promocion.fecha_inicio = request.POST.get('fecha_inicio')
-        promocion.fecha_fin = request.POST.get('fecha_fin')
-        promocion.activo = request.POST.get('activo') == 'on'
-        promocion.productos.set(request.POST.getlist('productos'))
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        tipo_descuento = request.POST.get('tipo_descuento', 'porcentaje')
+        valor_descuento_raw = request.POST.get('valor_descuento', '0')
+        fecha_inicio_raw = request.POST.get('fecha_inicio', '')
+        fecha_fin_raw = request.POST.get('fecha_fin', '')
+        productos_ids = request.POST.getlist('productos')
+
+        if not nombre:
+            messages.error(request, "El nombre de la promoción es obligatorio.")
+            return render(request, 'promociones/editar.html', {'promocion': promocion, 'productos': productos})
+
+        try:
+            valor_descuento = float(valor_descuento_raw)
+            if valor_descuento <= 0:
+                messages.error(request, "El valor del descuento debe ser mayor a 0.")
+                return render(request, 'promociones/editar.html', {'promocion': promocion, 'productos': productos})
+            if tipo_descuento == 'porcentaje' and valor_descuento > 100:
+                messages.error(request, "El porcentaje de descuento no puede exceder el 100%.")
+                return render(request, 'promociones/editar.html', {'promocion': promocion, 'productos': productos})
+        except ValueError:
+            messages.error(request, "Ingresa un valor de descuento numérico válido.")
+            return render(request, 'promociones/editar.html', {'promocion': promocion, 'productos': productos})
+
+        if not fecha_inicio_raw or not fecha_fin_raw:
+            messages.error(request, "Las fechas de inicio y fin son obligatorias.")
+            return render(request, 'promociones/editar.html', {'promocion': promocion, 'productos': productos})
+
+        if fecha_fin_raw <= fecha_inicio_raw:
+            messages.error(request, "La fecha de fin debe ser posterior a la fecha de inicio.")
+            return render(request, 'promociones/editar.html', {'promocion': promocion, 'productos': productos})
+
+        promocion.nombre = nombre
+        promocion.descripcion = descripcion
+        promocion.tipo_descuento = tipo_descuento
+        promocion.valor_descuento = valor_descuento
+        promocion.fecha_inicio = fecha_inicio_raw
+        promocion.fecha_fin = fecha_fin_raw
+        promocion.activo = (request.POST.get('activo') == 'on')
+
+        if 'imagen' in request.FILES:
+            promocion.imagen = request.FILES['imagen']
+
+        promocion.productos.set(productos_ids)
         promocion.save()
         
-        messages.success(request, 'Promoción actualizada')
+        messages.success(request, '✅ Promoción actualizada correctamente.')
         return redirect('lista_promociones')
     
-    productos = Producto.objects.all()
     return render(request, 'promociones/editar.html', {
         'promocion': promocion,
         'productos': productos
     })
 
 @admin_required
-@admin_required
 def eliminar_promocion(request, id):
     promocion = get_object_or_404(Promocion, id=id)
-    if request.method == 'POST':
-        promocion.delete()
-        messages.success(request, 'Promoción eliminada')
-        return redirect('lista_promociones')
-    # Si es GET, también elimina (para que funcione con el enlace directo)
     promocion.delete()
-    messages.success(request, 'Promoción eliminada')
+    messages.success(request, '✅ Promoción eliminada.')
     return redirect('lista_promociones')
 
 
@@ -1019,12 +1137,16 @@ def promociones_cliente(request):
 @cliente_required
 def pedido_personalizado(request):
     if request.method == 'POST':
-        base = request.POST.get('base_personalizado', '')
+        base = request.POST.get('base_personalizado', '').strip()
         acompanamientos = request.POST.getlist('acompanamientos')
         salsas = request.POST.getlist('salsas_personalizado')
-        instrucciones = request.POST.get('instrucciones_personalizado', '')
+        instrucciones = request.POST.get('instrucciones_personalizado', '').strip()
         
-        # Precios
+        if not base:
+            messages.error(request, "⚠️ Por favor selecciona una base/proteína para tu plato.")
+            return render(request, 'pedido_personalizado.html')
+
+        # Tabla de precios base
         precios_base = {
             'Pollo': 6.00,
             'Carne': 7.00,
@@ -1034,26 +1156,36 @@ def pedido_personalizado(request):
             'Mixto': 8.50,
         }
         
-        precio_base = precios_base.get(base, 0)
-        precio_acompanamientos = len(acompanamientos) * 2.00
-        precio_salsas = len(salsas) * 1.00
-        total = precio_base + precio_acompanamientos + precio_salsas
+        precio_base = precios_base.get(base, 5.00)
+        precio_extra = (len(acompanamientos) * 2.00) + (len(salsas) * 1.00)
+        total = precio_base + precio_extra
         
         carrito = request.session.get('carrito', {})
         
-        # 🔥 ID NUMÉRICO PARA EVITAR CONFLICTOS
         max_id = 0
         for key in carrito.keys():
             try:
-                if int(key) > max_id:
-                    max_id = int(key)
-            except:
+                val = int(key)
+                if val > max_id:
+                    max_id = val
+            except ValueError:
                 pass
         nuevo_id = max_id + 1000
         
+        desc_partes = [f"Base: {base} (${precio_base:.2f})"]
+        if acompanamientos:
+            desc_partes.append(f"Acompañamientos (+${len(acompanamientos)*2:.2f}): {', '.join(acompanamientos)}")
+        if salsas:
+            desc_partes.append(f"Salsas (+${len(salsas)*1:.2f}): {', '.join(salsas)}")
+        if instrucciones:
+            desc_partes.append(f"Indicaciones: {instrucciones}")
+            
+        desc_completa = " | ".join(desc_partes)
+        
         carrito[str(nuevo_id)] = {
-            'nombre': f"{base} Personalizado",
-            'descripcion': f"Base: {base} | Acompañamientos: {', '.join(acompanamientos) if acompanamientos else 'Ninguno'} | Salsas: {', '.join(salsas) if salsas else 'Ninguna'} | Instrucciones: {instrucciones if instrucciones else 'Ninguna'}",
+            'id': str(nuevo_id),
+            'nombre': f"Plato Personalizado ({base})",
+            'descripcion': desc_completa,
             'precio': float(total),
             'cantidad': 1,
             'imagen': '',
@@ -1061,13 +1193,14 @@ def pedido_personalizado(request):
             'instrucciones': instrucciones,
             'base': base,
             'acompanamientos': acompanamientos,
-            'salsas': salsas
+            'salsas': salsas,
+            'precio_extra': float(precio_extra)
         }
         
         request.session['carrito'] = carrito
         request.session.modified = True
         
-        messages.success(request, f'✅ Plato personalizado agregado por ${total:.2f}')
+        messages.success(request, f'✅ Plato personalizado ({base}) agregado por ${total:.2f}')
         return redirect('ver_carrito')
     
     return render(request, 'pedido_personalizado.html')

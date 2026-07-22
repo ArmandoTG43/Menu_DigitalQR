@@ -5,30 +5,44 @@
 <br><br><br><br>
 <div id="banner"></div>
 
-<div class="container">
+<div class="container" style="padding-top: 40px;">
     
     <div class="form-header">
         <h2><i class="fa-solid fa-pen-to-square"></i> Editar Promoción</h2>
         <p>Actualiza la información de la promoción</p>
     </div>
 
+    {% if messages %}
+        <div style="margin-bottom: 20px;">
+            {% for message in messages %}
+                <div style="padding: 14px 20px; border-radius: 12px; margin-bottom: 10px; font-weight: bold; background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #fca5a5;">
+                    <i class="fa-solid fa-circle-exclamation"></i> {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div id="js-error-alert" style="display: none; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #fca5a5;">
+        <i class="fa-solid fa-triangle-exclamation"></i> <span id="js-error-msg"></span>
+    </div>
+
     <div class="form-card">
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" id="form-promocion">
             {% csrf_token %}
             
             <div class="form-group">
-                <label for="nombre"> Nombre de la Promoción</label>
+                <label for="nombre"><i class="fa-solid fa-heading"></i> Nombre de la Promoción *</label>
                 <input type="text" name="nombre" id="nombre" class="form-control" value="{{ promocion.nombre }}" required>
             </div>
             
             <div class="form-group">
-                <label for="descripcion"> Descripción</label>
+                <label for="descripcion"><i class="fa-solid fa-align-left"></i> Descripción</label>
                 <textarea name="descripcion" id="descripcion" class="form-control" rows="3">{{ promocion.descripcion }}</textarea>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="tipo_descuento"> Tipo de Descuento</label>
+                    <label for="tipo_descuento"><i class="fa-solid fa-percent"></i> Tipo de Descuento *</label>
                     <select name="tipo_descuento" id="tipo_descuento" class="form-control" required>
                         <option value="porcentaje" {% if promocion.tipo_descuento == 'porcentaje' %}selected{% endif %}>Porcentaje (%)</option>
                         <option value="fijo" {% if promocion.tipo_descuento == 'fijo' %}selected{% endif %}>Monto Fijo ($)</option>
@@ -36,25 +50,26 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="valor_descuento"> Valor del Descuento</label>
-                    <input type="number" name="valor_descuento" id="valor_descuento" class="form-control" step="0.01" value="{{ promocion.valor_descuento }}" required>
+                    <label for="valor_descuento"><i class="fa-solid fa-dollar-sign"></i> Valor del Descuento *</label>
+                    <input type="number" name="valor_descuento" id="valor_descuento" class="form-control" step="0.01" min="0.01" value="{{ promocion.valor_descuento }}" required>
+                    <small id="valor_help">Para porcentaje ingresa entre 1 y 100</small>
                 </div>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label for="fecha_inicio"> Fecha de Inicio</label>
+                    <label for="fecha_inicio"><i class="fa-solid fa-calendar-days"></i> Fecha y Hora de Inicio *</label>
                     <input type="datetime-local" name="fecha_inicio" id="fecha_inicio" class="form-control" value="{{ promocion.fecha_inicio|date:'Y-m-d\TH:i' }}" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="fecha_fin"> Fecha de Fin</label>
+                    <label for="fecha_fin"><i class="fa-solid fa-calendar-check"></i> Fecha y Hora de Fin *</label>
                     <input type="datetime-local" name="fecha_fin" id="fecha_fin" class="form-control" value="{{ promocion.fecha_fin|date:'Y-m-d\TH:i' }}" required>
                 </div>
             </div>
             
             <div class="form-group">
-                <label for="productos"> Productos Asociados</label>
+                <label for="productos"><i class="fa-solid fa-burger"></i> Productos Asociados</label>
                 <select name="productos" id="productos" class="form-control" multiple>
                     {% for producto in productos %}
                         <option value="{{ producto.id }}" {% if producto in promocion.productos.all %}selected{% endif %}>
@@ -66,7 +81,7 @@
             </div>
             
             <div class="form-group">
-                <label for="imagen"> Imagen de la Promoción</label>
+                <label for="imagen"><i class="fa-solid fa-image"></i> Imagen de la Promoción</label>
                 <input type="file" name="imagen" id="imagen" class="form-control-file" accept="image/*">
                 {% if promocion.imagen %}
                     <small style="color: #22c55e;">Imagen actual: {{ promocion.imagen.name }}</small>
@@ -75,20 +90,70 @@
             
             <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
                 <input type="checkbox" name="activo" id="activo" {% if promocion.activo %}checked{% endif %}>
-                <label for="activo" style="margin: 0; color: white; cursor: pointer;">✅ Activo</label>
+                <label for="activo" style="margin: 0; color: white; cursor: pointer;">✅ Estado Activo</label>
             </div>
             
             <div class="form-actions">
                 <button type="submit" class="btn-save">
-                    <i class="fa-solid fa-floppy-disk"></i> Actualizar
+                    <i class="fa-solid fa-floppy-disk"></i> Actualizar Promoción
                 </button>
                 <a href="{% url 'lista_promociones' %}" class="btn-cancel">
-                    <i class="fa-solid fa-times"></i> Cancelar
+                    <i class="fa-solid fa-xmark"></i> Cancelar
                 </a>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-promocion');
+    const tipoDescuento = document.getElementById('tipo_descuento');
+    const valorDescuento = document.getElementById('valor_descuento');
+    const fechaInicio = document.getElementById('fecha_inicio');
+    const fechaFin = document.getElementById('fecha_fin');
+    const jsAlert = document.getElementById('js-error-alert');
+    const jsMsg = document.getElementById('js-error-msg');
+
+    tipoDescuento.addEventListener('change', function() {
+        if (this.value === 'porcentaje') {
+            valorDescuento.max = "100";
+            document.getElementById('valor_help').textContent = "Para porcentaje ingresa entre 1% y 100%";
+        } else {
+            valorDescuento.removeAttribute('max');
+            document.getElementById('valor_help').textContent = "Monto en dólares ($)";
+        }
+    });
+
+    form.addEventListener('submit', function(e) {
+        jsAlert.style.display = 'none';
+        const val = parseFloat(valorDescuento.value);
+        
+        if (isNaN(val) || val <= 0) {
+            e.preventDefault();
+            jsMsg.textContent = "El valor del descuento debe ser mayor a 0.";
+            jsAlert.style.display = 'block';
+            return;
+        }
+
+        if (tipoDescuento.value === 'porcentaje' && val > 100) {
+            e.preventDefault();
+            jsMsg.textContent = "El porcentaje de descuento no puede ser superior a 100%.";
+            jsAlert.style.display = 'block';
+            return;
+        }
+
+        if (fechaInicio.value && fechaFin.value) {
+            if (fechaFin.value <= fechaInicio.value) {
+                e.preventDefault();
+                jsMsg.textContent = "La fecha y hora de fin debe ser posterior a la fecha de inicio.";
+                jsAlert.style.display = 'block';
+                return;
+            }
+        }
+    });
+});
+</script>
 
 <style>
 /* ========== MISMOS ESTILOS QUE CREAR ========== */
