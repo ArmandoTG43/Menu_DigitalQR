@@ -357,49 +357,88 @@ def api_pedidos(request):
     if request.user.rol not in ['cocinero', 'admin']:
         return JsonResponse({'error': 'No autorizado'}, status=403)
     
-    pedidos = Pedido.objects.all().order_by('-fecha_hora')
-    data = []
-    for p in pedidos:
-        productos = []
-        for d in p.detallepedido_set.all():
-            precio_unit = float(d.producto.precio)
-            productos.append({
-                "nombre": d.producto.nombre,
-                "descripcion": d.producto.descripcion or "",
-                "cantidad": d.cantidad,
-                "precio": precio_unit,
-                "subtotal": round(precio_unit * d.cantidad, 2)
+    try:
+        # Obtener pedidos NO entregados
+        pedidos = Pedido.objects.exclude(estado='entregado').order_by('-fecha_hora')
+        
+        data = []
+        for p in pedidos:
+            productos = []
+            
+            # Obtener detalles del pedido
+            detalles = p.detallepedido_set.all()
+            for d in detalles:
+                try:
+                    # Verificar que el producto existe
+                    if d.producto:
+                        precio_unit = float(d.producto.precio) if d.producto.precio else 0
+                        productos.append({
+                            "nombre": d.producto.nombre or "Producto sin nombre",
+                            "descripcion": d.producto.descripcion or "",
+                            "cantidad": d.cantidad or 1,
+                            "precio": precio_unit,
+                            "subtotal": round(precio_unit * (d.cantidad or 1), 2)
+                        })
+                except Exception as e:
+                    print(f"Error en detalle {d.id}: {e}")
+                    # Saltar este detalle si da error
+                    continue
+            
+            # Si no tiene productos, agregar uno por defecto
+            if not productos:
+                productos.append({
+                    "nombre": "Producto no disponible",
+                    "descripcion": "",
+                    "cantidad": 1,
+                    "precio": 0,
+                    "subtotal": 0
+                })
+            
+            # Datos del pedido personalizado
+            pers_data = None
+            try:
+                if hasattr(p, 'personalizado') and p.personalizado:
+                    pers = p.personalizado
+                    pers_data = {
+                        "base": pers.base or "",
+                        "acompanamientos": pers.acompañamientos or "",
+                        "salsas": pers.salsas or "",
+                        "instrucciones": pers.instrucciones or "",
+                        "precio_extra": float(pers.precio_extra) if pers.precio_extra else 0
+                    }
+            except Exception:
+                pers_data = None
+
+            # Obtener hora de entrega formateada
+            hora_entrega = ""
+            if p.hora_entrega:
+                try:
+                    hora_entrega = p.hora_entrega.strftime('%H:%M')
+                except:
+                    hora_entrega = str(p.hora_entrega)
+
+            data.append({
+                "id": p.id,
+                "mesa": p.mesa.numero if p.mesa else 0,
+                "estado": p.estado or 'pendiente',
+                "es_domicilio": p.es_domicilio if hasattr(p, 'es_domicilio') else False,
+                "direccion_entrega": p.direccion_entrega or "",
+                "hora_entrega": hora_entrega,
+                "instrucciones_adicionales": p.instrucciones_adicionales or "",
+                "es_personalizado": p.es_personalizado if hasattr(p, 'es_personalizado') else False,
+                "personalizado": pers_data,
+                "productos": productos,
+                "total": float(p.total) if p.total else 0,
+                "fecha_hora": p.fecha_hora.strftime('%Y-%m-%d %H:%M:%S') if p.fecha_hora else ""
             })
         
-        pers_data = None
-        try:
-            if hasattr(p, 'personalizado') and p.personalizado:
-                pers = p.personalizado
-                pers_data = {
-                    "base": pers.base or "",
-                    "acompanamientos": pers.acompañamientos or "",
-                    "salsas": pers.salsas or "",
-                    "instrucciones": pers.instrucciones or "",
-                    "precio_extra": float(pers.precio_extra)
-                }
-        except Exception:
-            pers_data = None
-
-        data.append({
-            "id": p.id,
-            "mesa": p.mesa.numero,
-            "estado": p.estado,
-            "es_domicilio": p.es_domicilio,
-            "direccion_entrega": p.direccion_entrega or "",
-            "hora_entrega": p.hora_entrega.strftime('%H:%M') if p.hora_entrega else "",
-            "instrucciones_adicionales": p.instrucciones_adicionales or "",
-            "es_personalizado": p.es_personalizado,
-            "personalizado": pers_data,
-            "productos": productos,
-            "total": float(p.total),
-            "fecha_hora": p.fecha_hora.strftime('%Y-%m-%d %H:%M:%S')
-        })
-    return JsonResponse(data, safe=False)
+        return JsonResponse(data, safe=False)
+        
+    except Exception as e:
+        print(f"❌ Error en api_pedidos: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': str(e), 'detalle': traceback.format_exc()}, status=500)
 
 def api_pedido_detalle(request, pedido_id):
     """
@@ -408,14 +447,28 @@ def api_pedido_detalle(request, pedido_id):
     try:
         pedido = get_object_or_404(Pedido, id=pedido_id)
         productos = []
+        
         for d in pedido.detallepedido_set.all():
-            precio_unit = float(d.producto.precio)
+            try:
+                if d.producto:
+                    precio_unit = float(d.producto.precio) if d.producto.precio else 0
+                    productos.append({
+                        "nombre": d.producto.nombre or "Sin nombre",
+                        "descripcion": d.producto.descripcion or "",
+                        "cantidad": d.cantidad or 1,
+                        "precio": precio_unit,
+                        "subtotal": round(precio_unit * (d.cantidad or 1), 2)
+                    })
+            except Exception:
+                continue
+        
+        if not productos:
             productos.append({
-                "nombre": d.producto.nombre,
-                "descripcion": d.producto.descripcion or "",
-                "cantidad": d.cantidad,
-                "precio": precio_unit,
-                "subtotal": round(precio_unit * d.cantidad, 2)
+                "nombre": "Producto no disponible",
+                "descripcion": "",
+                "cantidad": 1,
+                "precio": 0,
+                "subtotal": 0
             })
         
         pers_data = None
@@ -427,7 +480,7 @@ def api_pedido_detalle(request, pedido_id):
                     "acompanamientos": pers.acompañamientos or "",
                     "salsas": pers.salsas or "",
                     "instrucciones": pers.instrucciones or "",
-                    "precio_extra": float(pers.precio_extra)
+                    "precio_extra": float(pers.precio_extra) if pers.precio_extra else 0
                 }
         except Exception:
             pers_data = None
@@ -441,20 +494,22 @@ def api_pedido_detalle(request, pedido_id):
 
         data = {
             "id": pedido.id,
-            "mesa": pedido.mesa.numero,
-            "estado": pedido.estado,
-            "es_domicilio": pedido.es_domicilio,
+            "mesa": pedido.mesa.numero if pedido.mesa else 0,
+            "estado": pedido.estado or 'pendiente',
+            "es_domicilio": pedido.es_domicilio if hasattr(pedido, 'es_domicilio') else False,
             "direccion_entrega": pedido.direccion_entrega or "",
             "hora_entrega": hora_str,
             "instrucciones_adicionales": pedido.instrucciones_adicionales or "",
-            "es_personalizado": pedido.es_personalizado,
+            "es_personalizado": pedido.es_personalizado if hasattr(pedido, 'es_personalizado') else False,
             "personalizado": pers_data,
             "productos": productos,
-            "total": float(pedido.total),
+            "total": float(pedido.total) if pedido.total else 0,
             "fecha_hora": pedido.fecha_hora.strftime('%Y-%m-%d %H:%M:%S') if pedido.fecha_hora else ""
         }
         return JsonResponse(data, safe=False)
+        
     except Exception as e:
+        print(f"❌ Error en api_pedido_detalle: {e}")
         return JsonResponse({'error': str(e)}, status=400)
 
 @admin_required
