@@ -186,15 +186,22 @@ def home_unificado(request):
 def menu_unificado(request, mesa_id=None):
     # Caso 1: Es cliente (viene del QR o tiene sesión de cliente)
     if mesa_id or request.session.get('cliente'):
-        if not mesa_id:
-            mesa_id = request.session.get('mesa_id')
+        anterior_mesa = request.session.get('mesa_id')
+        
+        if mesa_id:
+            # Si escanea un QR de otra mesa, vaciar el carrito sin confirmar de la mesa anterior
+            if anterior_mesa and str(anterior_mesa) != str(mesa_id):
+                request.session['carrito'] = {}
+                request.session.modified = True
+            request.session['mesa_id'] = mesa_id
+        else:
+            mesa_id = anterior_mesa
         
         if not mesa_id:
             messages.error(request, "No se identificó la mesa")
             return redirect('login')
         
         request.session['cliente'] = True
-        request.session['mesa_id'] = mesa_id
         
         categorias = Categoria.objects.all()
         productos = Producto.objects.all()
@@ -206,7 +213,7 @@ def menu_unificado(request, mesa_id=None):
             'categorias': categorias,
             'productos': productos,
             'mesa_id': mesa_id,
-            'total_items': total_items,  # 👈 ENVIAR AL TEMPLATE
+            'total_items': total_items,
         })
     
     # Caso 2: Administrador o cocinero
