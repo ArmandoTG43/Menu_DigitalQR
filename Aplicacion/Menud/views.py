@@ -448,7 +448,7 @@ def api_pedido_detalle(request, pedido_id):
         pedido = get_object_or_404(Pedido, id=pedido_id)
         productos = []
         
-        # ✅ CAMBIADO: usar DetallePedido.objects.filter en lugar de detallepedido_set
+        #  CAMBIADO: usar DetallePedido.objects.filter en lugar de detallepedido_set
         for d in DetallePedido.objects.filter(pedido=pedido):
             try:
                 if d.producto:
@@ -510,7 +510,7 @@ def api_pedido_detalle(request, pedido_id):
         return JsonResponse(data, safe=False)
         
     except Exception as e:
-        print(f"❌ Error en api_pedido_detalle: {e}")
+        print(f" Error en api_pedido_detalle: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)

@@ -82,7 +82,7 @@
                 <h4><i class="fa-solid fa-dollar-sign"></i> {{ total }}</h4>
             </div>
 
-            <!-- 🔥 FORMULARIO COMPLETO -->
+            <!--  FORMULARIO COMPLETO -->
             <form method="POST" action="{% url 'confirmar_pedido' %}">
                 {% csrf_token %}
 
@@ -92,7 +92,7 @@
                     
                     <div class="personalizado-toggle">
                         <input type="checkbox" name="es_personalizado" id="es_personalizado" value="1">
-                        <label for="es_personalizado">Sí, quiero armar mi propio plato 🧑‍🍳</label>
+                        <label for="es_personalizado">Sí, quiero armar mi propio plato</label>
                     </div>
                     
                     <div id="formulario-personalizado" style="display: none; margin-top: 15px;">
@@ -210,7 +210,7 @@
                     <i class="fa-solid fa-utensils"></i> Ver Menú
                 </a>
                 <a href="{% url 'pedido_personalizado' %}" class="btn-personalizado-link">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Arma tu Plato
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Pide segun thus gustos
                 </a>
             </div>
         </div>
