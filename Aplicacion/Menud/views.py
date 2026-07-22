@@ -725,12 +725,12 @@ def restar_carrito(request, producto_id):
 
 @cliente_required
 def crear_pago(request, pedido_id):
-    pedido = get_object_or_404(Pedido, id=pedido_id, usuario=request.user)
+    pedido = get_object_or_404(Pedido, id=pedido_id)  # ← CAMBIADO
     
     # Verificar si el pedido tiene productos
     if not pedido.tiene_productos():
         messages.error(request, '❌ Este pedido no tiene productos. Por favor, agrega productos antes de pagar.')
-        return redirect('ver_carrito')  # O donde corresponda
+        return redirect('ver_carrito')
     
     # Calcular el total actualizado
     pedido.calcular_total()
@@ -750,7 +750,7 @@ def confirmar_pago(request):
         try:
             pedido_id = request.POST.get('pedido_id')
             metodo = request.POST.get('metodo', 'tarjeta')
-            pedido = get_object_or_404(Pedido, id=pedido_id, usuario=request.user)
+            pedido = get_object_or_404(Pedido, id=pedido_id)  # ← CAMBIADO
             
             # Verificar si el pedido tiene productos
             if not pedido.tiene_productos():
