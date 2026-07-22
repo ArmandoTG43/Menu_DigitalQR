@@ -16,12 +16,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 20px;
         }
         .container {
             background: #fff;
             padding: 40px;
-            width: 420px;
+            width: 100%;
+            max-width: 500px;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             animation: fadeIn 0.8s ease;
@@ -33,18 +35,44 @@
         h2 {
             text-align: center;
             margin-bottom: 10px;
+            color: #2c3e50;
         }
         .detalle {
             text-align: center;
             color: #666;
             margin-bottom: 20px;
         }
-        .total {
-            font-size: 24px;
-            font-weight: bold;
+        .resumen-pedido {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #2c5364;
+        }
+        .item-pedido {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .item-pedido:last-child {
+            border-bottom: none;
+        }
+        .item-nombre {
+            font-weight: 500;
+        }
+        .item-precio {
             color: #2c5364;
+        }
+        .total {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00c853;
             text-align: center;
             margin: 20px 0;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 10px;
         }
         select, button {
             width: 100%;
@@ -53,6 +81,9 @@
             font-size: 16px;
             margin-bottom: 15px;
             border: 1px solid #ddd;
+        }
+        select {
+            background: white;
         }
         button {
             background: #00c853;
@@ -64,6 +95,11 @@
         }
         button:hover {
             background: #00a844;
+            transform: scale(1.02);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
         .lock {
             text-align: center;
@@ -71,13 +107,58 @@
             color: #999;
             margin-top: 15px;
         }
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .alert-info {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #90caf9;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2>Realizar Pago</h2>
+    <h2>💳 Realizar Pago</h2>
     <div class="detalle">Pedido #{{ pedido.id }} - Mesa {{ pedido.mesa.numero }}</div>
-    <div class="total">Total: ${{ pedido.total }}</div>
+    
+    <!-- Mostrar mensajes -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-info{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Resumen del pedido -->
+    <div class="resumen-pedido">
+        <h3 style="margin-top: 0; color: #2c3e50;"> Resumen del pedido</h3>
+        {% if detalles %}
+            {% for detalle in detalles %}
+                <div class="item-pedido">
+                    <span class="item-nombre"> {{ detalle.producto.nombre }} × {{ detalle.cantidad }}</span>
+                    <span class="item-precio">${{ detalle.subtotal|floatformat:2 }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-error">
+                ⚠️ No hay productos en este pedido. 
+                <a href="{% url 'ver_carrito' %}" style="color: #0d47a1;">Agregar productos</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="total">
+        Total: ${{ pedido.total|floatformat:2 }}
+    </div>
 
     <form method="post" action="{% url 'confirmar_pago' %}">
         {% csrf_token %}
@@ -85,15 +166,17 @@
 
         <label for="metodo">Selecciona método de pago:</label>
         <select name="metodo" id="metodo" required>
-            <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+            <option value="tarjeta"> Tarjeta de Crédito/Débito</option>
             <option value="efectivo"> Efectivo (en el local)</option>
             <option value="transferencia"> Transferencia Bancaria</option>
         </select>
 
-        <button type="submit"> Pagar ahora</button>
+        <button type="submit" {% if not detalles %}disabled{% endif %}>
+            {% if detalles %} Pagar ahora{% else %} Sin productos para pagar{% endif %}
+        </button>
     </form>
 
-    <div class="lock">Pago real con bancos</div>
+    <div class="lock"> Pago seguro con bancos</div>
 </div>
 </body>
 </html>

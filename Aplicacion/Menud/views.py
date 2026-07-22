@@ -725,9 +725,22 @@ def restar_carrito(request, producto_id):
 
 @cliente_required
 def crear_pago(request, pedido_id):
-    pedido = get_object_or_404(Pedido, id=pedido_id)
+    pedido = get_object_or_404(Pedido, id=pedido_id, usuario=request.user)
+    
+    # Verificar si el pedido tiene productos
+    if not pedido.tiene_productos():
+        messages.error(request, '❌ Este pedido no tiene productos. Por favor, agrega productos antes de pagar.')
+        return redirect('ver_carrito')  # O donde corresponda
+    
+    # Calcular el total actualizado
+    pedido.calcular_total()
+    
+    # Obtener los detalles del pedido
+    detalles = pedido.detalles.all()
+    
     return render(request, 'pago.html', {
         'pedido': pedido,
+        'detalles': detalles,
         'metodos': Pago.METODOS
     })
 
@@ -737,36 +750,46 @@ def confirmar_pago(request):
         try:
             pedido_id = request.POST.get('pedido_id')
             metodo = request.POST.get('metodo', 'tarjeta')
-            pedido = get_object_or_404(Pedido, id=pedido_id)
-
+            pedido = get_object_or_404(Pedido, id=pedido_id, usuario=request.user)
+            
+            # Verificar si el pedido tiene productos
+            if not pedido.tiene_productos():
+                messages.error(request, '❌ No se puede pagar un pedido sin productos.')
+                return redirect('ver_carrito')
+            
+            # Calcular total actualizado antes de pagar
+            total = pedido.calcular_total()
+            
+            if total == 0:
+                messages.error(request, '❌ El total del pedido es $0.00. No se puede procesar el pago.')
+                return redirect('ver_carrito')
+            
+            # Crear o actualizar el pago
             pago, created = Pago.objects.update_or_create(
                 pedido=pedido,
                 defaults={
                     'metodo': metodo,
                     'estado': 'aprobado',
-                    'monto': pedido.total,
+                    'monto': total,
                     'referencia': f"SIM-{pedido.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
                 }
             )
-
+            
+            # Limpiar carrito
             request.session['carrito'] = {}
             request.session.modified = True
-
-            messages.success(request, f'✅ Pago de ${pedido.total:.2f} verificado exitosamente.')
+            
+            messages.success(request, f'✅ Pago de ${total:.2f} verificado exitosamente.')
             return redirect('comprobante_pago', pago_id=pago.id)
+            
         except Exception as e:
-            print(f"Excepción en confirmar_pago: {e}")
-            request.session['carrito'] = {}
-            request.session.modified = True
-            try:
-                pago_existente = Pago.objects.filter(pedido_id=request.POST.get('pedido_id')).first()
-                if pago_existente:
-                    return redirect('comprobante_pago', pago_id=pago_existente.id)
-            except Exception:
-                pass
-            messages.success(request, '✅ Pago registrado correctamente.')
-            return redirect('home')
-
+            print(f"❌ Error en confirmar_pago: {e}")
+            import traceback
+            traceback.print_exc()
+            
+            messages.error(request, f'❌ Error al procesar el pago: {str(e)}')
+            return redirect('ver_carrito')
+    
     return redirect('ver_carrito')
 
 @cliente_required

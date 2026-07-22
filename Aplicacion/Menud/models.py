@@ -120,7 +120,23 @@ class Pedido(models.Model):
     fecha_hora = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Pedido {self.id} - Mesa {self.mesa.numero}"
+        return f"Pedido #{self.id} - Mesa {self.mesa.numero}"
+    
+    def calcular_total(self):
+        """Calcula el total del pedido basado en los detalles"""
+        total = sum(detalle.subtotal() for detalle in self.detalles.all())
+        self.total = total
+        self.save(update_fields=['total'])
+        return total
+    
+    @property
+    def total_calculado(self):
+        """Propiedad para obtener el total calculado sin guardar"""
+        return sum(detalle.subtotal() for detalle in self.detalles.all()) or 0.00
+    
+    def tiene_productos(self):
+        """Verifica si el pedido tiene productos"""
+        return self.detalles.exists()
     
 # -------------------
 # PAGO
@@ -150,16 +166,24 @@ class Pago(models.Model):
         return f"Pago {self.id} - {self.metodo}"
 
 class DetallePedido(models.Model):
-    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE)
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='detalles')
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.IntegerField(default=1)
+    precio_unitario = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)  # ← CAMPO FALTANTE
 
+    def subtotal(self):
+        """Calcula el subtotal del detalle"""
+        return self.cantidad * self.precio_unitario
 
+    def save(self, *args, **kwargs):
+        """Guarda automáticamente el precio_unitario del producto"""
+        if not self.precio_unitario and self.producto:
+            self.precio_unitario = self.producto.precio
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.producto.nombre} x {self.cantidad}"
-    
-# models.py - Agrega esto al final
+        return f"{self.producto.nombre} x {self.cantidad} = ${self.subtotal():.2f}"
+
 
 class Promocion(models.Model):
     TIPO_DESCUENTO = [
