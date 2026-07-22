@@ -2,6 +2,7 @@ from datetime import datetime
 from time import timezone
 from django.utils import timezone
 import stripe
+from django.db import connection
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from django.http import HttpResponse
@@ -435,7 +436,7 @@ def api_pedidos(request):
         return JsonResponse(data, safe=False)
         
     except Exception as e:
-        print(f"❌ Error en api_pedidos: {e}")
+        print(f" Error en api_pedidos: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e), 'detalle': traceback.format_exc()}, status=500)
@@ -588,12 +589,20 @@ def confirmar_pedido(request):
             precio_item = float(item.get('precio', 0))
             desc_item = item.get('descripcion', '')
             
-            producto = Producto.objects.create(
+            # ✅ CORREGIDO: Usar get_or_create en lugar de create
+            producto, created = Producto.objects.get_or_create(
                 nombre=f"Personalizado ({nombre_base})",
-                descripcion=desc_item,
-                precio=precio_item,
-                categoria=categoria_personalizada
+                defaults={
+                    'descripcion': desc_item,
+                    'precio': precio_item,
+                    'categoria': categoria_personalizada
+                }
             )
+            # Si ya existe, actualizar precio y descripción
+            if not created:
+                producto.precio = precio_item
+                producto.descripcion = desc_item
+                producto.save()
             
             cant = int(item.get('cantidad', 1))
             DetallePedido.objects.create(
@@ -663,12 +672,19 @@ def confirmar_pedido(request):
 
         desc_completa = " | ".join(desc_partes)
 
-        producto_custom = Producto.objects.create(
+        # ✅ CORREGIDO: Usar get_or_create en lugar de create
+        producto_custom, created = Producto.objects.get_or_create(
             nombre=f"Personalizado ({inline_base})",
-            descripcion=desc_completa,
-            precio=custom_total,
-            categoria=categoria_personalizada
+            defaults={
+                'descripcion': desc_completa,
+                'precio': custom_total,
+                'categoria': categoria_personalizada
+            }
         )
+        if not created:
+            producto_custom.precio = custom_total
+            producto_custom.descripcion = desc_completa
+            producto_custom.save()
 
         DetallePedido.objects.create(
             pedido=pedido,
@@ -1373,7 +1389,23 @@ def pedido_personalizado(request):
         request.session['carrito'] = carrito
         request.session.modified = True
         
-        messages.success(request, f'✅ Plato personalizado ({base}) agregado por ${total:.2f}')
+        messages.success(request, f' Plato personalizado ({base}) agregado por ${total:.2f}')
         return redirect('ver_carrito')
     
     return render(request, 'pedido_personalizado.html')
+
+
+def resetear_productos(request):
+    try:
+        from Aplicacion.Menud.models import Producto
+        
+        # Eliminar productos personalizados
+        eliminados = Producto.objects.filter(nombre__contains="Personalizado").delete()
+        
+        # Resetear secuencia
+        with connection.cursor() as c:
+            c.execute("SELECT setval('Menud_producto_id_seq', COALESCE((SELECT MAX(id) FROM Menud_producto), 1), false);")
+        
+        return HttpResponse(f" Listo! Eliminados {eliminados[0]} productos. Secuencia reseteada.")
+    except Exception as e:
+        return HttpResponse(f"❌ Error: {e}")
