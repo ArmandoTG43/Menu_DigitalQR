@@ -426,11 +426,13 @@ def confirmar_pedido(request):
     
     mesa = get_object_or_404(Mesa, id=mesa_id)
     
+    # Obtener datos del formulario
     tipo_entrega = request.POST.get('tipo_entrega', 'local')
     direccion = request.POST.get('direccion', '')
     hora_entrega = request.POST.get('hora_entrega', '')
     instrucciones_domicilio = request.POST.get('instrucciones_domicilio', '')
     
+    # 🔥 CREAR PEDIDO
     pedido = Pedido.objects.create(
         mesa=mesa,
         es_domicilio=(tipo_entrega == 'domicilio'),
@@ -442,9 +444,12 @@ def confirmar_pedido(request):
     total = 0
     categoria_personalizada, _ = Categoria.objects.get_or_create(nombre="Personalizados")
     
+    # 🔥 RECORRER EL CARRITO
     for key, item in carrito.items():
+        print(f"🔍 Procesando item: {key} -> {item}")
+        
         if item.get('es_personalizado'):
-            # 🔥 Crear producto personalizado
+            # 🔥 PLATO PERSONALIZADO
             producto, created = Producto.objects.get_or_create(
                 nombre=item.get('nombre', 'Plato Personalizado'),
                 defaults={
@@ -460,66 +465,42 @@ def confirmar_pedido(request):
                 cantidad=item.get('cantidad', 1)
             )
             
-            total += item.get('precio', 0) * item.get('cantidad', 1)
+            total += float(item.get('precio', 0)) * int(item.get('cantidad', 1))
             
         else:
+            # 🔥 PRODUCTO NORMAL
             try:
-                # 🔥 AHORA key es un número
                 producto = Producto.objects.get(id=int(key))
-                cantidad = item.get('cantidad', 1)
+                cantidad = int(item.get('cantidad', 1))
                 
                 DetallePedido.objects.create(
                     pedido=pedido,
                     producto=producto,
                     cantidad=cantidad
                 )
-                total += producto.precio * cantidad
+                total += float(producto.precio) * cantidad
             except Producto.DoesNotExist:
+                print(f"⚠️ Producto no encontrado: {key}")
                 continue
-            except ValueError:
+            except Exception as e:
+                print(f"⚠️ Error: {e}")
                 continue
     
+    # 🔥 ACTUALIZAR TOTAL
     pedido.total = total
     pedido.save()
     
+    # 🔥 VERIFICAR QUE SE GUARDARON PRODUCTOS
+    print(f"✅ Pedido #{pedido.id} creado con {pedido.detallepedido_set.count()} productos, Total: ${total}")
+    for d in pedido.detallepedido_set.all():
+        print(f"   - {d.producto.nombre} x{d.cantidad}")
+    
+    # Limpiar carrito
     request.session['carrito'] = {}
     request.session['pedido_id'] = pedido.id
     
     messages.success(request, f'✅ Pedido #{pedido.id} confirmado por ${total:.2f}')
     return redirect('crear_pago', pedido_id=pedido.id)
-
-@cliente_required
-def agregar_carrito(request, producto_id):
-    carrito = request.session.get('carrito', {})
-    producto = Producto.objects.get(id=producto_id)
-    
-    if str(producto_id) in carrito:
-        carrito[str(producto_id)]['cantidad'] += 1
-    else:
-        carrito[str(producto_id)] = {
-            'id': producto.id,
-            'nombre': producto.nombre,
-            'descripcion': producto.descripcion,
-            'precio': float(producto.precio),
-            'cantidad': 1,
-            'imagen': producto.imagen.url if producto.imagen else ''
-        }
-    
-    request.session['carrito'] = carrito
-    
-    # Si es petición AJAX, devolver JSON
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        total_items = sum(item['cantidad'] for item in carrito.values())
-        return JsonResponse({
-            'success': True,
-            'mensaje': f'{producto.nombre} agregado al carrito',
-            'count': total_items
-        })
-    
-    # Si no, redirigir normalmente
-    messages.success(request, f' {producto.nombre} agregado al carrito')
-    return redirect('menu')
-
 @cliente_required
 def ver_carrito(request):
     carrito = request.session.get('carrito', {})
@@ -571,10 +552,15 @@ def restar_carrito(request, producto_id):
 @cliente_required
 def crear_pago(request, pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
-    # Solo mostramos la pantalla de pago (sin Stripe)
+    
+    # 🔥 VERIFICAR QUE EL PEDIDO TENGA PRODUCTOS
+    if pedido.detallepedido_set.count() == 0:
+        messages.error(request, 'El pedido no tiene productos. Por favor, intenta de nuevo.')
+        return redirect('ver_carrito')
+    
     return render(request, 'pago.html', {
         'pedido': pedido,
-        'metodos': Pago.METODOS  # para mostrar opciones en el template
+        'metodos': Pago.METODOS
     })
 
 @cliente_required
@@ -1005,7 +991,7 @@ def pedido_personalizado(request):
         salsas = request.POST.getlist('salsas_personalizado')
         instrucciones = request.POST.get('instrucciones_personalizado', '')
         
-        # Calcular precio
+        # Precios
         precios_base = {
             'Pollo': 6.00,
             'Carne': 7.00,
@@ -1022,23 +1008,27 @@ def pedido_personalizado(request):
         
         carrito = request.session.get('carrito', {})
         
-        # 🔥 CREAR UN ID NUMÉRICO (más grande para no chocar con productos reales)
-        # Buscar el ID más alto y sumarle 1000
+        # 🔥 ID NUMÉRICO PARA EVITAR CONFLICTOS
         max_id = 0
         for key in carrito.keys():
-            if str(key).isdigit():
-                max_id = max(max_id, int(key))
+            try:
+                if int(key) > max_id:
+                    max_id = int(key)
+            except:
+                pass
         nuevo_id = max_id + 1000
         
         carrito[str(nuevo_id)] = {
-            'id': nuevo_id,  #  AHORA ES UN NÚMERO
-            'nombre': f" {base} Personalizado",
-            'descripcion': f"Base: {base}, Acomp: {', '.join(acompanamientos)}, Salsas: {', '.join(salsas)}",
+            'nombre': f"{base} Personalizado",
+            'descripcion': f"Base: {base} | Acompañamientos: {', '.join(acompanamientos) if acompanamientos else 'Ninguno'} | Salsas: {', '.join(salsas) if salsas else 'Ninguna'} | Instrucciones: {instrucciones if instrucciones else 'Ninguna'}",
             'precio': float(total),
             'cantidad': 1,
             'imagen': '',
             'es_personalizado': True,
-            'instrucciones': instrucciones
+            'instrucciones': instrucciones,
+            'base': base,
+            'acompanamientos': acompanamientos,
+            'salsas': salsas
         }
         
         request.session['carrito'] = carrito
