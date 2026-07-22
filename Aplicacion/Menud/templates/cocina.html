@@ -78,19 +78,10 @@ body {
     margin-right: 10px;
 }
 
-.historial-title {
-    margin-top: 50px;
-    font-size: 24px;
-    border-top: 2px solid rgba(231, 110, 5, 0.5);
-    padding-top: 30px;
-}
-
 .grid-cocina {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 20px;
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
 }
 
 .grid-historial {
@@ -98,8 +89,6 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 20px;
     margin-top: 20px;
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
 }
 
 .card {
@@ -110,14 +99,67 @@ body {
     animation: fadeIn 0.5s;
     border: 1px solid rgba(255,255,255,0.2);
     transition: 0.3s;
-    border: 1px solid #cbd5e1;
 }
 
 .card:hover {
     transform: translateY(-3px);
     background: rgba(255,255,255,0.18);
-    border: 1px solid #cbd5e1;
+}
 
+.card .badge-entrega {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.badge-local {
+    background: #22c55e;
+    color: white;
+}
+
+.badge-domicilio {
+    background: #3b82f6;
+    color: white;
+}
+
+.card .domicilio-info {
+    background: rgba(59,130,246,0.15);
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 13px;
+    border-left: 3px solid #3b82f6;
+}
+
+.card .domicilio-info i {
+    color: #3b82f6;
+    width: 20px;
+}
+
+.card .personalizado-info {
+    background: rgba(139,92,246,0.15);
+    border-radius: 10px;
+    padding: 10px;
+    margin: 10px 0;
+    font-size: 13px;
+    border-left: 3px solid #8b5cf6;
+}
+
+.card .personalizado-info i {
+    color: #8b5cf6;
+    width: 20px;
+}
+
+.card .total-pedido {
+    font-size: 18px;
+    font-weight: bold;
+    color: #f59e0b;
+    margin-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 10px;
 }
 
 .card-historial {
@@ -127,12 +169,10 @@ body {
     border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.15);
     transition: 0.3s;
-    border: 1px solid #cbd5e1;
 }
 
 .card-historial:hover {
     background: rgba(255,255,255,0.12);
-    border: 1px solid #cbd5e1;
 }
 
 .card-historial .mesa-titulo {
@@ -295,28 +335,13 @@ body {
     background: rgba(255,255,255,0.05);
     padding: 15px 20px;
     border-radius: 12px;
-    border: 1px solid #cbd5e1;
-}
-
-.filtro-historial input[type="date"] {
-    min-width: 180px;
-    flex-shrink: 1;
-}
-
-.filtro-historial .btn {
-    flex-shrink: 0;
-}
-
-@media (max-width: 700px) {
-    .filtro-historial {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
+    border: 1px solid rgba(255,255,255,0.15);
 }
 
 .filtro-historial label {
     font-weight: bold;
     color: #e76e05;
+    white-space: nowrap;
 }
 
 .filtro-historial input[type="date"] {
@@ -336,6 +361,14 @@ body {
 
 .filtro-historial .btn {
     margin-top: 0;
+    flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+    .filtro-historial {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 }
 
 .notificacion {
@@ -468,9 +501,6 @@ async function cargarPedidos() {
         
         console.log("Pedidos activos:", pedidosActivos.length);
 
-        // ============================
-        // VERIFICAR SI ES ADMIN
-        // ============================
         const esAdmin = "{{ user.rol }}" === "admin";
 
         // ====================
@@ -489,16 +519,52 @@ async function cargarPedidos() {
                 let productosHtml = "";
                 if (p.productos && p.productos.length > 0) {
                     p.productos.forEach(d => {
-                        productosHtml += `<p><i class="fa-solid fa-utensils"></i> ${d.nombre} <strong>x${d.cantidad}</strong></p>`;
+                        const esPersonalizado = d.nombre && d.nombre.includes('Personalizado');
+                        productosHtml += `
+                            <p>
+                                <i class="fa-solid fa-utensils"></i> ${d.nombre} 
+                                <strong>x${d.cantidad}</strong>
+                                ${esPersonalizado ? '<span style="color:#8b5cf6;font-size:11px;"> 🧑‍🍳 Personalizado</span>' : ''}
+                            </p>
+                        `;
                     });
                 } else {
                     productosHtml = `<p><i class="fa-solid fa-exclamation-triangle"></i> Sin productos</p>`;
                 }
 
                 let estadoTexto = "";
-                if (p.estado === "pendiente") estadoTexto = " Pendiente";
-                else if (p.estado === "en_preparacion") estadoTexto = " En Preparación";
-                else if (p.estado === "listo") estadoTexto = " Listo";
+                if (p.estado === "pendiente") estadoTexto = "🕐 Pendiente";
+                else if (p.estado === "en_preparacion") estadoTexto = "🔪 En Preparación";
+                else if (p.estado === "listo") estadoTexto = "✅ Listo";
+
+                // 🔥 Información de domicilio
+                let domicilioHtml = "";
+                if (p.es_domicilio) {
+                    domicilioHtml = `
+                        <div class="domicilio-info">
+                            <div><i class="fa-solid fa-truck-fast"></i> <strong>🚚 Domicilio</strong></div>
+                            ${p.direccion_entrega ? `<div><i class="fa-solid fa-location-dot"></i> ${p.direccion_entrega}</div>` : ''}
+                            ${p.hora_entrega ? `<div><i class="fa-solid fa-clock"></i> Hora: ${p.hora_entrega}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    domicilioHtml = `
+                        <div class="domicilio-info" style="border-left-color:#22c55e;background:rgba(34,197,94,0.1);">
+                            <div><i class="fa-solid fa-chair" style="color:#22c55e;"></i> <strong style="color:#22c55e;">🪑 Consumir en local</strong></div>
+                        </div>
+                    `;
+                }
+
+                // 🔥 Información de personalizado
+                let personalizadoHtml = "";
+                if (p.es_personalizado) {
+                    personalizadoHtml = `
+                        <div class="personalizado-info">
+                            <div><i class="fa-solid fa-pen-ruler"></i> <strong>🧑‍🍳 Plato Personalizado</strong></div>
+                            ${p.instrucciones_adicionales ? `<div><i class="fa-solid fa-comment"></i> ${p.instrucciones_adicionales}</div>` : ''}
+                        </div>
+                    `;
+                }
 
                 let boton = "";
                 if (!esAdmin) {
@@ -517,14 +583,22 @@ async function cargarPedidos() {
                         <div class="mesa-badge">
                             <i class="fa-solid fa-chair"></i> Mesa ${p.mesa}
                         </div>
+                        <span class="badge-entrega ${p.es_domicilio ? 'badge-domicilio' : 'badge-local'}">
+                            ${p.es_domicilio ? '🚚 Domicilio' : '🪑 Local'}
+                        </span>
                         <div class="estado ${p.estado}">
                             ${estadoTexto}
                         </div>
+                        ${domicilioHtml}
+                        ${personalizadoHtml}
                         <div class="productos-lista">
                             ${productosHtml}
                         </div>
                         <div style="margin-top:10px;font-size:12px;color:#9ca3af;">
                             <i class="fa-solid fa-clock"></i> ${p.fecha_hora}
+                        </div>
+                        <div class="total-pedido">
+                            <i class="fa-solid fa-dollar-sign"></i> Total: $${p.total}
                         </div>
                         ${boton}
                     </div>
@@ -556,7 +630,6 @@ async function cargarHistorial(fecha) {
     const historialGrid = document.getElementById("historial-grid");
     if (!historialGrid) return;
     
-    // Mostrar estado de carga
     historialGrid.innerHTML = `
         <div class="sin-pedidos">
             <i class="fa-solid fa-spinner fa-spin"></i><br>
@@ -586,7 +659,6 @@ async function cargarHistorial(fecha) {
             return;
         }
         
-        // Renderizar tablas por mesa
         historialGrid.innerHTML = "";
         data.forEach(mesaData => {
             const { mesa, productos, total_mesa } = mesaData;
@@ -652,11 +724,9 @@ async function cargarHistorial(fecha) {
 // ============================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Cargar pedidos activos al inicio
     cargarPedidos();
     setInterval(cargarPedidos, 5000);
     
-    // Botón Cargar Historial
     document.getElementById('btnCargarHistorial').addEventListener('click', function() {
         const fecha = document.getElementById('fechaHistorial').value;
         if (!fecha) {
@@ -666,7 +736,6 @@ document.addEventListener('DOMContentLoaded', function() {
         cargarHistorial(fecha);
     });
     
-    // Botón Limpiar Historial
     document.getElementById('btnLimpiarHistorial').addEventListener('click', function() {
         const historialGrid = document.getElementById('historial-grid');
         historialGrid.innerHTML = `
@@ -678,7 +747,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('fechaHistorial').value = '';
     });
     
-    // Permitir Enter en el campo fecha
     document.getElementById('fechaHistorial').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             document.getElementById('btnCargarHistorial').click();

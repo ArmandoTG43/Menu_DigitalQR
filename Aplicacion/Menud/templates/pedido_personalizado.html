@@ -12,37 +12,39 @@
     <div class="personalizado-card">
         <p class="subtitle">Crea tu plato a tu gusto y nosotros lo preparamos</p>
         
-        <form method="post">
+        <form method="POST" action="{% url 'pedido_personalizado' %}">
             {% csrf_token %}
             
             <div class="form-group">
-                <label for="base">🥩 Base / Proteína</label>
-                <select name="base" id="base" class="form-control">
-                    <option value="Pollo">Pollo a la plancha</option>
-                    <option value="Carne">Carne de res</option>
-                    <option value="Cerdo">Cerdo</option>
-                    <option value="Pescado">Pescado</option>
-                    <option value="Vegetariano">Vegetariano (sin carne)</option>
-                    <option value="Otro">Otro (especificar en observaciones)</option>
+                <label for="base_personalizado">🥩 Base / Proteína</label>
+                <select name="base_personalizado" id="base_personalizado" class="form-control" required>
+                    <option value="">Selecciona una base</option>
+                    <option value="Pollo">Pollo a la plancha - $6.00</option>
+                    <option value="Carne">Carne de res - $7.00</option>
+                    <option value="Cerdo">Cerdo - $6.50</option>
+                    <option value="Pescado">Pescado - $8.00</option>
+                    <option value="Vegetariano">Vegetariano (sin carne) - $5.00</option>
+                    <option value="Mixto">Mixto (pollo y carne) - $8.50</option>
                 </select>
             </div>
             
             <div class="form-group">
-                <label for="acompañamientos">🥗 Acompañamientos</label>
-                <select name="acompañamientos" id="acompañamientos" class="form-control" multiple>
+                <label for="acompanamientos">🥗 Acompañamientos (+$2.00 c/u)</label>
+                <select name="acompanamientos" id="acompanamientos" class="form-control" multiple>
                     <option value="Papas fritas">Papas fritas</option>
                     <option value="Arroz">Arroz</option>
                     <option value="Ensalada">Ensalada fresca</option>
                     <option value="Vegetales salteados">Vegetales salteados</option>
                     <option value="Puré de papas">Puré de papas</option>
                     <option value="Frijoles">Frijoles</option>
+                    <option value="Yuca frita">Yuca frita</option>
                 </select>
                 <small>Mantén presionado Ctrl para seleccionar múltiples opciones</small>
             </div>
             
             <div class="form-group">
-                <label for="salsas">🥫 Salsas</label>
-                <select name="salsas" id="salsas" class="form-control" multiple>
+                <label for="salsas_personalizado">🥫 Salsas (+$1.00 c/u)</label>
+                <select name="salsas_personalizado" id="salsas_personalizado" class="form-control" multiple>
                     <option value="Salsa de tomate">Salsa de tomate</option>
                     <option value="Salsa picante">Salsa picante</option>
                     <option value="Mayonesa">Mayonesa</option>
@@ -54,14 +56,14 @@
             </div>
             
             <div class="form-group">
-                <label for="instrucciones">📝 Instrucciones especiales</label>
-                <textarea name="instrucciones" id="instrucciones" class="form-control" rows="4" 
-                          placeholder="Ej: Sin sal, bien cocido, sin cebolla, etc."></textarea>
+                <label for="instrucciones_personalizado">📝 Instrucciones especiales</label>
+                <textarea name="instrucciones_personalizado" id="instrucciones_personalizado" class="form-control" 
+                          rows="3" placeholder="Ej: Sin sal, bien cocido, sin cebolla, extra picante..."></textarea>
             </div>
             
             <div class="form-actions">
                 <button type="submit" class="btn-personalizado">
-                    <i class="fa-solid fa-check"></i> Confirmar Pedido Personalizado
+                    <i class="fa-solid fa-check"></i> Agregar al Carrito
                 </button>
                 <a href="{% url 'ver_carrito' %}" class="btn-cancelar">
                     <i class="fa-solid fa-arrow-left"></i> Volver al Carrito
@@ -151,9 +153,8 @@
     background: #1a1a2e;
 }
 
-textarea.form-control {
-    resize: vertical;
-    min-height: 100px;
+select[multiple].form-control {
+    min-height: 120px;
 }
 
 small {
@@ -161,6 +162,11 @@ small {
     color: #9ca3af;
     font-size: 12px;
     margin-top: 4px;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
 }
 
 .form-actions {
