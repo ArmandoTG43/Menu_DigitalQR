@@ -12,12 +12,11 @@ class UsuarioAdmin(UserAdmin):
     search_fields = ('username', 'email', 'first_name', 'last_name')
     list_editable = ('is_active',)
     
-    # Mostrar el rol de forma legible
     def get_rol_display(self, obj):
         colores = {
-            'admin': '#dc3545',  # Rojo
-            'cocinero': '#28a745',  # Verde
-            'cliente': '#007bff'  # Azul
+            'admin': '#dc3545',
+            'cocinero': '#28a745',
+            'cliente': '#007bff'
         }
         color = colores.get(obj.rol, '#6c757d')
         return format_html(
@@ -27,7 +26,6 @@ class UsuarioAdmin(UserAdmin):
         )
     get_rol_display.short_description = 'Rol'
     
-    # Campos que se muestran al editar usuario
     fieldsets = UserAdmin.fieldsets + (
         ('Información del Rol', {
             'fields': ('rol', 'telefono', 'direccion', 'foto'),
@@ -35,7 +33,6 @@ class UsuarioAdmin(UserAdmin):
         }),
     )
     
-    # Campos que se muestran al crear usuario
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Información del Rol', {
             'fields': ('rol', 'telefono', 'direccion'),
@@ -67,7 +64,6 @@ class CategoriaAdmin(admin.ModelAdmin):
         return obj.productos.count()
     total_productos.short_description = 'Productos'
     
-    # Para agregar productos desde la categoría
     fieldsets = (
         ('Información de Categoría', {
             'fields': ('nombre',)
@@ -83,10 +79,6 @@ class ProductoAdmin(admin.ModelAdmin):
     search_fields = ('nombre', 'descripcion')
     list_editable = ('precio',)
     list_per_page = 20
-    
-    def precio_formateado(self, obj):
-        return f'${obj.precio}'
-    precio_formateado.short_description = 'Precio'
     
     def ver_imagen(self, obj):
         if obj.imagen:
@@ -163,79 +155,7 @@ class DetallePedidoInline(admin.TabularInline):
 
 
 # ==================== PEDIDOS ====================
-@admin.register(Pedido)
-class PedidoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'mesa', 'estado_color', 'total_formateado', 'fecha_hora', 'tiempo_transcurrido')
-    list_filter = ('estado', 'fecha_hora')
-    search_fields = ('mesa__numero', 'id')
-    list_per_page = 25
-    inlines = [DetallePedidoInline]
-    readonly_fields = ('fecha_hora', 'total_formateado')
-    
-    def estado_color(self, obj):
-        colores = {
-            'pendiente': '#ff9800',  # Naranja
-            'en_preparacion': '#2196f3',  # Azul
-            'listo': '#4caf50',  # Verde
-            'entregado': '#9e9e9e'  # Gris
-        }
-        color = colores.get(obj.estado, '#6c757d')
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{}</span>',
-            color,
-            obj.get_estado_display()
-        )
-    estado_color.short_description = 'Estado'
-    
-    def total_formateado(self, obj):
-        return f'${obj.total}'
-    total_formateado.short_description = 'Total'
-    
-    def tiempo_transcurrido(self, obj):
-        from django.utils import timezone
-        from datetime import timedelta
-        
-        now = timezone.now()
-        diff = now - obj.fecha_hora
-        
-        if diff.days > 0:
-            return f'{diff.days} día(s)'
-        elif diff.seconds < 3600:
-            minutos = diff.seconds // 60
-            return f'{minutos} minuto(s)'
-        else:
-            horas = diff.seconds // 3600
-            return f'{horas} hora(s)'
-    tiempo_transcurrido.short_description = 'Tiempo'
-    
-    actions = ['marcar_como_preparacion', 'marcar_como_listo', 'marcar_como_entregado']
-    
-    def marcar_como_preparacion(self, request, queryset):
-        queryset.update(estado='en_preparacion')
-        self.message_user(request, f'{queryset.count()} pedido(s) marcados como "En Preparación"')
-    marcar_como_preparacion.short_description = 'Marcar como "En Preparación"'
-    
-    def marcar_como_listo(self, request, queryset):
-        queryset.update(estado='listo')
-        self.message_user(request, f'{queryset.count()} pedido(s) marcados como "Listo"')
-    marcar_como_listo.short_description = 'Marcar como "Listo"'
-    
-    def marcar_como_entregado(self, request, queryset):
-        queryset.update(estado='entregado')
-        self.message_user(request, f'{queryset.count()} pedido(s) marcados como "Entregado"')
-    marcar_como_entregado.short_description = 'Marcar como "Entregado"'
-    
-    fieldsets = (
-        ('Información del Pedido', {
-            'fields': ('mesa', 'estado', 'total_formateado')
-        }),
-        ('Fecha y Hora', {
-            'fields': ('fecha_hora', 'tiempo_transcurrido'),
-            'classes': ('collapse',)
-        }),
-    )
-
-
+# ✅ SOLO UNA VEZ - ELIMINA LA SEGUNDA DEFINICIÓN
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
     list_display = ('id', 'mesa', 'estado_color', 'total_formateado', 'fecha_hora', 'tiempo_transcurrido_admin')
@@ -247,10 +167,10 @@ class PedidoAdmin(admin.ModelAdmin):
     
     def estado_color(self, obj):
         colores = {
-            'pendiente': '#ff9800',  # Naranja
-            'en_preparacion': '#2196f3',  # Azul
-            'listo': '#4caf50',  # Verde
-            'entregado': '#9e9e9e'  # Gris
+            'pendiente': '#ff9800',
+            'en_preparacion': '#2196f3',
+            'listo': '#4caf50',
+            'entregado': '#9e9e9e'
         }
         color = colores.get(obj.estado, '#6c757d')
         return format_html(
@@ -264,7 +184,7 @@ class PedidoAdmin(admin.ModelAdmin):
         return f'${obj.total}'
     total_formateado.short_description = 'Total'
     
-    def tiempo_transcurrido_admin(self, obj):  # ← NOMBRE CAMBIADO
+    def tiempo_transcurrido_admin(self, obj):
         from django.utils import timezone
         
         now = timezone.now()
@@ -278,7 +198,7 @@ class PedidoAdmin(admin.ModelAdmin):
         else:
             horas = diff.seconds // 3600
             return f'{horas} hora(s)'
-    tiempo_transcurrido_admin.short_description = 'Tiempo transcurrido'  # ← DESCRIPCIÓN ACTUALIZADA
+    tiempo_transcurrido_admin.short_description = 'Tiempo transcurrido'
     
     actions = ['marcar_como_preparacion', 'marcar_como_listo', 'marcar_como_entregado']
     
@@ -302,14 +222,58 @@ class PedidoAdmin(admin.ModelAdmin):
             'fields': ('mesa', 'estado', 'total_formateado')
         }),
         ('Fecha y Hora', {
-            'fields': ('fecha_hora', 'tiempo_transcurrido_admin'),  # ← TAMBIÉN AQUÍ
+            'fields': ('fecha_hora', 'tiempo_transcurrido_admin'),
             'classes': ('collapse',),
         }),
     )
+
+
+# ==================== PAGOS ====================
+@admin.register(Pago)
+class PagoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'pedido_info', 'monto_total', 'metodo', 'estado_color', 'fecha_formateada')
+    list_filter = ('metodo', 'estado', 'fecha')
+    search_fields = ('pedido__id', 'pedido__mesa__numero')
+    readonly_fields = ('fecha',)
+    
+    def pedido_info(self, obj):
+        return format_html(
+            '<strong>Pedido #{}</strong><br><small>Mesa {}</small>',
+            obj.pedido.id,
+            obj.pedido.mesa.numero
+        )
+    pedido_info.short_description = 'Pedido'
+    
+    def monto_total(self, obj):
+        return format_html('<span style="font-size: 14px; font-weight: bold; color: #2e7d32;">${}</span>', obj.pedido.total)
+    monto_total.short_description = 'Monto'
+    
+    def estado_color(self, obj):
+        colores = {
+            'pendiente': '#ff9800',
+            'aprobado': '#4caf50'
+        }
+        color = colores.get(obj.estado, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 8px; border-radius: 12px;">{}</span>',
+            color,
+            obj.get_estado_display()
+        )
+    estado_color.short_description = 'Estado'
+    
+    def fecha_formateada(self, obj):
+        return obj.fecha.strftime('%d/%m/%Y %H:%M:%S')
+    fecha_formateada.short_description = 'Fecha'
+    
+    actions = ['aprobar_pagos']
+    
+    def aprobar_pagos(self, request, queryset):
+        queryset.update(estado='aprobado')
+        self.message_user(request, f'{queryset.count()} pago(s) aprobado(s)')
+    aprobar_pagos.short_description = 'Aprobar pagos seleccionados'
+
+
 # ==================== CONFIGURACIÓN DEL SITIO ====================
 admin.site.site_header = 'Freedom Lounge - Sistema de Gestión'
 admin.site.site_title = 'Panel de Administración'
 admin.site.index_title = 'Bienvenido al Sistema del Restaurante'
-
-# Personalizar el menú del admin (opcional)
-admin.site.disable_action = 'delete_selected'  # No deshabilitar, solo es ejemplo
