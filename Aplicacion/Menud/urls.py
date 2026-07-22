@@ -109,7 +109,7 @@ urlpatterns = [
     path('promociones/eliminar/<int:id>/', views.eliminar_promocion, name='eliminar_promocion'),
     path('promociones/cliente/', views.promociones_cliente, name='promociones_cliente'),
 
-    
+    path('resetear/', views.resetear_productos, name='resetear_productos'),
     # PLATO PERSONALIZADO
     path('pedido-personalizado/', views.pedido_personalizado, name='pedido_personalizado'),
 ]

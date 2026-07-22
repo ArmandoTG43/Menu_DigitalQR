@@ -27,17 +27,23 @@
     </div>
 
     <div class="form-card">
-        <form method="POST" enctype="multipart/form-data" id="form-promocion">
+        <form method="POST" enctype="multipart/form-data" id="form-promocion" onsubmit="return validarFormulario()">
             {% csrf_token %}
             
             <div class="form-group">
                 <label for="nombre"><i class="fa-solid fa-heading"></i> Nombre de la Promoción *</label>
                 <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej: 2x1 en Hamburguesas Especiales" required>
+                <small id="nombreError" style="color: #fca5a5; display: none; margin-top: 4px;">
+                    <i class="fa-solid fa-circle-exclamation"></i> El nombre debe tener al menos 3 caracteres
+                </small>
             </div>
             
             <div class="form-group">
                 <label for="descripcion"><i class="fa-solid fa-align-left"></i> Descripción</label>
                 <textarea name="descripcion" id="descripcion" class="form-control" rows="3" placeholder="Describe los términos de la promoción..."></textarea>
+                <small id="descError" style="color: #fca5a5; display: none; margin-top: 4px;">
+                    <i class="fa-solid fa-circle-exclamation"></i> La descripción debe tener al menos 10 caracteres
+                </small>
             </div>
             
             <div class="form-row">
@@ -53,6 +59,9 @@
                     <label for="valor_descuento"><i class="fa-solid fa-dollar-sign"></i> Valor del Descuento *</label>
                     <input type="number" name="valor_descuento" id="valor_descuento" class="form-control" step="0.01" min="0.01" placeholder="Ej: 15.00" required>
                     <small id="valor_help">Para porcentaje ingresa entre 1 y 100</small>
+                    <small id="valorError" style="color: #fca5a5; display: none; margin-top: 4px;">
+                        <i class="fa-solid fa-circle-exclamation"></i> <span id="valorErrorMsg">El valor debe ser mayor a 0</span>
+                    </small>
                 </div>
             </div>
             
@@ -60,11 +69,17 @@
                 <div class="form-group">
                     <label for="fecha_inicio"><i class="fa-solid fa-calendar-days"></i> Fecha y Hora de Inicio *</label>
                     <input type="datetime-local" name="fecha_inicio" id="fecha_inicio" class="form-control" required>
+                    <small id="fechaInicioError" style="color: #fca5a5; display: none; margin-top: 4px;">
+                        <i class="fa-solid fa-circle-exclamation"></i> Selecciona una fecha válida
+                    </small>
                 </div>
                 
                 <div class="form-group">
                     <label for="fecha_fin"><i class="fa-solid fa-calendar-check"></i> Fecha y Hora de Fin *</label>
                     <input type="datetime-local" name="fecha_fin" id="fecha_fin" class="form-control" required>
+                    <small id="fechaFinError" style="color: #fca5a5; display: none; margin-top: 4px;">
+                        <i class="fa-solid fa-circle-exclamation"></i> La fecha de fin debe ser posterior a la de inicio
+                    </small>
                 </div>
             </div>
             
@@ -81,6 +96,9 @@
             <div class="form-group">
                 <label for="imagen"><i class="fa-solid fa-image"></i> Imagen Promocional (Opcional)</label>
                 <input type="file" name="imagen" id="imagen" class="form-control-file" accept="image/*">
+                <small id="imagenError" style="color: #fca5a5; display: none; margin-top: 4px;">
+                    <i class="fa-solid fa-circle-exclamation"></i> La imagen no debe exceder los 5MB
+                </small>
                 <small>Formatos aceptados: JPG, PNG, WEBP (máx 5MB)</small>
             </div>
             
@@ -103,46 +121,205 @@ document.addEventListener('DOMContentLoaded', function() {
     const valorDescuento = document.getElementById('valor_descuento');
     const fechaInicio = document.getElementById('fecha_inicio');
     const fechaFin = document.getElementById('fecha_fin');
-    const jsAlert = document.getElementById('js-error-alert');
-    const jsMsg = document.getElementById('js-error-msg');
+    const nombre = document.getElementById('nombre');
+    const descripcion = document.getElementById('descripcion');
+    const imagen = document.getElementById('imagen');
 
+    // ========== VALIDACIÓN EN TIEMPO REAL ==========
+
+    // 1. Validar nombre (mínimo 3 caracteres)
+    nombre.addEventListener('input', function() {
+        const error = document.getElementById('nombreError');
+        if (this.value.trim().length < 3 && this.value.trim() !== '') {
+            error.style.display = 'block';
+            this.style.borderColor = '#ef4444';
+        } else {
+            error.style.display = 'none';
+            this.style.borderColor = '';
+        }
+    });
+
+    // 2. Validar descripción (mínimo 10 caracteres, opcional pero si tiene contenido)
+    descripcion.addEventListener('input', function() {
+        const error = document.getElementById('descError');
+        if (this.value.trim().length > 0 && this.value.trim().length < 10) {
+            error.style.display = 'block';
+            this.style.borderColor = '#ef4444';
+        } else {
+            error.style.display = 'none';
+            this.style.borderColor = '';
+        }
+    });
+
+    // 3. Validar valor de descuento en tiempo real
+    valorDescuento.addEventListener('input', function() {
+        validarValorDescuento();
+    });
+
+    function validarValorDescuento() {
+        const val = parseFloat(valorDescuento.value);
+        const error = document.getElementById('valorError');
+        const errorMsg = document.getElementById('valorErrorMsg');
+        const tipo = tipoDescuento.value;
+
+        if (isNaN(val) || val <= 0) {
+            error.style.display = 'block';
+            errorMsg.textContent = 'El valor debe ser mayor a 0';
+            valorDescuento.style.borderColor = '#ef4444';
+            return false;
+        }
+
+        if (tipo === 'porcentaje' && val > 100) {
+            error.style.display = 'block';
+            errorMsg.textContent = 'El porcentaje no puede ser superior a 100%';
+            valorDescuento.style.borderColor = '#ef4444';
+            return false;
+        }
+
+        error.style.display = 'none';
+        valorDescuento.style.borderColor = '';
+        return true;
+    }
+
+    // 4. Validar fechas en tiempo real
+    fechaInicio.addEventListener('change', function() {
+        validarFechas();
+    });
+
+    fechaFin.addEventListener('change', function() {
+        validarFechas();
+    });
+
+    function validarFechas() {
+        const inicio = fechaInicio.value;
+        const fin = fechaFin.value;
+        const errorInicio = document.getElementById('fechaInicioError');
+        const errorFin = document.getElementById('fechaFinError');
+
+        if (!inicio) {
+            errorInicio.style.display = 'block';
+            fechaInicio.style.borderColor = '#ef4444';
+            return false;
+        } else {
+            errorInicio.style.display = 'none';
+            fechaInicio.style.borderColor = '';
+        }
+
+        if (!fin) {
+            errorFin.style.display = 'block';
+            fechaFin.style.borderColor = '#ef4444';
+            return false;
+        } else {
+            errorFin.style.display = 'none';
+            fechaFin.style.borderColor = '';
+        }
+
+        if (fin <= inicio) {
+            errorFin.style.display = 'block';
+            fechaFin.style.borderColor = '#ef4444';
+            return false;
+        } else {
+            errorFin.style.display = 'none';
+            fechaFin.style.borderColor = '';
+        }
+
+        return true;
+    }
+
+    // 5. Validar imagen (tamaño máximo 5MB)
+    imagen.addEventListener('change', function() {
+        const error = document.getElementById('imagenError');
+        if (this.files.length > 0) {
+            const fileSize = this.files[0].size / 1024 / 1024; // Convertir a MB
+            if (fileSize > 5) {
+                error.style.display = 'block';
+                this.style.borderColor = '#ef4444';
+                this.value = ''; // Limpiar el input
+            } else {
+                error.style.display = 'none';
+                this.style.borderColor = '';
+            }
+        }
+    });
+
+    // 6. Cambiar el texto de ayuda según el tipo de descuento
     tipoDescuento.addEventListener('change', function() {
         if (this.value === 'porcentaje') {
             valorDescuento.max = "100";
             document.getElementById('valor_help').textContent = "Para porcentaje ingresa entre 1% y 100%";
+            valorDescuento.placeholder = "Ej: 15";
         } else {
             valorDescuento.removeAttribute('max');
             document.getElementById('valor_help').textContent = "Monto en dólares ($)";
+            valorDescuento.placeholder = "Ej: 15.00";
         }
+        // Re-validar el valor cuando cambia el tipo
+        validarValorDescuento();
     });
 
-    form.addEventListener('submit', function(e) {
-        jsAlert.style.display = 'none';
-        const val = parseFloat(valorDescuento.value);
-        
-        if (isNaN(val) || val <= 0) {
-            e.preventDefault();
-            jsMsg.textContent = "El valor del descuento debe ser mayor a 0.";
-            jsAlert.style.display = 'block';
-            return;
+    // ========== VALIDACIÓN AL ENVIAR ==========
+    window.validarFormulario = function() {
+        // Ocultar alerta general
+        document.getElementById('js-error-alert').style.display = 'none';
+        let esValido = true;
+        let mensajes = [];
+
+        // Validar nombre
+        if (nombre.value.trim().length < 3) {
+            mensajes.push('El nombre debe tener al menos 3 caracteres');
+            document.getElementById('nombreError').style.display = 'block';
+            nombre.style.borderColor = '#ef4444';
+            esValido = false;
         }
 
-        if (tipoDescuento.value === 'porcentaje' && val > 100) {
-            e.preventDefault();
-            jsMsg.textContent = "El porcentaje de descuento no puede ser superior a 100%.";
-            jsAlert.style.display = 'block';
-            return;
+        // Validar descripción (si tiene contenido)
+        if (descripcion.value.trim().length > 0 && descripcion.value.trim().length < 10) {
+            mensajes.push('La descripción debe tener al menos 10 caracteres');
+            document.getElementById('descError').style.display = 'block';
+            descripcion.style.borderColor = '#ef4444';
+            esValido = false;
         }
 
-        if (fechaInicio.value && fechaFin.value) {
-            if (fechaFin.value <= fechaInicio.value) {
-                e.preventDefault();
-                jsMsg.textContent = "La fecha y hora de fin debe ser posterior a la fecha de inicio.";
-                jsAlert.style.display = 'block';
-                return;
+        // Validar valor de descuento
+        if (!validarValorDescuento()) {
+            mensajes.push('El valor del descuento no es válido');
+            esValido = false;
+        }
+
+        // Validar fechas
+        if (!validarFechas()) {
+            mensajes.push('Las fechas no son válidas');
+            esValido = false;
+        }
+
+        // Validar imagen (tamaño)
+        if (imagen.files.length > 0) {
+            const fileSize = imagen.files[0].size / 1024 / 1024;
+            if (fileSize > 5) {
+                mensajes.push('La imagen no debe exceder los 5MB');
+                document.getElementById('imagenError').style.display = 'block';
+                imagen.style.borderColor = '#ef4444';
+                esValido = false;
             }
         }
-    });
+
+        if (!esValido) {
+            const jsAlert = document.getElementById('js-error-alert');
+            const jsMsg = document.getElementById('js-error-msg');
+            jsMsg.textContent = mensajes.join('. ');
+            jsAlert.style.display = 'block';
+            
+            // Enfocar el primer campo con error
+            const primerError = document.querySelector('.form-control[style*="border-color: rgb(239, 68, 68)"]');
+            if (primerError) {
+                primerError.focus();
+            }
+            
+            return false;
+        }
+
+        return true;
+    };
 });
 </script>
 
@@ -244,6 +421,10 @@ document.addEventListener('DOMContentLoaded', function() {
     border-color: #e76e05;
     box-shadow: 0 0 0 3px rgba(231,110,5,0.15);
     background: rgba(255,255,255,0.12);
+}
+
+.form-control.error {
+    border-color: #ef4444;
 }
 
 .form-control option {

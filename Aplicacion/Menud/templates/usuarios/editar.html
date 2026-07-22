@@ -15,7 +15,7 @@
         </div>
 
         <!-- FORMULARIO -->
-        <form method="post">
+        <form method="post" id="editarForm" onsubmit="return validarFormulario()">
             {% csrf_token %}
 
             <!-- ===== CAMPOS ===== -->
@@ -23,17 +23,29 @@
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-user"></i> Usuario</label>
-                    <input type="text" name="username" value="{{ usuario.username }}" required>
+                    <input type="text" id="username" name="username" value="{{ usuario.username }}" required>
+                    <small id="usernameError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
+                        <i class="fa-regular fa-circle-exclamation"></i> Solo se permiten letras y espacios
+                    </small>
                 </div>
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-envelope"></i> Correo</label>
-                    <input type="email" name="email" value="{{ usuario.email }}" required>
+                    <input type="email" id="email" name="email" value="{{ usuario.email }}" required>
+                    <small id="emailError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
+                        <i class="fa-regular fa-circle-exclamation"></i> Ingresa un correo válido
+                    </small>
                 </div>
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-lock"></i> Nueva Contraseña</label>
-                    <input type="password" name="password" placeholder="• • • • • • • • • • • •" required>
+                    <input type="password" id="password" name="password" placeholder="• • • • • • • • • • • •">
+                    <small id="passwordError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
+                        <i class="fa-regular fa-circle-exclamation"></i> Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo
+                    </small>
+                    <small style="color: #6b7280; font-size: 11px; margin-top: 3px;">
+                        <i class="fa-regular fa-info-circle"></i> Dejar vacío para mantener la contraseña actual
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -52,13 +64,104 @@
                     <i class="fa-regular fa-floppy-disk"></i> Actualizar
                 </button>
                 <a href="{% url 'lista_usuarios' %}" class="btn-cancel">
-                    <i class="fa-regular"></i> Cancelar
+                    <i class="fa-regular fa-xmark"></i> Cancelar
                 </a>
             </div>
 
         </form>
     </div>
 </div>
+
+<!-- ========== JAVASCRIPT DE VALIDACIÓN ========== -->
+<script>
+function validarFormulario() {
+    // Limpiar mensajes de error anteriores
+    document.getElementById('usernameError').style.display = 'none';
+    document.getElementById('emailError').style.display = 'none';
+    document.getElementById('passwordError').style.display = 'none';
+
+    let esValido = true;
+
+    // 1. VALIDACIÓN DE NOMBRE: solo letras y espacios
+    const username = document.getElementById('username').value.trim();
+    const soloLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
+    if (!soloLetras.test(username)) {
+        document.getElementById('usernameError').style.display = 'block';
+        esValido = false;
+    }
+
+    // 2. VALIDACIÓN DE CORREO: debe ser único (solo un correo)
+    const email = document.getElementById('email').value.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        document.getElementById('emailError').style.display = 'block';
+        esValido = false;
+    }
+
+    // 3. VALIDACIÓN DE CONTRASEÑA SEGURA (solo si se ingresó una nueva)
+    const password = document.getElementById('password').value;
+    if (password.trim() !== '') {
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-])[A-Za-z\d@$!%*?&_\-]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            document.getElementById('passwordError').style.display = 'block';
+            esValido = false;
+        }
+    }
+
+    if (!esValido) {
+        // Enfocar el primer campo con error
+        const primerError = document.querySelector('.form-group input:invalid, .form-group input:not([style*="display: none"])');
+        if (primerError) {
+            primerError.focus();
+        }
+        // Mostrar alerta de error
+        alert('Por favor, corrige los errores en el formulario.');
+        return false;
+    }
+
+    return true;
+}
+
+// Validación en tiempo real mientras el usuario escribe
+document.addEventListener('DOMContentLoaded', function() {
+    // Validar nombre mientras se escribe
+    const usernameInput = document.getElementById('username');
+    usernameInput.addEventListener('input', function() {
+        const soloLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
+        if (!soloLetras.test(this.value.trim()) && this.value.trim() !== '') {
+            document.getElementById('usernameError').style.display = 'block';
+        } else {
+            document.getElementById('usernameError').style.display = 'none';
+        }
+    });
+
+    // Validar correo mientras se escribe
+    const emailInput = document.getElementById('email');
+    emailInput.addEventListener('input', function() {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(this.value.trim()) && this.value.trim() !== '') {
+            document.getElementById('emailError').style.display = 'block';
+        } else {
+            document.getElementById('emailError').style.display = 'none';
+        }
+    });
+
+    // Validar contraseña mientras se escribe (solo si no está vacía)
+    const passwordInput = document.getElementById('password');
+    passwordInput.addEventListener('input', function() {
+        if (this.value.trim() === '') {
+            document.getElementById('passwordError').style.display = 'none';
+            return;
+        }
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-])[A-Za-z\d@$!%*?&_\-]{8,}$/;
+        if (!passwordRegex.test(this.value)) {
+            document.getElementById('passwordError').style.display = 'block';
+        } else {
+            document.getElementById('passwordError').style.display = 'none';
+        }
+    });
+});
+</script>
 
 <!-- ========== ESTILOS ========== -->
 <style>
@@ -191,6 +294,10 @@
         border-color: #6c63ff;
         background: #ffffff;
         box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.10);
+    }
+
+    .form-group input:invalid {
+        border-color: #dc2626;
     }
 
     /* ----- BOTONES ----- */

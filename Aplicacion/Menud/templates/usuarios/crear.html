@@ -16,7 +16,7 @@
         </div>
 
         <!-- FORMULARIO -->
-        <form method="post">
+        <form method="post" id="registroForm" onsubmit="return validarFormulario()">
             {% csrf_token %}
 
             <!-- ===== CAMPOS ===== -->
@@ -24,24 +24,32 @@
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-user"></i> Usuario</label>
-                    <input type="text" name="username" placeholder="Ej: juan.perez" required>
+                    <input type="text" id="username" name="username" placeholder="Ej: Juan Perez" required>
+                    <small id="usernameError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
+                        <i class="fa-regular fa-circle-exclamation"></i> Solo se permiten letras y espacios
+                    </small>
                 </div>
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-envelope"></i> Correo</label>
-                    <input type="email" name="email" placeholder="correo@ejemplo.com" required>
+                    <input type="email" id="email" name="email" placeholder="correo@ejemplo.com" required>
+                    <small id="emailError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
+                        <i class="fa-regular fa-circle-exclamation"></i> Ingresa un correo válido
+                    </small>
                 </div>
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-lock"></i> Contraseña</label>
-                    <input type="password" name="password" placeholder="• • • • • •" required>
+                    <input type="password" id="password" name="password" placeholder="• • • • • •" required>
+                    <small id="passwordError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
+                        <i class="fa-regular fa-circle-exclamation"></i> Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo
+                    </small>
                 </div>
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-badge-check"></i> Rol</label>
                     <select name="rol" required>
                         <option value="cocinero">Cocinero</option>
-                        <option value="admin">Administrador</option>
                     </select>
                 </div>
 
@@ -60,6 +68,95 @@
         </form>
     </div>
 </div>
+
+<!-- ========== JAVASCRIPT DE VALIDACIÓN ========== -->
+<script>
+function validarFormulario() {
+    // Limpiar mensajes de error anteriores
+    document.getElementById('usernameError').style.display = 'none';
+    document.getElementById('emailError').style.display = 'none';
+    document.getElementById('passwordError').style.display = 'none';
+
+    let esValido = true;
+
+    // 1. VALIDACIÓN DE NOMBRE: solo letras y espacios
+    const username = document.getElementById('username').value.trim();
+    const soloLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
+    if (!soloLetras.test(username)) {
+        document.getElementById('usernameError').style.display = 'block';
+        esValido = false;
+    }
+
+    // 2. VALIDACIÓN DE CORREO: debe ser único (solo un correo)
+    const email = document.getElementById('email').value.trim();
+    // Expresión regular para validar formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        document.getElementById('emailError').style.display = 'block';
+        esValido = false;
+    }
+
+    // 3. VALIDACIÓN DE CONTRASEÑA SEGURA
+    const password = document.getElementById('password').value;
+    // Requisitos:
+    // - Mínimo 8 caracteres
+    // - Al menos una mayúscula
+    // - Al menos una minúscula
+    // - Al menos un número
+    // - Al menos un carácter especial
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-])[A-Za-z\d@$!%*?&_\-]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        document.getElementById('passwordError').style.display = 'block';
+        esValido = false;
+    }
+
+    if (!esValido) {
+        // Enfocar el primer campo con error
+        const primerError = document.querySelector('.form-group input:invalid, .form-group input:not([style*="display: none"])');
+        if (primerError) {
+            primerError.focus();
+        }
+        // Mostrar alerta de error
+        alert('Por favor, corrige los errores en el formulario.');
+        return false;
+    }
+
+    return true;
+}
+
+// Validación en tiempo real mientras el usuario escribe
+document.addEventListener('DOMContentLoaded', function() {
+    // Validar nombre mientras se escribe
+    document.getElementById('username').addEventListener('input', function() {
+        const soloLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
+        if (!soloLetras.test(this.value.trim()) && this.value.trim() !== '') {
+            document.getElementById('usernameError').style.display = 'block';
+        } else {
+            document.getElementById('usernameError').style.display = 'none';
+        }
+    });
+
+    // Validar correo mientras se escribe
+    document.getElementById('email').addEventListener('input', function() {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(this.value.trim()) && this.value.trim() !== '') {
+            document.getElementById('emailError').style.display = 'block';
+        } else {
+            document.getElementById('emailError').style.display = 'none';
+        }
+    });
+
+    // Validar contraseña mientras se escribe
+    document.getElementById('password').addEventListener('input', function() {
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-])[A-Za-z\d@$!%*?&_\-]{8,}$/;
+        if (!passwordRegex.test(this.value) && this.value !== '') {
+            document.getElementById('passwordError').style.display = 'block';
+        } else {
+            document.getElementById('passwordError').style.display = 'none';
+        }
+    });
+});
+</script>
 
 <!-- ========== ESTILOS ========== -->
 <style>
@@ -191,6 +288,10 @@
         border-color: #6c63ff;
         background: #ffffff;
         box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.10);
+    }
+
+    .form-group input:invalid {
+        border-color: #dc2626;
     }
 
     .form-group input::placeholder {
