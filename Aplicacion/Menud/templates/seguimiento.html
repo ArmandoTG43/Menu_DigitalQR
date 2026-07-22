@@ -66,9 +66,30 @@
             <h4>Tu Pedido</h4>
         </div>
         <div class="productos-lista" id="productos-lista">
-            <div style="text-align:center;color:#9ca3af;padding:20px;">
-                <i class="fa-solid fa-spinner fa-pulse"></i> Cargando productos...
-            </div>
+            {% if pedido.detallepedido_set.all %}
+                {% for d in pedido.detallepedido_set.all %}
+                    <div class="producto-item" style="flex-direction:column;align-items:flex-start;gap:4px;padding:12px 0;">
+                        <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+                            <div class="producto-nombre">
+                                <i class="fa-solid fa-utensils"></i>
+                                <strong>{{ d.producto.nombre }}</strong>
+                            </div>
+                            <div class="producto-cantidad">x{{ d.cantidad }} — ${{ d.producto.precio }}</div>
+                        </div>
+                        {% if d.producto.descripcion %}
+                            <div style="font-size:12px;color:#cbd5e1;padding-left:28px;">{{ d.producto.descripcion }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:10px;border-top:1px solid rgba(255,255,255,0.2);font-weight:bold;font-size:16px;">
+                    <span>Total del Pedido:</span>
+                    <span style="color:#f59e0b;">${{ pedido.total }}</span>
+                </div>
+            {% else %}
+                <div style="text-align:center;color:#9ca3af;padding:20px;">
+                    <i class="fa-solid fa-spinner fa-pulse"></i> Cargando productos...
+                </div>
+            {% endif %}
         </div>
     </div>
 

@@ -365,15 +365,18 @@ def api_pedidos(request):
             })
         
         pers_data = None
-        if hasattr(p, 'personalizado'):
-            pers = p.personalizado
-            pers_data = {
-                "base": pers.base or "",
-                "acompanamientos": pers.acompañamientos or "",
-                "salsas": pers.salsas or "",
-                "instrucciones": pers.instrucciones or "",
-                "precio_extra": float(pers.precio_extra)
-            }
+        try:
+            if hasattr(p, 'personalizado') and p.personalizado:
+                pers = p.personalizado
+                pers_data = {
+                    "base": pers.base or "",
+                    "acompanamientos": pers.acompañamientos or "",
+                    "salsas": pers.salsas or "",
+                    "instrucciones": pers.instrucciones or "",
+                    "precio_extra": float(pers.precio_extra)
+                }
+        except Exception:
+            pers_data = None
 
         data.append({
             "id": p.id,
@@ -393,7 +396,7 @@ def api_pedidos(request):
 
 def api_pedido_detalle(request, pedido_id):
     """
-    API pública para que el cliente vea su pedido en tiempo real.
+    API pública para que el cliente vea su pedido en tiempo real sin fallos.
     """
     try:
         pedido = get_object_or_404(Pedido, id=pedido_id)
@@ -409,15 +412,25 @@ def api_pedido_detalle(request, pedido_id):
             })
         
         pers_data = None
-        if hasattr(pedido, 'personalizado'):
-            pers = pedido.personalizado
-            pers_data = {
-                "base": pers.base or "",
-                "acompanamientos": pers.acompañamientos or "",
-                "salsas": pers.salsas or "",
-                "instrucciones": pers.instrucciones or "",
-                "precio_extra": float(pers.precio_extra)
-            }
+        try:
+            if hasattr(pedido, 'personalizado') and pedido.personalizado:
+                pers = pedido.personalizado
+                pers_data = {
+                    "base": pers.base or "",
+                    "acompanamientos": pers.acompañamientos or "",
+                    "salsas": pers.salsas or "",
+                    "instrucciones": pers.instrucciones or "",
+                    "precio_extra": float(pers.precio_extra)
+                }
+        except Exception:
+            pers_data = None
+
+        hora_str = ""
+        if pedido.hora_entrega:
+            try:
+                hora_str = pedido.hora_entrega.strftime('%H:%M')
+            except Exception:
+                hora_str = str(pedido.hora_entrega)
 
         data = {
             "id": pedido.id,
@@ -425,17 +438,17 @@ def api_pedido_detalle(request, pedido_id):
             "estado": pedido.estado,
             "es_domicilio": pedido.es_domicilio,
             "direccion_entrega": pedido.direccion_entrega or "",
-            "hora_entrega": pedido.hora_entrega.strftime('%H:%M') if pedido.hora_entrega else "",
+            "hora_entrega": hora_str,
             "instrucciones_adicionales": pedido.instrucciones_adicionales or "",
             "es_personalizado": pedido.es_personalizado,
             "personalizado": pers_data,
             "productos": productos,
             "total": float(pedido.total),
-            "fecha_hora": pedido.fecha_hora.strftime('%Y-%m-%d %H:%M:%S')
+            "fecha_hora": pedido.fecha_hora.strftime('%Y-%m-%d %H:%M:%S') if pedido.fecha_hora else ""
         }
         return JsonResponse(data, safe=False)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': str(e)}, status=400)
 
 @admin_required
 def generar_comprobante(request, pedido_id):
@@ -452,12 +465,30 @@ def generar_comprobante(request, pedido_id):
     doc.build(contenido)
     return response
 
+def cliente_required(view_func):
+    """Decorador para vistas de clientes (QR) o usuarios autenticados"""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.session.get('cliente') or (request.user and request.user.is_authenticated):
+            return view_func(request, *args, **kwargs)
+        return redirect('login')
+    return wrapper
+
 @cliente_required
 def confirmar_pedido(request):
     carrito = request.session.get('carrito', {})
     mesa_id = request.session.get('mesa_id')
     
-    if not carrito:
+    # Si es usuario autenticado (ej. admin probando), asignar mesa por defecto si falta
+    if not mesa_id and request.user.is_authenticated:
+        mesa_obj = Mesa.objects.first()
+        if not mesa_obj:
+            mesa_obj = Mesa.objects.create(numero=1)
+        mesa_id = mesa_obj.id
+        request.session['mesa_id'] = mesa_id
+        request.session['cliente'] = True
+
+    if not carrito and not request.POST.get('base_personalizado'):
         messages.error(request, 'No hay productos en el carrito')
         return redirect('menu')
     
@@ -480,10 +511,11 @@ def confirmar_pedido(request):
         instrucciones_adicionales=instrucciones_domicilio if tipo_entrega == 'domicilio' else ''
     )
     
-    total = 0
+    total = 0.0
     categoria_personalizada, _ = Categoria.objects.get_or_create(nombre="Personalizados")
-    
     has_custom = False
+
+    # 1. Procesar items del carrito de la sesión
     for key, item in carrito.items():
         if item.get('es_personalizado'):
             has_custom = True
@@ -491,7 +523,6 @@ def confirmar_pedido(request):
             precio_item = float(item.get('precio', 0))
             desc_item = item.get('descripcion', '')
             
-            # Crear un producto único para este ítem personalizado
             producto = Producto.objects.create(
                 nombre=f"Personalizado ({nombre_base})",
                 descripcion=desc_item,
@@ -512,15 +543,8 @@ def confirmar_pedido(request):
             if not hasattr(pedido, 'personalizado'):
                 acomps = item.get('acompanamientos', [])
                 salsas_list = item.get('salsas', [])
-                if isinstance(acomps, list):
-                    acomps_str = ', '.join(acomps)
-                else:
-                    acomps_str = str(acomps)
-                    
-                if isinstance(salsas_list, list):
-                    salsas_str = ', '.join(salsas_list)
-                else:
-                    salsas_str = str(salsas_list)
+                acomps_str = ', '.join(acomps) if isinstance(acomps, list) else str(acomps)
+                salsas_str = ', '.join(salsas_list) if isinstance(salsas_list, list) else str(salsas_list)
 
                 PedidoPersonalizado.objects.create(
                     pedido=pedido,
@@ -543,15 +567,68 @@ def confirmar_pedido(request):
                 total += float(producto.precio) * cantidad
             except (Producto.DoesNotExist, ValueError):
                 continue
-            except Exception as e:
-                print(f"⚠️ Error: {e}")
-                continue
-    
+
+    # 2. Procesar plato personalizado si fue enviado desde el formulario en carrito.html
+    inline_base = request.POST.get('base_personalizado', '').strip()
+    if inline_base:
+        has_custom = True
+        inline_acomps = request.POST.getlist('acompanamientos')
+        inline_salsas = request.POST.getlist('salsas_personalizado')
+        inline_instr = request.POST.get('instrucciones_personalizado', '').strip()
+
+        precios_base = {
+            'Pollo': 6.00,
+            'Carne': 7.00,
+            'Cerdo': 6.50,
+            'Pescado': 8.00,
+            'Vegetariano': 5.00,
+            'Mixto': 8.50,
+        }
+        base_price = precios_base.get(inline_base, 5.00)
+        extra_price = (len(inline_acomps) * 2.00) + (len(inline_salsas) * 1.00)
+        custom_total = base_price + extra_price
+
+        desc_partes = [f"Base: {inline_base} (${base_price:.2f})"]
+        if inline_acomps:
+            desc_partes.append(f"Acompañamientos (+${len(inline_acomps)*2:.2f}): {', '.join(inline_acomps)}")
+        if inline_salsas:
+            desc_partes.append(f"Salsas (+${len(inline_salsas)*1:.2f}): {', '.join(inline_salsas)}")
+        if inline_instr:
+            desc_partes.append(f"Indicaciones: {inline_instr}")
+
+        desc_completa = " | ".join(desc_partes)
+
+        producto_custom = Producto.objects.create(
+            nombre=f"Personalizado ({inline_base})",
+            descripcion=desc_completa,
+            precio=custom_total,
+            categoria=categoria_personalizada
+        )
+
+        DetallePedido.objects.create(
+            pedido=pedido,
+            producto=producto_custom,
+            cantidad=1
+        )
+
+        total += custom_total
+
+        if not hasattr(pedido, 'personalizado'):
+            PedidoPersonalizado.objects.create(
+                pedido=pedido,
+                base=inline_base,
+                acompañamientos=', '.join(inline_acomps),
+                salsas=', '.join(inline_salsas),
+                instrucciones=inline_instr,
+                precio_extra=extra_price
+            )
+
     pedido.es_personalizado = has_custom
     pedido.total = round(total, 2)
     pedido.save()
     
     request.session['pedido_id'] = pedido.id
+    request.session['cliente'] = True
     
     messages.success(request, f'✅ Pedido #{pedido.id} confirmado por ${total:.2f}')
     return redirect('crear_pago', pedido_id=pedido.id)

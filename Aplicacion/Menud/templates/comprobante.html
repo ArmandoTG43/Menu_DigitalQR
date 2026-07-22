@@ -53,9 +53,11 @@
         <p><strong>Fecha:</strong> {{ pago.fecha_pago|date:"d/m/Y H:i" }}</p>
     </div>
 
-    <a href="{% url 'comprobante_pdf' pago.pedido.id %}" class="btn" target="_blank">📄 Descargar PDF</a>
-    <br><br>
-    <a href="{% url 'menu_cliente' pago.pedido.mesa.id %}" style="color: #666;">Volver al menú</a>
+    <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+        <a href="{% url 'seguimiento_pedido' pago.pedido.id %}" class="btn" style="background: linear-gradient(135deg, #e76e05, #f59e0b);">🚚 Ver Seguimiento del Pedido</a>
+        <a href="{% url 'comprobante_pdf' pago.pedido.id %}" class="btn" style="background: #4b5563;" target="_blank">📄 Descargar Comprobante PDF</a>
+        <a href="{% url 'menu_cliente' pago.pedido.mesa.id %}" style="color: #6c757d; margin-top: 10px; text-decoration: underline;">Volver al Menú Principal</a>
+    </div>
 </div>
 </body>
 </html>

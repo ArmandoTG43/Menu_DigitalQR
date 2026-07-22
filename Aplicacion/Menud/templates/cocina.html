@@ -536,15 +536,15 @@ async function cargarPedidos() {
                 }
 
                 let estadoTexto = "";
-                if (p.estado === "pendiente") estadoTexto = "🕐 Pendiente";
-                else if (p.estado === "en_preparacion") estadoTexto = "🔪 En Preparación";
-                else if (p.estado === "listo") estadoTexto = "✅ Listo";
+                if (p.estado === "pendiente") estadoTexto = " Pendiente";
+                else if (p.estado === "en_preparacion") estadoTexto = " En Preparación";
+                else if (p.estado === "listo") estadoTexto = " Listo";
 
                 let domicilioHtml = "";
                 if (p.es_domicilio) {
                     domicilioHtml = `
                         <div class="domicilio-info">
-                            <div><i class="fa-solid fa-truck-fast"></i> <strong>🚚 PEDIDO A DOMICILIO</strong></div>
+                            <div><i class="fa-solid fa-truck-fast"></i> <strong> PEDIDO A DOMICILIO</strong></div>
                             ${p.direccion_entrega ? `<div><i class="fa-solid fa-location-dot"></i> <strong>Dirección:</strong> ${p.direccion_entrega}</div>` : ''}
                             ${p.hora_entrega ? `<div><i class="fa-solid fa-clock"></i> <strong>Hora requerida:</strong> ${p.hora_entrega}</div>` : ''}
                             ${p.instrucciones_adicionales ? `<div><i class="fa-solid fa-comment"></i> <strong>Notas entrega:</strong> ${p.instrucciones_adicionales}</div>` : ''}
@@ -563,7 +563,7 @@ async function cargarPedidos() {
                     const pers = p.personalizado;
                     personalizadoHtml = `
                         <div class="personalizado-info">
-                            <div><i class="fa-solid fa-pen-ruler"></i> <strong>🧑‍🍳 Detalle del Plato Personalizado:</strong></div>
+                            <div><i class="fa-solid fa-pen-ruler"></i> <strong> Detalle del Plato Personalizado:</strong></div>
                             ${pers.base ? `<div>• <strong>Base:</strong> ${pers.base}</div>` : ''}
                             ${pers.acompanamientos ? `<div>• <strong>Acompañamientos:</strong> ${pers.acompanamientos}</div>` : ''}
                             ${pers.salsas ? `<div>• <strong>Salsas:</strong> ${pers.salsas}</div>` : ''}
@@ -573,7 +573,7 @@ async function cargarPedidos() {
                 } else if (p.es_personalizado && p.instrucciones_adicionales) {
                     personalizadoHtml = `
                         <div class="personalizado-info">
-                            <div><i class="fa-solid fa-pen-ruler"></i> <strong>🧑‍🍳 Instrucciones Especiales:</strong></div>
+                            <div><i class="fa-solid fa-pen-ruler"></i> <strong> Detalle del Plato Personalizado:</strong></div>
                             <div>${p.instrucciones_adicionales}</div>
                         </div>
                     `;
@@ -595,7 +595,7 @@ async function cargarPedidos() {
                                 <i class="fa-solid fa-receipt"></i> Pedido #${p.id}
                             </div>
                             <span class="badge-entrega ${p.es_domicilio ? 'badge-domicilio' : 'badge-local'}">
-                                ${p.es_domicilio ? '🚚 Domicilio' : `🪑 Mesa ${p.mesa}`}
+                                ${p.es_domicilio ? ' Domicilio' : ` Mesa ${p.mesa}`}
                             </span>
                         </div>
                         <div class="estado ${p.estado}">
