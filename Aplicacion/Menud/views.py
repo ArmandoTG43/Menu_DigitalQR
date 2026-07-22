@@ -501,6 +501,39 @@ def confirmar_pedido(request):
     
     messages.success(request, f'✅ Pedido #{pedido.id} confirmado por ${total:.2f}')
     return redirect('crear_pago', pedido_id=pedido.id)
+
+@cliente_required
+def agregar_carrito(request, producto_id):
+    carrito = request.session.get('carrito', {})
+    producto = Producto.objects.get(id=producto_id)
+    
+    if str(producto_id) in carrito:
+        carrito[str(producto_id)]['cantidad'] += 1
+    else:
+        carrito[str(producto_id)] = {
+            'id': producto.id,
+            'nombre': producto.nombre,
+            'descripcion': producto.descripcion,
+            'precio': float(producto.precio),
+            'cantidad': 1,
+            'imagen': producto.imagen.url if producto.imagen else ''
+        }
+    
+    request.session['carrito'] = carrito
+    
+    # Si es petición AJAX, devolver JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        total_items = sum(item['cantidad'] for item in carrito.values())
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'{producto.nombre} agregado al carrito',
+            'count': total_items
+        })
+    
+    # Si no, redirigir normalmente
+    messages.success(request, f' {producto.nombre} agregado al carrito')
+    return redirect('menu')
+
 @cliente_required
 def ver_carrito(request):
     carrito = request.session.get('carrito', {})
