@@ -366,7 +366,7 @@ def api_pedidos(request):
             productos = []
             
             # Obtener detalles del pedido
-            detalles = p.detallepedido_set.all()
+            detalles = DetallePedido.objects.filter(pedido=p)
             for d in detalles:
                 try:
                     # Verificar que el producto existe
@@ -448,7 +448,8 @@ def api_pedido_detalle(request, pedido_id):
         pedido = get_object_or_404(Pedido, id=pedido_id)
         productos = []
         
-        for d in pedido.detallepedido_set.all():
+        # ✅ CAMBIADO: usar DetallePedido.objects.filter en lugar de detallepedido_set
+        for d in DetallePedido.objects.filter(pedido=pedido):
             try:
                 if d.producto:
                     precio_unit = float(d.producto.precio) if d.producto.precio else 0
@@ -510,6 +511,8 @@ def api_pedido_detalle(request, pedido_id):
         
     except Exception as e:
         print(f"❌ Error en api_pedido_detalle: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
 
 @admin_required
