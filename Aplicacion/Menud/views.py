@@ -417,15 +417,10 @@ def confirmar_pedido(request):
     carrito = request.session.get('carrito', {})
     mesa_id = request.session.get('mesa_id')
     
-    if not carrito:
-        messages.error(request, 'No hay productos en el carrito')
+    if not carrito or not mesa_id:
         return redirect('menu')
     
-    if not mesa_id:
-        messages.error(request, 'No se identificó la mesa')
-        return redirect('login')
-    
-    mesa = get_object_or_404(Mesa, id=mesa_id)
+    # Obtener datos del formulario
     tipo_entrega = request.POST.get('tipo_entrega', 'local')
     direccion = request.POST.get('direccion', '')
     hora_entrega = request.POST.get('hora_entrega', '')
@@ -437,6 +432,8 @@ def confirmar_pedido(request):
     salsas_personalizado = request.POST.get('salsas_personalizado', '')
     instrucciones_personalizado = request.POST.get('instrucciones_personalizado', '')
     
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    
     pedido = Pedido.objects.create(
         mesa=mesa,
         es_domicilio=(tipo_entrega == 'domicilio'),
@@ -445,7 +442,10 @@ def confirmar_pedido(request):
         instrucciones_adicionales=instrucciones_domicilio if tipo_entrega == 'domicilio' else '',
         es_personalizado=es_personalizado
     )
+    
     total = 0
+    
+    # 🔥 1. Agregar productos del carrito
     for id, item in carrito.items():
         producto = Producto.objects.get(id=id)
         DetallePedido.objects.create(
@@ -455,23 +455,69 @@ def confirmar_pedido(request):
         )
         total += producto.precio * item['cantidad']
     
-    pedido.total = total
-    pedido.save()
-    
+    # 🔥 2. Si es personalizado, agregar extras con precio
     if es_personalizado:
-        from .models import PedidoPersonalizado  # Asegúrate de tener el modelo
+        precio_extra = 0
+        
+        # Precio de la base
+        precios_base = {
+            'Pollo': 6.00,
+            'Carne': 7.00,
+            'Cerdo': 6.50,
+            'Pescado': 8.00,
+            'Vegetariano': 5.00,
+            'Mixto': 8.50,
+        }
+        base_seleccionada = base_personalizado
+        if base_seleccionada in precios_base:
+            precio_extra += precios_base[base_seleccionada]
+        
+        # Precio de acompañamientos (cada uno $2.00 extra)
+        if acompanamientos:
+            acompanamientos_list = request.POST.getlist('acompanamientos')
+            precio_extra += len(acompanamientos_list) * 2.00
+        
+        # Precio de salsas (cada una $1.00 extra)
+        if salsas_personalizado:
+            salsas_list = request.POST.getlist('salsas_personalizado')
+            precio_extra += len(salsas_list) * 1.00
+        
+        # Agregar el precio extra al total
+        total += precio_extra
+        
+        # Guardar el detalle personalizado
         PedidoPersonalizado.objects.create(
             pedido=pedido,
             instrucciones=instrucciones_personalizado,
             base=base_personalizado,
             acompañamientos=acompanamientos,
-            salsas=salsas_personalizado
+            salsas=salsas_personalizado,
+            precio_extra=precio_extra  # 🔥 Guardar el precio extra
+        )
+        
+        # Agregar un item al carrito para que se vea en la cocina
+        # Crear un producto virtual "Plato Personalizado"
+        producto_personalizado, created = Producto.objects.get_or_create(
+            nombre=f"🍽️ Plato Personalizado - {base_personalizado}",
+            defaults={
+                'descripcion': f"Base: {base_personalizado}, Acompañamientos: {acompanamientos}, Salsas: {salsas_personalizado}",
+                'precio': precio_extra,
+                'categoria': Categoria.objects.first() or Categoria.objects.create(nombre="Personalizados")
+            }
+        )
+        
+        DetallePedido.objects.create(
+            pedido=pedido,
+            producto=producto_personalizado,
+            cantidad=1
         )
     
-    request.session['pedido_id'] = pedido.id
-    request.session['carrito'] = {}
+    pedido.total = total
+    pedido.save()
     
-    messages.success(request, f'¡Pedido #{pedido.id} confirmado exitosamente!')
+    request.session['carrito'] = {}
+    request.session['pedido_id'] = pedido.id
+    
     return redirect('crear_pago', pedido_id=pedido.id)
 
 @cliente_required

@@ -197,13 +197,25 @@ class Promocion(models.Model):
         
 
 class PedidoPersonalizado(models.Model):
-    """Pedido especial con instrucciones específicas"""
     pedido = models.OneToOneField(Pedido, on_delete=models.CASCADE, related_name='personalizado')
-    instrucciones = models.TextField()
+    instrucciones = models.TextField(blank=True, null=True)
     base = models.CharField(max_length=100, blank=True, null=True)
     acompañamientos = models.TextField(blank=True, null=True)
     salsas = models.TextField(blank=True, null=True)
+    precio_extra = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)  # 🔥 NUEVO
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"Pedido Personalizado #{self.pedido.id}"
+        return f"Personalizado #{self.pedido.id}"
+    
+class Extra(models.Model):
+    nombre = models.CharField(max_length=100)
+    precio = models.DecimalField(max_digits=6, decimal_places=2)
+    categoria = models.CharField(max_length=50, choices=[
+        ('base', 'Base/Proteína'),
+        ('acompañamiento', 'Acompañamiento'),
+        ('salsa', 'Salsa'),
+    ])
+
+    def __str__(self):
+        return f"{self.nombre} (${self.precio})"
