@@ -7,3 +7,6 @@ pip install -r requirements.txt
 
 python manage.py collectstatic --no-input
 python manage.py migrate
+
+# 🔥 EJECUTAR RESETEO DE BASE DE DATOS (SOLO UNA VEZ)
+python reset_db.py
