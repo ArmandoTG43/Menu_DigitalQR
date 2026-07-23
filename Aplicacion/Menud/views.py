@@ -589,7 +589,6 @@ def confirmar_pedido(request):
             precio_item = float(item.get('precio', 0))
             desc_item = item.get('descripcion', '')
             
-            # ✅ CORREGIDO: Usar get_or_create en lugar de create
             producto, created = Producto.objects.get_or_create(
                 nombre=f"Personalizado ({nombre_base})",
                 defaults={
@@ -598,7 +597,6 @@ def confirmar_pedido(request):
                     'categoria': categoria_personalizada
                 }
             )
-            # Si ya existe, actualizar precio y descripción
             if not created:
                 producto.precio = precio_item
                 producto.descripcion = desc_item
@@ -613,7 +611,6 @@ def confirmar_pedido(request):
             
             total += precio_item * cant
             
-            # Crear PedidoPersonalizado vinculado
             if not hasattr(pedido, 'personalizado'):
                 acomps = item.get('acompanamientos', [])
                 salsas_list = item.get('salsas', [])
@@ -642,7 +639,7 @@ def confirmar_pedido(request):
             except (Producto.DoesNotExist, ValueError):
                 continue
 
-    # 2. Procesar plato personalizado si fue enviado desde el formulario en carrito.html
+    # 2. Procesar plato personalizado
     inline_base = request.POST.get('base_personalizado', '').strip()
     if inline_base:
         has_custom = True
@@ -672,7 +669,6 @@ def confirmar_pedido(request):
 
         desc_completa = " | ".join(desc_partes)
 
-        # ✅ CORREGIDO: Usar get_or_create en lugar de create
         producto_custom, created = Producto.objects.get_or_create(
             nombre=f"Personalizado ({inline_base})",
             defaults={
@@ -705,16 +701,29 @@ def confirmar_pedido(request):
             )
 
     pedido.es_personalizado = has_custom
+
+    # ==========  APLICAR DESCUENTO DE PROMOCIÓN ==========
+    promocion_data = request.session.get('promocion_aplicada')
+    if promocion_data:
+        if promocion_data['tipo'] == 'porcentaje':
+            total = total * (1 - promocion_data['valor'] / 100)
+        else:
+            total = total - promocion_data['valor']
+        total = max(0, round(total, 2))
+        # Eliminar la promoción de la sesión después de aplicarla
+        del request.session['promocion_aplicada']
+    # =====================================================
+
     pedido.total = round(total, 2)
     pedido.save()
     
-    # Vaciar el carrito inmediatamente al confirmar el pedido
+    # Vaciar el carrito
     request.session['carrito'] = {}
     request.session['pedido_id'] = pedido.id
     request.session['cliente'] = True
     request.session.modified = True
     
-    messages.success(request, f'✅ Pedido #{pedido.id} confirmado por ${total:.2f}')
+    messages.success(request, f' Pedido #{pedido.id} confirmado por ${total:.2f}')
     return redirect('crear_pago', pedido_id=pedido.id)
 
 @cliente_required
@@ -803,7 +812,7 @@ def crear_pago(request, pedido_id):
     
     # Verificar si el pedido tiene productos
     if not pedido.tiene_productos():
-        messages.error(request, '❌ Este pedido no tiene productos. Por favor, agrega productos antes de pagar.')
+        messages.error(request, ' Este pedido no tiene productos. Por favor, agrega productos antes de pagar.')
         return redirect('ver_carrito')
     
     # Calcular el total actualizado
@@ -828,14 +837,14 @@ def confirmar_pago(request):
             
             # Verificar si el pedido tiene productos
             if not pedido.tiene_productos():
-                messages.error(request, '❌ No se puede pagar un pedido sin productos.')
+                messages.error(request, ' No se puede pagar un pedido sin productos.')
                 return redirect('ver_carrito')
             
             # Calcular total actualizado antes de pagar
             total = pedido.calcular_total()
             
             if total == 0:
-                messages.error(request, '❌ El total del pedido es $0.00. No se puede procesar el pago.')
+                messages.error(request, ' El total del pedido es $0.00. No se puede procesar el pago.')
                 return redirect('ver_carrito')
             
             # Crear o actualizar el pago
@@ -853,15 +862,15 @@ def confirmar_pago(request):
             request.session['carrito'] = {}
             request.session.modified = True
             
-            messages.success(request, f'✅ Pago de ${total:.2f} verificado exitosamente.')
+            messages.success(request, f' Pago de ${total:.2f} verificado exitosamente.')
             return redirect('comprobante_pago', pago_id=pago.id)
             
         except Exception as e:
-            print(f"❌ Error en confirmar_pago: {e}")
+            print(f" Error en confirmar_pago: {e}")
             import traceback
             traceback.print_exc()
             
-            messages.error(request, f'❌ Error al procesar el pago: {str(e)}')
+            messages.error(request, f' Error al procesar el pago: {str(e)}')
             return redirect('ver_carrito')
     
     return redirect('ver_carrito')
@@ -1201,6 +1210,8 @@ def crear_promocion(request):
         fecha_inicio_raw = request.POST.get('fecha_inicio', '')
         fecha_fin_raw = request.POST.get('fecha_fin', '')
         productos_ids = request.POST.getlist('productos')
+        #  AGREGAR ESTO
+        activo = request.POST.get('activo') == 'on'  # Si viene del checkbox
 
         if not nombre:
             messages.error(request, "El nombre de la promoción es obligatorio.")
@@ -1226,6 +1237,7 @@ def crear_promocion(request):
             messages.error(request, "La fecha de fin debe ser posterior a la fecha de inicio.")
             return render(request, 'promociones/crear.html', {'productos': productos})
 
+        #  CREAR CON activo=True
         promocion = Promocion.objects.create(
             nombre=nombre,
             descripcion=descripcion,
@@ -1233,14 +1245,15 @@ def crear_promocion(request):
             valor_descuento=valor_descuento,
             fecha_inicio=fecha_inicio_raw,
             fecha_fin=fecha_fin_raw,
-            activo=True
+            activo=True  # 👈 ESTO ES LO QUE FALTA
         )
+        
         if 'imagen' in request.FILES:
             promocion.imagen = request.FILES['imagen']
             promocion.save()
 
         promocion.productos.set(productos_ids)
-        messages.success(request, '✅ Promoción creada exitosamente.')
+        messages.success(request, ' Promoción creada exitosamente.')
         return redirect('lista_promociones')
     
     return render(request, 'promociones/crear.html', {'productos': productos})
@@ -1258,6 +1271,8 @@ def editar_promocion(request, id):
         fecha_inicio_raw = request.POST.get('fecha_inicio', '')
         fecha_fin_raw = request.POST.get('fecha_fin', '')
         productos_ids = request.POST.getlist('productos')
+        # ESTO YA ESTÁ BIEN, PERO VERIFICA:
+        activo = request.POST.get('activo') == 'on'  # True si está marcado
 
         if not nombre:
             messages.error(request, "El nombre de la promoción es obligatorio.")
@@ -1289,7 +1304,7 @@ def editar_promocion(request, id):
         promocion.valor_descuento = valor_descuento
         promocion.fecha_inicio = fecha_inicio_raw
         promocion.fecha_fin = fecha_fin_raw
-        promocion.activo = (request.POST.get('activo') == 'on')
+        promocion.activo = activo 
 
         if 'imagen' in request.FILES:
             promocion.imagen = request.FILES['imagen']
@@ -1297,19 +1312,18 @@ def editar_promocion(request, id):
         promocion.productos.set(productos_ids)
         promocion.save()
         
-        messages.success(request, '✅ Promoción actualizada correctamente.')
+        messages.success(request, ' Promoción actualizada correctamente.')
         return redirect('lista_promociones')
     
     return render(request, 'promociones/editar.html', {
         'promocion': promocion,
         'productos': productos
     })
-
 @admin_required
 def eliminar_promocion(request, id):
     promocion = get_object_or_404(Promocion, id=id)
     promocion.delete()
-    messages.success(request, '✅ Promoción eliminada.')
+    messages.success(request, ' Promoción eliminada.')
     return redirect('lista_promociones')
 
 
@@ -1322,6 +1336,53 @@ def promociones_cliente(request):
     )
     return render(request, 'promociones/cliente.html', {'promociones': promociones})
 
+@cliente_required
+def agregar_promocion_carrito(request, promo_id):
+    """Agrega todos los productos de una promoción al carrito"""
+    promocion = get_object_or_404(Promocion, id=promo_id)
+    
+    # Verificar que la promoción está activa
+    ahora = timezone.now()
+    if not (promocion.activo and promocion.fecha_inicio <= ahora <= promocion.fecha_fin):
+        messages.error(request, "Esta promoción ya no está activa")
+        return redirect('promociones_cliente')
+    
+    carrito = request.session.get('carrito', {})
+    productos_promo = promocion.productos.all()
+    
+    if not productos_promo.exists():
+        messages.error(request, "Esta promoción no tiene productos asociados")
+        return redirect('promociones_cliente')
+    
+    # Agregar cada producto de la promoción al carrito
+    for producto in productos_promo:
+        if str(producto.id) in carrito:
+            carrito[str(producto.id)]['cantidad'] += 1
+        else:
+            carrito[str(producto.id)] = {
+                'id': producto.id,
+                'nombre': producto.nombre,
+                'descripcion': producto.descripcion,
+                'precio': float(producto.precio),
+                'cantidad': 1,
+                'imagen': producto.imagen.url if producto.imagen else ''
+            }
+    
+    request.session['carrito'] = carrito
+    request.session.modified = True
+    
+    # Aplicar descuento global en el carrito (opcional)
+    # Si quieres aplicar el descuento a todo el carrito
+    request.session['promocion_aplicada'] = {
+        'id': promocion.id,
+        'nombre': promocion.nombre,
+        'tipo': promocion.tipo_descuento,
+        'valor': float(promocion.valor_descuento)
+    }
+    
+    messages.success(request, f'¡Promoción "{promocion.nombre}" agregada al carrito!')
+    return redirect('ver_carrito')
+
 
 @cliente_required
 def pedido_personalizado(request):
@@ -1332,7 +1393,7 @@ def pedido_personalizado(request):
         instrucciones = request.POST.get('instrucciones_personalizado', '').strip()
         
         if not base:
-            messages.error(request, "⚠️ Por favor selecciona una base/proteína para tu plato.")
+            messages.error(request, " Por favor selecciona una base/proteína para tu plato.")
             return render(request, 'pedido_personalizado.html')
 
         # Tabla de precios base
@@ -1408,4 +1469,4 @@ def resetear_productos(request):
         
         return HttpResponse(f" Listo! Eliminados {eliminados[0]} productos. Secuencia reseteada.")
     except Exception as e:
-        return HttpResponse(f"❌ Error: {e}")
+        return HttpResponse(f" Error: {e}")

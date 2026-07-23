@@ -9,8 +9,8 @@
     <br><br><br><br>
     
     <div class="header-cliente">
-        <h2><i class="fa-solid fa-tag"></i> Promociones Activas</h2>
-        <p>¡Aprovecha estas ofertas especiales!</p>
+        <h2><i class="fa-solid fa-tag"></i> Promociones</h2>
+        <p>¡Ofertas especiales para ti!</p>
     </div>
     
     <div class="promociones-grid">
@@ -24,7 +24,8 @@
             
             <div class="promo-info">
                 <h3>{{ promo.nombre }}</h3>
-                <p>{{ promo.descripcion }}</p>
+                <p>{{ promo.descripcion|truncatechars:60 }}</p>
+                
                 <div class="promo-descuento">
                     <span class="badge-oferta">
                         {% if promo.tipo_descuento == 'porcentaje' %}
@@ -34,28 +35,22 @@
                         {% endif %}
                     </span>
                 </div>
+                
                 <p class="promo-fecha">
                     <i class="fa-regular fa-clock"></i> 
-                    Válido hasta: {{ promo.fecha_fin|date:"d/m/Y H:i" }}
+                    Hasta: {{ promo.fecha_fin|date:"d/m/Y" }}
                 </p>
-                {% if promo.productos.all %}
-                <div class="promo-productos">
-                    <span>Platos:</span>
-                    {% for p in promo.productos.all|slice:":3" %}
-                        <span class="producto-tag">{{ p.nombre }}</span>
-                    {% endfor %}
-                    {% if promo.productos.count > 3 %}
-                        <span class="producto-tag">+{{ promo.productos.count|add:"-3" }} más</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-                <a href="{% url 'menu' %}" class="btn-promo">Ver Menú</a>
+                
+                <!--  BOTÓN PARA PEDIR LA PROMOCIÓN -->
+                <a href="{% url 'agregar_promocion_carrito' promo.id %}" class="btn-pedir">
+                    <i class="fa-solid fa-cart-plus"></i> Pedir Promoción
+                </a>
             </div>
         </div>
         {% empty %}
         <div class="sin-promociones">
             <i class="fa-regular fa-face-frown"></i>
-            <p>No hay promociones activas en este momento</p>
+            <p>No hay promociones activas</p>
             <a href="{% url 'menu' %}" class="btn-ver-menu">Ver Menú</a>
         </div>
         {% endfor %}
@@ -79,176 +74,185 @@
 .container {
     position: relative;
     z-index: 2;
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 15px;
 }
 
 .header-cliente {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
 }
 
 .header-cliente h2 {
     color: white;
-    font-size: 32px;
+    font-size: 28px;
     margin: 0;
 }
 
 .header-cliente h2 i {
     color: #e76e05;
-    margin-right: 10px;
+    margin-right: 8px;
 }
 
 .header-cliente p {
     color: #9ca3af;
-    font-size: 16px;
-    margin-top: 5px;
+    font-size: 14px;
+    margin-top: 3px;
 }
 
-/* ===== GRID ===== */
 .promociones-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
 }
 
-/* ===== TARJETA ===== */
 .promo-card {
-    background: rgba(255,255,255,0.10);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
     overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.06);
     transition: 0.3s;
     color: white;
 }
 
 .promo-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .promo-card img {
     width: 100%;
-    height: 180px;
+    height: 150px;
     object-fit: cover;
 }
 
 .promo-icon {
-    height: 180px;
+    height: 150px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #e76e05, #f59e0b);
-    font-size: 60px;
+    font-size: 50px;
     color: white;
 }
 
-/* ===== INFO ===== */
 .promo-info {
-    padding: 20px;
+    padding: 15px;
 }
 
 .promo-info h3 {
-    font-size: 20px;
-    margin-bottom: 8px;
+    font-size: 18px;
+    margin-bottom: 5px;
     color: #f59e0b;
 }
 
 .promo-info p {
     color: #cbd5e1;
-    font-size: 14px;
-    margin-bottom: 12px;
+    font-size: 13px;
+    margin-bottom: 8px;
+    line-height: 1.4;
 }
 
 .badge-oferta {
     display: inline-block;
     background: linear-gradient(135deg, #22c55e, #16a34a);
     color: white;
-    padding: 6px 16px;
+    padding: 4px 14px;
     border-radius: 20px;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .promo-fecha {
-    font-size: 13px;
-    color: #9ca3af;
-    margin-top: 10px;
-}
-
-.promo-productos {
-    margin: 12px 0;
-}
-
-.producto-tag {
-    display: inline-block;
-    background: rgba(231,110,5,0.2);
-    color: #f59e0b;
-    padding: 3px 10px;
-    border-radius: 12px;
     font-size: 12px;
-    margin: 2px;
+    color: #9ca3af;
+    margin: 8px 0 12px 0;
 }
 
-.btn-promo {
+.btn-pedir {
     display: inline-block;
     background: #e76e05;
     color: white;
-    padding: 10px 25px;
-    border-radius: 12px;
+    padding: 8px 20px;
+    border-radius: 10px;
     text-decoration: none;
     font-weight: bold;
+    font-size: 14px;
     transition: 0.3s;
-    margin-top: 10px;
+    width: 100%;
+    text-align: center;
 }
 
-.btn-promo:hover {
+.btn-pedir:hover {
     background: #f59e0b;
     transform: scale(1.02);
+}
+
+.btn-pedir i {
+    margin-right: 6px;
+}
+
+.sin-promociones {
+    text-align: center;
+    padding: 40px;
+    color: #9ca3af;
+    grid-column: 1 / -1;
+}
+
+.sin-promociones i {
+    font-size: 40px;
+    color: #e76e05;
+}
+
+.sin-promociones p {
+    font-size: 16px;
+    margin-top: 8px;
 }
 
 .btn-ver-menu {
     display: inline-block;
     background: #e76e05;
     color: white;
-    padding: 12px 30px;
-    border-radius: 12px;
+    padding: 10px 25px;
+    border-radius: 10px;
     text-decoration: none;
     font-weight: bold;
     transition: 0.3s;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 .btn-ver-menu:hover {
     background: #f59e0b;
 }
 
-.sin-promociones {
-    text-align: center;
-    padding: 60px;
-    color: #9ca3af;
-    grid-column: 1 / -1;
-}
-
-.sin-promociones i {
-    font-size: 48px;
-    color: #e76e05;
-}
-
-.sin-promociones p {
-    font-size: 18px;
-    margin-top: 10px;
-}
-
-/* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
     .promociones-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
     }
     .header-cliente h2 {
-        font-size: 24px;
+        font-size: 22px;
+    }
+    .promo-card img, .promo-icon {
+        height: 120px;
+    }
+    .promo-info h3 {
+        font-size: 15px;
+    }
+    .promo-info p {
+        font-size: 12px;
+    }
+    .btn-pedir {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 400px) {
+    .promociones-grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>

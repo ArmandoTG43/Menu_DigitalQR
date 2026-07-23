@@ -8,8 +8,8 @@
 <div class="container" style="padding-top: 40px;">
     
     <div class="form-header">
-        <h2><i class="fa-solid fa-plus-circle"></i> Nueva Promoción</h2>
-        <p>Registra una nueva promoción con descuentos para tus clientes</p>
+        <h2><i class="fa-solid fa-pen-to-square"></i> Editar Promoción</h2>
+        <p>Actualiza la información de la promoción</p>
     </div>
 
     {% if messages %}
@@ -32,7 +32,7 @@
             
             <div class="form-group">
                 <label for="nombre"><i class="fa-solid fa-heading"></i> Nombre de la Promoción *</label>
-                <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej: 2x1 en Hamburguesas Especiales" required>
+                <input type="text" name="nombre" id="nombre" class="form-control" value="{{ promocion.nombre }}" required>
                 <small id="nombreError" style="color: #fca5a5; display: none; margin-top: 4px;">
                     <i class="fa-solid fa-circle-exclamation"></i> El nombre debe tener al menos 3 caracteres
                 </small>
@@ -40,7 +40,7 @@
             
             <div class="form-group">
                 <label for="descripcion"><i class="fa-solid fa-align-left"></i> Descripción</label>
-                <textarea name="descripcion" id="descripcion" class="form-control" rows="3" placeholder="Describe los términos de la promoción..."></textarea>
+                <textarea name="descripcion" id="descripcion" class="form-control" rows="3">{{ promocion.descripcion }}</textarea>
                 <small id="descError" style="color: #fca5a5; display: none; margin-top: 4px;">
                     <i class="fa-solid fa-circle-exclamation"></i> La descripción debe tener al menos 10 caracteres
                 </small>
@@ -50,14 +50,14 @@
                 <div class="form-group">
                     <label for="tipo_descuento"><i class="fa-solid fa-percent"></i> Tipo de Descuento *</label>
                     <select name="tipo_descuento" id="tipo_descuento" class="form-control" required>
-                        <option value="porcentaje">Porcentaje (%)</option>
-                        <option value="fijo">Monto Fijo ($)</option>
+                        <option value="porcentaje" {% if promocion.tipo_descuento == 'porcentaje' %}selected{% endif %}>Porcentaje (%)</option>
+                        <option value="fijo" {% if promocion.tipo_descuento == 'fijo' %}selected{% endif %}>Monto Fijo ($)</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label for="valor_descuento"><i class="fa-solid fa-dollar-sign"></i> Valor del Descuento *</label>
-                    <input type="number" name="valor_descuento" id="valor_descuento" class="form-control" step="0.01" min="0.01" placeholder="Ej: 15.00" required>
+                    <input type="number" name="valor_descuento" id="valor_descuento" class="form-control" step="0.01" min="0.01" value="{{ promocion.valor_descuento }}" required>
                     <small id="valor_help">Para porcentaje ingresa entre 1 y 100</small>
                     <small id="valorError" style="color: #fca5a5; display: none; margin-top: 4px;">
                         <i class="fa-solid fa-circle-exclamation"></i> <span id="valorErrorMsg">El valor debe ser mayor a 0</span>
@@ -68,7 +68,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="fecha_inicio"><i class="fa-solid fa-calendar-days"></i> Fecha y Hora de Inicio *</label>
-                    <input type="datetime-local" name="fecha_inicio" id="fecha_inicio" class="form-control" required>
+                    <input type="datetime-local" name="fecha_inicio" id="fecha_inicio" class="form-control" value="{{ promocion.fecha_inicio|date:'Y-m-d\TH:i' }}" required>
                     <small id="fechaInicioError" style="color: #fca5a5; display: none; margin-top: 4px;">
                         <i class="fa-solid fa-circle-exclamation"></i> Selecciona una fecha válida
                     </small>
@@ -76,7 +76,7 @@
                 
                 <div class="form-group">
                     <label for="fecha_fin"><i class="fa-solid fa-calendar-check"></i> Fecha y Hora de Fin *</label>
-                    <input type="datetime-local" name="fecha_fin" id="fecha_fin" class="form-control" required>
+                    <input type="datetime-local" name="fecha_fin" id="fecha_fin" class="form-control" value="{{ promocion.fecha_fin|date:'Y-m-d\TH:i' }}" required>
                     <small id="fechaFinError" style="color: #fca5a5; display: none; margin-top: 4px;">
                         <i class="fa-solid fa-circle-exclamation"></i> La fecha de fin debe ser posterior a la de inicio
                     </small>
@@ -84,27 +84,46 @@
             </div>
             
             <div class="form-group">
-                <label for="productos"><i class="fa-solid fa-burger"></i> Productos Aplican (Opcional)</label>
+                <label for="productos"><i class="fa-solid fa-burger"></i> Productos Asociados</label>
                 <select name="productos" id="productos" class="form-control" multiple>
                     {% for producto in productos %}
-                        <option value="{{ producto.id }}">{{ producto.nombre }} - ${{ producto.precio }}</option>
+                        <option value="{{ producto.id }}" {% if producto in promocion.productos.all %}selected{% endif %}>
+                            {{ producto.nombre }} - ${{ producto.precio }}
+                        </option>
                     {% endfor %}
                 </select>
                 <small>Mantén presionado <strong>Ctrl</strong> para seleccionar múltiples productos</small>
             </div>
             
             <div class="form-group">
-                <label for="imagen"><i class="fa-solid fa-image"></i> Imagen Promocional (Opcional)</label>
+                <label for="imagen"><i class="fa-solid fa-image"></i> Imagen de la Promoción</label>
                 <input type="file" name="imagen" id="imagen" class="form-control-file" accept="image/*">
+                {% if promocion.imagen %}
+                    <small style="color: #22c55e;">Imagen actual: {{ promocion.imagen.name }}</small>
+                {% endif %}
                 <small id="imagenError" style="color: #fca5a5; display: none; margin-top: 4px;">
                     <i class="fa-solid fa-circle-exclamation"></i> La imagen no debe exceder los 5MB
                 </small>
-                <small>Formatos aceptados: JPG, PNG, WEBP (máx 5MB)</small>
             </div>
+            
+            <!-- ========== ✅ CHECKBOX ACTIVO - CORREGIDO ========== -->
+            <div class="form-group" style="margin-top: 15px;">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 15px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+                    <input type="checkbox" name="activo" id="activo" {% if promocion.activo %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #22c55e; cursor: pointer;">
+                    <span style="color: white; font-weight: 500; font-size: 15px;">
+                        <i class="fa-solid fa-toggle-on" style="color: #22c55e; margin-right: 8px;"></i> 
+                        Promoción Activa
+                    </span>
+                </label>
+                <small style="color: rgba(255,255,255,0.4); margin-top: 4px;">
+                    <i class="fa-solid fa-info-circle"></i> Desmarca esta opción para ocultar la promoción a los clientes
+                </small>
+            </div>
+            <!-- ====================================================== -->
             
             <div class="form-actions">
                 <button type="submit" class="btn-save">
-                    <i class="fa-solid fa-floppy-disk"></i> Guardar Promoción
+                    <i class="fa-solid fa-floppy-disk"></i> Actualizar Promoción
                 </button>
                 <a href="{% url 'lista_promociones' %}" class="btn-cancel">
                     <i class="fa-solid fa-xmark"></i> Cancelar
@@ -235,9 +254,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 error.style.display = 'block';
                 this.style.borderColor = '#ef4444';
                 this.value = ''; // Limpiar el input
+                // Mostrar mensaje de error
+                const jsAlert = document.getElementById('js-error-alert');
+                const jsMsg = document.getElementById('js-error-msg');
+                jsMsg.textContent = 'La imagen no debe exceder los 5MB';
+                jsAlert.style.display = 'block';
             } else {
                 error.style.display = 'none';
                 this.style.borderColor = '';
+                // Ocultar alerta si estaba visible
+                document.getElementById('js-error-alert').style.display = 'none';
             }
         }
     });
@@ -256,6 +282,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Re-validar el valor cuando cambia el tipo
         validarValorDescuento();
     });
+
+    // Trigger inicial para validar valores existentes
+    setTimeout(function() {
+        validarValorDescuento();
+        validarFechas();
+        // Validar nombre si existe
+        if (nombre.value.trim().length > 0 && nombre.value.trim().length < 3) {
+            document.getElementById('nombreError').style.display = 'block';
+            nombre.style.borderColor = '#ef4444';
+        }
+        // Validar descripción si existe
+        if (descripcion.value.trim().length > 0 && descripcion.value.trim().length < 10) {
+            document.getElementById('descError').style.display = 'block';
+            descripcion.style.borderColor = '#ef4444';
+        }
+    }, 100);
 
     // ========== VALIDACIÓN AL ENVIAR ==========
     window.validarFormulario = function() {
@@ -337,7 +379,6 @@ document.addEventListener('DOMContentLoaded', function() {
     filter: brightness(0.60);
 }
 
-
 .container {
     position: relative;
     z-index: 2;
@@ -346,8 +387,6 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 20px;
 }
 
-
-/* ===== HEADER ===== */
 .form-header {
     text-align: center;
     margin-bottom: 30px;
@@ -370,18 +409,15 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-top: 5px;
 }
 
-/* ===== TARJETA ===== */
 .form-card {
     background: rgba(255,255,255,0.10);
     backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     border-radius: 24px;
     padding: 35px;
     border: 1px solid rgba(255,255,255,0.10);
     box-shadow: 0 15px 50px rgba(0,0,0,0.2);
 }
 
-/* ===== CAMPOS ===== */
 .form-group {
     margin-bottom: 20px;
 }
@@ -412,8 +448,8 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: all 0.3s ease;
 }
 
-.form-control::placeholder {
-    color: rgba(255,255,255,0.4);
+.form-control.error {
+    border-color: #ef4444 !important;
 }
 
 .form-control:focus {
@@ -421,10 +457,6 @@ document.addEventListener('DOMContentLoaded', function() {
     border-color: #e76e05;
     box-shadow: 0 0 0 3px rgba(231,110,5,0.15);
     background: rgba(255,255,255,0.12);
-}
-
-.form-control.error {
-    border-color: #ef4444;
 }
 
 .form-control option {
@@ -435,31 +467,10 @@ document.addEventListener('DOMContentLoaded', function() {
 textarea.form-control {
     resize: vertical;
     min-height: 80px;
-    font-family: inherit;
 }
 
 select[multiple].form-control {
     min-height: 120px;
-}
-/* 🔥 ARREGLA EL SELECT - QUE NO SE CORTA EL TEXTO */
-select.form-control {
-    min-width: 200px;
-    width: 100%;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.08);
-    color: white;
-    font-size: 14px;
-    appearance: auto;
-}
-
-select.form-control option {
-    background: #1a1a2e;
-    color: white;
-    padding: 8px 12px;
-    font-size: 14px;
-    white-space: nowrap;
 }
 
 .form-control-file {
@@ -479,7 +490,6 @@ small {
     margin-top: 4px;
 }
 
-/* ===== BOTONES ===== */
 .form-actions {
     display: flex;
     gap: 15px;
@@ -488,7 +498,7 @@ small {
 
 .btn-save {
     flex: 1;
-    background: linear-gradient(135deg, #22c55e, #16a34a);
+    background: linear-gradient(135deg, #f59e0b, #e76e05);
     color: white;
     border: none;
     padding: 14px 20px;
@@ -505,7 +515,7 @@ small {
 
 .btn-save:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(34,197,94,0.3);
+    box-shadow: 0 8px 25px rgba(231,110,5,0.3);
 }
 
 .btn-cancel {
@@ -529,7 +539,6 @@ small {
     background: rgba(255,255,255,0.15);
 }
 
-/* ===== RESPONSIVE ===== */
 @media (max-width: 600px) {
     .form-row {
         grid-template-columns: 1fr;

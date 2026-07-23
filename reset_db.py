@@ -9,11 +9,11 @@ from Aplicacion.Menud.models import Pedido, DetallePedido, Pago, Producto, Mesa
 
 def resetear_sistema():
     print("="*60)
-    print("🔥 REINICIANDO SISTEMA...")
+    print(" REINICIANDO SISTEMA...")
     print("="*60)
     
     # 1. Eliminar datos existentes
-    print("\n🗑️ ELIMINANDO DATOS CORRUPTOS...")
+    print("\n ELIMINANDO DATOS CORRUPTOS...")
     pagos = Pago.objects.count()
     detalles = DetallePedido.objects.count()
     pedidos = Pedido.objects.count()
@@ -22,9 +22,9 @@ def resetear_sistema():
     DetallePedido.objects.all().delete()
     Pedido.objects.all().delete()
     
-    print(f"   ✅ {pagos} pagos eliminados")
-    print(f"   ✅ {detalles} detalles eliminados")
-    print(f"   ✅ {pedidos} pedidos eliminados")
+    print(f"    {pagos} pagos eliminados")
+    print(f"    {detalles} detalles eliminados")
+    print(f"    {pedidos} pedidos eliminados")
     
     # 2. Verificar productos
     print("\n VERIFICANDO PRODUCTOS...")
@@ -68,7 +68,7 @@ def resetear_sistema():
         )
         subtotal = i * p.precio
         total += subtotal
-        print(f"   ✅ {p.nombre} x{i} = ${subtotal:.2f}")
+        print(f"    {p.nombre} x{i} = ${subtotal:.2f}")
     
     # 6. Actualizar total
     pedido.total = total

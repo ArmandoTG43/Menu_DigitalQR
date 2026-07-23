@@ -112,4 +112,5 @@ urlpatterns = [
     path('resetear/', views.resetear_productos, name='resetear_productos'),
     # PLATO PERSONALIZADO
     path('pedido-personalizado/', views.pedido_personalizado, name='pedido_personalizado'),
+    path('agregar-promocion/<int:promo_id>/', views.agregar_promocion_carrito, name='agregar_promocion_carrito'),
 ]

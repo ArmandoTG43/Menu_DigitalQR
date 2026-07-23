@@ -155,7 +155,7 @@ class DetallePedidoInline(admin.TabularInline):
 
 
 # ==================== PEDIDOS ====================
-# ✅ SOLO UNA VEZ - ELIMINA LA SEGUNDA DEFINICIÓN
+#  SOLO UNA VEZ - ELIMINA LA SEGUNDA DEFINICIÓN
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
     list_display = ('id', 'mesa', 'estado_color', 'total_formateado', 'fecha_hora', 'tiempo_transcurrido_admin')
