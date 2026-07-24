@@ -497,20 +497,20 @@ async function actualizar() {
         let estadoNombre = "";
 
         if (pedido.estado === "pendiente") {
-            estadoNombre = "Pedido Recibido";
+            estadoNombre = "Pedido recibido";
             estadoTexto.textContent = " Pedido recibido";
             estadoIcono.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
             document.getElementById("step1").classList.add("active");
             mensajeEstado.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> <span>Tu pedido ha sido recibido. Pronto comenzaremos a prepararlo.</span>';
         } else if (pedido.estado === "en_preparacion") {
-            estadoNombre = "En Preparación 🔪";
+            estadoNombre = "En Preparación";
             estadoTexto.textContent = " En preparación";
             estadoIcono.innerHTML = '<i class="fa-solid fa-kitchen-set"></i>';
             document.getElementById("step1").classList.add("done");
             document.getElementById("step2").classList.add("active");
             mensajeEstado.innerHTML = '<i class="fa-solid fa-spinner fa-pulse"></i> <span>Chefs trabajando para ti en la cocina...</span>';
         } else if (pedido.estado === "listo") {
-            estadoNombre = "¡Tu Pedido está Listo! 🎉";
+            estadoNombre = "¡Tu Pedido está Listo! ";
             estadoTexto.textContent = " ¡Tu pedido está listo!";
             estadoIcono.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>';
             document.getElementById("step1").classList.add("done");
@@ -519,7 +519,7 @@ async function actualizar() {
             mensajeEstado.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> <span>¡Tu pedido está listo para servirse o enviarse!</span>';
             mensajeEstado.style.background = "rgba(34,197,94,0.2)";
         } else if (pedido.estado === "entregado") {
-            estadoNombre = "Pedido Entregado ✅";
+            estadoNombre = "Pedido Entregado";
             estadoTexto.textContent = "¡Pedido entregado!";
             estadoIcono.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>';
             document.getElementById("step1").classList.add("done");

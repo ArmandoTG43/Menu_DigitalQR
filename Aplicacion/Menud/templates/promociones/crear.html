@@ -8,7 +8,7 @@
 <div class="container" style="padding-top: 40px;">
     
     <div class="form-header">
-        <h2><i class="fa-solid fa-pen-to-square"></i> Editar Promoción</h2>
+        <h2><i class="fa-solid fa-pen-to-square"></i> Crear Promoción</h2>
         <p>Actualiza la información de la promoción</p>
     </div>
 
@@ -106,7 +106,7 @@
                 </small>
             </div>
             
-            <!-- ========== ✅ CHECKBOX ACTIVO - CORREGIDO ========== -->
+            <!-- ==========  CHECKBOX ACTIVO - CORREGIDO ========== -->
             <div class="form-group" style="margin-top: 15px;">
                 <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 15px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
                     <input type="checkbox" name="activo" id="activo" {% if promocion.activo %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #22c55e; cursor: pointer;">
@@ -123,7 +123,7 @@
             
             <div class="form-actions">
                 <button type="submit" class="btn-save">
-                    <i class="fa-solid fa-floppy-disk"></i> Actualizar Promoción
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Promoción
                 </button>
                 <a href="{% url 'lista_promociones' %}" class="btn-cancel">
                     <i class="fa-solid fa-xmark"></i> Cancelar
