@@ -58,7 +58,7 @@
             </div>
             <div class="stat-info">
                 <span class="stat-number" id="totalAdministradores">
-                    {% for u in usuarios %}{% if u.rol == 'administrador' %}{{ forloop.counter }}{% endif %}{% endfor %}
+                    {% for u in usuarios %}{% if u.rol == 'admin' %}{{ forloop.counter }}{% endif %}{% endfor %}
                 </span>
                 <span class="stat-label">Administradores</span>
             </div>
@@ -103,7 +103,7 @@
                     </td>
                     <td>{{ usuario.email }}</td>
                     <td>
-                        {% if usuario.rol == 'administrador' %}
+                        {% if usuario.rol == 'admin' %}
                             <span class="badge-admin"><i class="fa-solid fa-user-tie"></i> Administrador</span>
                         {% elif usuario.rol == 'cocinero' %}
                             <span class="badge-cocinero"><i class="fa-solid fa-kitchen-set"></i> Cocinero</span>
@@ -582,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fila.style.display = '';
                 visibles++;
                 const rolTexto = fila.dataset.rol || '';
-                if (rolTexto === 'administrador') {
+                if (rolTexto === 'admin') {
                     admins++;
                 } else if (rolTexto === 'cocinero') {
                     cocineros++;
