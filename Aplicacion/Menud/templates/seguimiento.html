@@ -448,7 +448,7 @@ function notificarCambioEstado(nuevoEstadoTexto) {
         gap: 12px;
         animation: slideDown 0.4s ease;
     `;
-    notif.innerHTML = `<i class="fa-solid fa-bell fa-bounce" style="font-size:22px;"></i> <span>¡Actualización de tu pedido: <strong>${nuevoEstadoTexto}</strong>!</span>`;
+    notif.innerHTML = `<i class="fa-solid fa-bell fa-bounce" style="font-size:22px;"></i> <span>¡Tu pedido está: <strong>${nuevoEstadoTexto}</strong>!</span>`;
     document.body.appendChild(notif);
     
     if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
