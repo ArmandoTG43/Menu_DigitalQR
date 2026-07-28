@@ -12,8 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from dotenv import load_dotenv
-import os
-import dj_database_url  # <-- NUEVO: para base de datos desde URL
+import os, ssl
+import dj_database_url  
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -169,3 +169,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --- URL base para el sitio (usado en plantillas) ---
 BASE_URL = os.getenv('BASE_URL', 'https://ammonium-sliceable-sizzle.ngrok-free.dev')
+
+
+# Configuración de correo con timeout
+EMAIL_TIMEOUT = 60
+try:
+    ssl._create_default_https_context = ssl._create_unverified_context
+except AttributeError:
+    pass
+os.environ['GUNICORN_TIMEOUT'] = '120'
