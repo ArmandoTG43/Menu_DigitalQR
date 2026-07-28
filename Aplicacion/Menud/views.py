@@ -1470,3 +1470,14 @@ def resetear_productos(request):
         return HttpResponse(f" Listo! Eliminados {eliminados[0]} productos. Secuencia reseteada.")
     except Exception as e:
         return HttpResponse(f" Error: {e}")
+
+def validar_email(request):
+    email = request.GET.get('email', '')
+    existe = User.objects.filter(email=email).exists()
+    return JsonResponse({'existe': existe})
+
+def validar_email_editar(request):
+    email = request.GET.get('email', '')
+    usuario_id = request.GET.get('usuario_id', '')
+    existe = User.objects.filter(email=email).exclude(id=usuario_id).exists()
+    return JsonResponse({'existe': existe})

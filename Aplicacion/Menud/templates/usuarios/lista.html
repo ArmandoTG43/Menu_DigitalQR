@@ -2,373 +2,636 @@
 {% load static %}
 
 {% block contenido %}
-<br><br><br><br>
 
-<!-- ========== BANNER FIJO ========== -->
 <div id="banner"></div>
 
-<!-- ========== CONTENIDO PRINCIPAL ========== -->
-<div class="table-wrapper">
+<div class="container">
+    <br><br><br><br>
+    
+    <!-- ===== HEADER ===== -->
+    <div class="admin-header">
+        <div class="header-left">
+            <h2><i class="fa-solid fa-users-gear"></i> Gestión de Usuarios</h2>
+            <p class="subtitle">Administra las cuentas del personal del restaurante</p>
+        </div>
+        <a href="{% url 'crear_usuario' %}" class="btn-add">
+            <i class="fa-solid fa-plus"></i> Nuevo Usuario
+        </a>
+    </div>
 
-    <div class="table-card">
+    <!-- ===== BUSCADOR ===== -->
+    <div class="buscador-container">
+        <div class="buscador-wrapper">
+            <i class="fa-solid fa-search"></i>
+            <input type="text" id="buscadorUsuarios" placeholder="Buscar por nombre, correo o rol..." class="buscador-input">
+            <button id="btnLimpiarBusqueda" class="btn-limpiar" style="display:none;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
 
-        <!-- HEADER -->
-        <div class="table-header">
-            <div class="header-left">
-                <h2><i class="fa-regular "></i> Gestión de Usuarios</h2>
-                <p>Listado de todos los usuarios registrados en el sistema</p>
+    <!-- ===== MENSAJES ===== -->
+    {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+                <div class="message-success">
+                    <i class="fa-solid fa-circle-check"></i> {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- ===== ESTADÍSTICAS ===== -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(34,197,94,0.15);">
+                <i class="fa-solid fa-users" style="color: #22c55e;"></i>
             </div>
-            <a href="{% url 'crear_usuario' %}" class="btn-add">
-                <i class="fa-regular fa-plus"></i> Nuevo Usuario
-            </a>
+            <div class="stat-info">
+                <span class="stat-number" id="totalUsuarios">{{ usuarios|length }}</span>
+                <span class="stat-label">Total Usuarios</span>
+            </div>
         </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(245,158,11,0.15);">
+                <i class="fa-solid fa-user-tie" style="color: #f59e0b;"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-number" id="totalAdministradores">
+                    {% for u in usuarios %}{% if u.rol == 'administrador' %}{{ forloop.counter }}{% endif %}{% endfor %}
+                </span>
+                <span class="stat-label">Administradores</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(59,130,246,0.15);">
+                <i class="fa-solid fa-kitchen-set" style="color: #3b82f6;"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-number" id="totalCocineros">
+                    {% for u in usuarios %}{% if u.rol == 'cocinero' %}{{ forloop.counter }}{% endif %}{% endfor %}
+                </span>
+                <span class="stat-label">Cocineros</span>
+            </div>
+        </div>
+    </div>
 
-        <!-- TABLA -->
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Email</th>
-                        <th>Rol</th>
-                        <th>Fecha Registro</th>
-                        <th class="text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for usuario in usuarios %}
-                    <tr>
-                        <td><span class="user-badge">{{ usuario.username }}</span></td>
-                        <td>{{ usuario.email }}</td>
-                        <td>
-                            <span class="rol-badge {% if usuario.rol == 'admin' %}rol-admin{% else %}rol-cocinero{% endif %}">
-                                {{ usuario.get_rol_display }}
-                            </span>
-                        </td>
-                        <td>{{ usuario.date_joined|date:"d/m/Y" }}</td>
-                        <td class="acciones">
+    <!-- ===== TABLA DE USUARIOS ===== -->
+    <div class="table-container">
+        <table class="tabla-usuarios" id="tablaUsuarios">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Usuario</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Fecha Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoTabla">
+                {% for usuario in usuarios %}
+                <tr data-nombre="{{ usuario.username|lower }}" data-email="{{ usuario.email|lower }}" data-rol="{{ usuario.rol|lower }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <span>{{ usuario.username }}</span>
+                        </div>
+                    </td>
+                    <td>{{ usuario.email }}</td>
+                    <td>
+                        {% if usuario.rol == 'administrador' %}
+                            <span class="badge-admin"><i class="fa-solid fa-user-tie"></i> Administrador</span>
+                        {% elif usuario.rol == 'cocinero' %}
+                            <span class="badge-cocinero"><i class="fa-solid fa-kitchen-set"></i> Cocinero</span>
+                        {% else %}
+                            <span class="badge-cliente"><i class="fa-solid fa-user"></i> Cliente</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ usuario.date_joined|date:"d/m/Y" }}</td>
+                    <td>
+                        <div class="acciones">
                             <a href="{% url 'editar_usuario' usuario.id %}" class="btn-edit" title="Editar">
-                                <i class="fa-regular fa-pen-to-square"></i>
+                                <i class="fa-solid fa-pen"></i>
                             </a>
-                            <a href="{% url 'eliminar_usuario' usuario.id %}" class="btn-delete" title="Eliminar">
-                                <i class="fa-regular fa-trash-can"></i>
+                            <a href="{% url 'eliminar_usuario' usuario.id %}" 
+                               class="btn-delete" 
+                               title="Eliminar"
+                               onclick="return confirm('¿Eliminar al usuario «{{ usuario.username }}»?')">
+                                <i class="fa-solid fa-trash"></i>
                             </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="empty-row">
-                            <i class="fa-regular fa-user-slash"></i> No hay usuarios registrados
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- PIE DE TABLA (contador) -->
-        <div class="table-footer">
-            <span>Total: <strong>{{ usuarios.count }}</strong> usuarios</span>
-        </div>
-
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty-row">
+                        <i class="fa-regular fa-face-frown"></i>
+                        <p>No hay usuarios registrados</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- ========== ESTILOS ========== -->
 <style>
-    /* ----- BANNER ----- */
-    body {
-        background: #f0f2f8;
-        min-height: 100vh;
-        font-family: 'Segoe UI', system-ui, sans-serif;
-    }
+/* ===== BANNER ===== */
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.50);
+}
 
-    #banner {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100vh;
-        background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
-        background-size: cover;
-        background-position: center;
-        z-index: 1;
-        filter: brightness(0.60);
-    }
+.container {
+    position: relative;
+    z-index: 2;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 20px;
+}
 
-    /* ----- CONTENEDOR ----- */
-    .table-wrapper {
-        position: relative;
-        z-index: 2;
-        display: flex;
-        justify-content: center;
+/* ===== HEADER ===== */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header-left h2 {
+    color: white;
+    font-size: 32px;
+    margin: 0;
+    font-weight: 700;
+}
+
+.header-left h2 i {
+    color: #f59e0b;
+    margin-right: 12px;
+}
+
+.subtitle {
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    margin: 4px 0 0 0;
+    letter-spacing: 0.5px;
+}
+
+.btn-add {
+    background: linear-gradient(135deg, #e76e05, #f59e0b);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 14px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    box-shadow: 0 4px 15px rgba(231,110,5,0.3);
+}
+
+.btn-add:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(231,110,5,0.5);
+}
+
+/* ===== BUSCADOR ===== */
+.buscador-container {
+    margin-bottom: 25px;
+}
+
+.buscador-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.3s ease;
+}
+
+.buscador-wrapper:focus-within {
+    border-color: rgba(245,158,11,0.4);
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
+}
+
+.buscador-wrapper i {
+    color: rgba(255,255,255,0.3);
+    font-size: 18px;
+    padding: 0 0 0 18px;
+}
+
+.buscador-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 14px 16px;
+    color: white;
+    font-size: 15px;
+    outline: none;
+    font-weight: 400;
+    
+}
+
+.buscador-input::placeholder {
+    color: rgba(255,255,255,0.35);
+    font-weight: 300;
+}
+
+.btn-limpiar {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    font-size: 20px;
+    padding: 0 18px 0 0;
+    transition: 0.3s;
+}
+
+.btn-limpiar:hover {
+    color: white;
+}
+
+/* ===== MENSAJES ===== */
+.messages-container {
+    margin-bottom: 25px;
+}
+
+.message-success {
+    padding: 14px 20px;
+    border-radius: 12px;
+    background: rgba(34,197,94,0.12);
+    border: 1px solid #cbd5e1;
+    color: #86efac;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.message-success i {
+    font-size: 18px;
+    color: #22c55e;
+}
+
+/* ===== ESTADÍSTICAS ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 18px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border: 1px solid #cbd5e1;
+    transition: 0.3s;
+}
+
+.stat-card:hover {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid #cbd5e1;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-number {
+    color: white;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.stat-label {
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+}
+
+/* ===== TABLA ===== */
+.table-container {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    border: 1px solid #cbd5e1;
+    overflow-x: auto;
+    padding: 5px;
+}
+
+.tabla-usuarios {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 650px;
+}
+
+.tabla-usuarios thead th {
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 18px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.tabla-usuarios tbody td {
+    color: rgba(255,255,255,0.85);
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    vertical-align: middle;
+}
+
+.tabla-usuarios tbody tr:hover {
+    background: rgba(255,255,255,0.04);
+}
+
+.tabla-usuarios tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ===== USER INFO ===== */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(245,158,11,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f59e0b;
+    font-size: 16px;
+}
+
+/* ===== BADGES ===== */
+.badge-admin {
+    background: rgba(245,158,11,0.15);
+    color: #f59e0b;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(245,158,11,0.08);
+}
+
+.badge-cocinero {
+    background: rgba(59,130,246,0.15);
+    color: #3b82f6;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(59,130,246,0.08);
+}
+
+.badge-cliente {
+    background: rgba(34,197,94,0.15);
+    color: #22c55e;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(34,197,94,0.08);
+}
+
+/* ===== ACCIONES ===== */
+.acciones {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-edit {
+    background: rgba(245,158,11,0.10);
+    color: #f59e0b;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(245,158,11,0.06);
+}
+
+.btn-edit:hover {
+    background: rgba(245,158,11,0.25);
+    transform: scale(1.05);
+}
+
+.btn-delete {
+    background: rgba(239,68,68,0.10);
+    color: #ef4444;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(239,68,68,0.06);
+}
+
+.btn-delete:hover {
+    background: rgba(239,68,68,0.25);
+    transform: scale(1.05);
+}
+
+/* ===== EMPTY ROW ===== */
+.empty-row {
+    text-align: center !important;
+    padding: 40px 20px !important;
+}
+
+.empty-row i {
+    font-size: 40px;
+    color: rgba(255,255,255,0.15);
+    display: block;
+    margin-bottom: 10px;
+}
+
+.empty-row p {
+    color: rgba(255,255,255,0.3);
+    font-size: 16px;
+    margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .admin-header {
+        flex-direction: column;
         align-items: flex-start;
-        min-height: 100vh;
-        padding: 40px 15px;
     }
-
-    /* ----- TARJETA ----- */
-    .table-card {
-        width: 100%;
-        max-width: 1000px;
-        background: rgba(255, 255, 255, 0.92);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border-radius: 28px;
-        padding: 35px 35px 25px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15),
-                    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-        animation: fadeUp 0.6s ease;
+    
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
     }
-
-    @keyframes fadeUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* ----- HEADER ----- */
-    .table-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 25px;
-    }
-
-    .header-left h2 {
-        font-size: 26px;
-        font-weight: 700;
-        color: #1a1a2e;
-        margin: 0;
-        letter-spacing: -0.5px;
-    }
-
-    .header-left h2 i {
-        color: #6c63ff;
-        margin-right: 10px;
-    }
-
-    .header-left p {
-        color: #6b7280;
-        font-size: 14px;
-        margin: 4px 0 0;
-    }
-
-    .btn-add {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 12px 24px;
-        background: #6c63ff;
-        color: #fff;
-        border-radius: 16px;
-        font-weight: 600;
-        font-size: 14px;
-        text-decoration: none;
-        box-shadow: 0 4px 14px rgba(108, 99, 255, 0.30);
-        transition: 0.25s;
-        white-space: nowrap;
-    }
-
-    .btn-add:hover {
-        background: #5a52d5;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(108, 99, 255, 0.35);
-        color: #fff;
-    }
-
-    .btn-add i {
-        font-size: 16px;
-    }
-
-    /* ----- TABLA ----- */
-    .table-responsive {
-        overflow-x: auto;
-        border-radius: 16px;
-        border: 1px solid #e5e7eb;
-        background: #ffffff;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-        min-width: 600px;
-    }
-
-    thead {
-        background: #f8f9fc;
-        border-bottom: 2px solid #e5e7eb;
-    }
-
-    thead th {
-        padding: 16px 18px;
-        text-align: left;
-        font-weight: 600;
-        color: #374151;
-        letter-spacing: 0.3px;
+    
+    .tabla-usuarios {
         font-size: 13px;
-        text-transform: uppercase;
+        min-width: 500px;
     }
-
-    tbody tr {
-        border-bottom: 1px solid #f1f2f6;
-        transition: background 0.2s;
+    
+    .tabla-usuarios thead th,
+    .tabla-usuarios tbody td {
+        padding: 10px 12px;
     }
+}
 
-    tbody tr:hover {
-        background: #f8f9fc;
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
     }
-
-    tbody td {
-        padding: 14px 18px;
-        color: #1f2937;
-        vertical-align: middle;
-    }
-
-    /* ----- BADGES ----- */
-    .user-badge {
-        font-weight: 600;
-        color: #1a1a2e;
-    }
-
-    .rol-badge {
-        display: inline-block;
-        padding: 4px 14px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-    }
-
-    .rol-admin {
-        background: #e0e7ff;
-        color: #4338ca;
-    }
-
-    .rol-cocinero {
-        background: #fef3c7;
-        color: #b45309;
-    }
-
-    /* ----- ACCIONES ----- */
-    .acciones {
-        text-align: center;
-        display: flex;
-        gap: 8px;
-        justify-content: center;
-        flex-wrap: wrap;
-    }
-
-    .btn-edit,
-    .btn-delete {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        text-decoration: none;
-        transition: 0.25s;
-        font-size: 15px;
-        border: 1px solid transparent;
-    }
-
-    .btn-edit {
-        background: #e0e7ff;
-        color: #4338ca;
-    }
-
-    .btn-edit:hover {
-        background: #c7d2fe;
-        transform: scale(1.08);
-    }
-
-    .btn-delete {
-        background: #fee2e2;
-        color: #b91c1c;
-    }
-
-    .btn-delete:hover {
-        background: #fecaca;
-        transform: scale(1.08);
-    }
-
-    /* ----- EMPTY ROW ----- */
-    .empty-row {
-        text-align: center;
-        padding: 40px 20px !important;
-        color: #9ca3af;
-        font-size: 16px;
-    }
-
-    .empty-row i {
+    
+    .header-left h2 {
         font-size: 24px;
-        display: block;
-        margin-bottom: 8px;
-        color: #d1d5db;
     }
-
-    /* ----- FOOTER ----- */
-    .table-footer {
-        margin-top: 20px;
-        text-align: right;
-        font-size: 14px;
-        color: #6b7280;
-        padding: 0 6px;
+    
+    .btn-add {
+        width: 100%;
+        justify-content: center;
     }
-
-    .table-footer strong {
-        color: #1a1a2e;
-    }
-
-    /* ----- RESPONSIVE ----- */
-    @media (max-width: 768px) {
-        .table-card {
-            padding: 20px 15px;
-        }
-        .table-header {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .btn-add {
-            justify-content: center;
-        }
-        .header-left h2 {
-            font-size: 22px;
-        }
-        .acciones {
-            gap: 4px;
-        }
-        .btn-edit,
-        .btn-delete {
-            width: 32px;
-            height: 32px;
-            font-size: 13px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .table-card {
-            padding: 15px 10px;
-        }
-        thead th,
-        tbody td {
-            padding: 10px 12px;
-            font-size: 13px;
-        }
-        .rol-badge {
-            font-size: 11px;
-            padding: 3px 10px;
-        }
-    }
+}
 </style>
+
+<!-- ===== JAVASCRIPT BUSCADOR ===== -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const buscador = document.getElementById('buscadorUsuarios');
+    const tabla = document.getElementById('cuerpoTabla');
+    const btnLimpiar = document.getElementById('btnLimpiarBusqueda');
+    const totalUsuarios = document.getElementById('totalUsuarios');
+    const totalAdministradores = document.getElementById('totalAdministradores');
+    const totalCocineros = document.getElementById('totalCocineros');
+
+    function filtrarUsuarios() {
+        const texto = buscador.value.toLowerCase().trim();
+        const filas = tabla.querySelectorAll('tr');
+        let visibles = 0;
+        let admins = 0;
+        let cocineros = 0;
+
+        filas.forEach(function(fila) {
+            // Saltar fila vacía
+            if (fila.classList.contains('empty-row')) {
+                return;
+            }
+
+            const nombre = fila.dataset.nombre || '';
+            const email = fila.dataset.email || '';
+            const rol = fila.dataset.rol || '';
+            
+            const coincide = texto === '' || 
+                nombre.includes(texto) || 
+                email.includes(texto) || 
+                rol.includes(texto);
+
+            if (coincide) {
+                fila.style.display = '';
+                visibles++;
+                const rolTexto = fila.dataset.rol || '';
+                if (rolTexto === 'administrador') {
+                    admins++;
+                } else if (rolTexto === 'cocinero') {
+                    cocineros++;
+                }
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+
+        // Actualizar estadísticas
+        totalUsuarios.textContent = visibles;
+        totalAdministradores.textContent = admins;
+        totalCocineros.textContent = cocineros;
+
+        // Mostrar/ocultar botón limpiar
+        btnLimpiar.style.display = texto !== '' ? 'block' : 'none';
+
+        // Mostrar mensaje si no hay resultados
+        let emptyMsg = document.getElementById('emptySearchMessage');
+        const filasVisibles = tabla.querySelectorAll('tr:not([style*="display: none"])');
+        
+        if (visibles === 0 && filas.length > 0) {
+            if (!emptyMsg) {
+                emptyMsg = document.createElement('tr');
+                emptyMsg.id = 'emptySearchMessage';
+                emptyMsg.innerHTML = `
+                    <td colspan="6" class="empty-row">
+                        <i class="fa-regular fa-face-frown"></i>
+                        <p>No se encontraron usuarios</p>
+                    </td>
+                `;
+                tabla.appendChild(emptyMsg);
+            }
+            emptyMsg.style.display = '';
+        } else {
+            if (emptyMsg) {
+                emptyMsg.style.display = 'none';
+            }
+        }
+    }
+
+    buscador.addEventListener('input', filtrarUsuarios);
+
+    btnLimpiar.addEventListener('click', function() {
+        buscador.value = '';
+        filtrarUsuarios();
+        buscador.focus();
+    });
+});
+</script>
 
 {% endblock %}

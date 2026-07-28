@@ -83,7 +83,7 @@
             </div>
 
             <!--  FORMULARIO COMPLETO -->
-            <form method="POST" action="{% url 'confirmar_pedido' %}">
+            <form method="POST" action="{% url 'confirmar_pedido' %}" id="formPedido" onsubmit="return validarFormulario()">
                 {% csrf_token %}
 
                 <!-- ========== 1. PLATO PERSONALIZADO (PRIMERO) ========== -->
@@ -96,21 +96,25 @@
                     </div>
                     
                     <div id="formulario-personalizado" style="display: none; margin-top: 15px;">
+                        
                         <div class="form-group">
                             <label for="base_personalizado"> Base / Proteína</label>
                             <select name="base_personalizado" id="base_personalizado" class="form-control">
                                 <option value="">Selecciona una base</option>
-                                <option value="Pollo">Pollo a la plancha</option>
-                                <option value="Carne">Carne de res</option>
-                                <option value="Cerdo">Cerdo</option>
-                                <option value="Pescado">Pescado</option>
-                                <option value="Vegetariano">Vegetariano (sin carne)</option>
-                                <option value="Mixto">Mixto (pollo y carne)</option>
+                                <option value="Pollo">Pollo a la plancha - $6.00</option>
+                                <option value="Carne">Carne de res - $7.00</option>
+                                <option value="Cerdo">Cerdo - $6.50</option>
+                                <option value="Pescado">Pescado - $8.00</option>
+                                <option value="Vegetariano">Vegetariano (sin carne) - $5.00</option>
+                                <option value="Mixto">Mixto (pollo y carne) - $8.50</option>
                             </select>
+                            <small id="baseError" class="error-msg" style="display:none; color:#ef4444; font-size:12px;">
+                                <i class="fa-regular fa-circle-exclamation"></i> Selecciona una base
+                            </small>
                         </div>
                         
                         <div class="form-group">
-                            <label for="acompanamientos"> Acompañamientos</label>
+                            <label for="acompanamientos"> Acompañamientos (+$2.00 c/u)</label>
                             <select name="acompanamientos" id="acompanamientos" class="form-control" multiple>
                                 <option value="Papas fritas">Papas fritas</option>
                                 <option value="Arroz">Arroz</option>
@@ -124,7 +128,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="salsas_personalizado"> Salsas</label>
+                            <label for="salsas_personalizado"> Salsas (+$1.00 c/u)</label>
                             <select name="salsas_personalizado" id="salsas_personalizado" class="form-control" multiple>
                                 <option value="Salsa de tomate">Salsa de tomate</option>
                                 <option value="Salsa picante">Salsa picante</option>
@@ -171,18 +175,24 @@
                             <label for="direccion"> Ubicación actual</label>
                             <input type="text" name="direccion" id="direccion" class="form-control" 
                                    placeholder="Tu ubicación actual (dirección, referencia)">
+                            <small id="direccionError" class="error-msg" style="display:none; color:#ef4444; font-size:12px;">
+                                <i class="fa-regular fa-circle-exclamation"></i> Ingresa una dirección
+                            </small>
                         </div>
                         
                         <div class="form-group">
                             <label for="hora_entrega"> Hora de entrega</label>
                             <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
+                            <small id="horaError" class="error-msg" style="display:none; color:#ef4444; font-size:12px;">
+                                <i class="fa-regular fa-circle-exclamation"></i> Selecciona una hora válida (8:00 - 22:00)
+                            </small>
                             <small>Si no seleccionas hora, lo enviaremos lo más pronto posible</small>
                         </div>
                     </div>
                 </div>
 
                 <!-- ========== 3. BOTÓN CONFIRMAR ========== -->
-                <button type="submit" class="btn-pagar">
+                <button type="submit" class="btn-pagar" id="btnConfirmar">
                     <i class="fa-solid fa-credit-card"></i> Confirmar Pedido
                 </button>
             </form>
@@ -210,7 +220,7 @@
                     <i class="fa-solid fa-utensils"></i> Ver Menú
                 </a>
                 <a href="{% url 'pedido_personalizado' %}" class="btn-personalizado-link">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Pide segun thus gustos
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Pide según tus gustos
                 </a>
             </div>
         </div>
@@ -708,6 +718,20 @@ body {
     resize: vertical;
 }
 
+.error-msg {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.error-msg i {
+    font-size: 14px;
+}
+
 @media (max-width: 768px) {
     .grid-carrito {
         grid-template-columns: 1fr;
@@ -768,6 +792,120 @@ document.addEventListener('DOMContentLoaded', function() {
     if (local) {
         local.checked = true;
         document.querySelector('.opcion-entrega:has(#entrega_local)')?.classList.add('seleccionada');
+    }
+});
+
+// ========== VALIDACIÓN DEL FORMULARIO ==========
+function validarFormulario() {
+    let esValido = true;
+
+    // Ocultar todos los mensajes de error
+    document.querySelectorAll('.error-msg').forEach(el => el.style.display = 'none');
+
+    // 1. Validar plato personalizado (si está activado)
+    const chkPersonalizado = document.getElementById('es_personalizado');
+    if (chkPersonalizado && chkPersonalizado.checked) {
+        const base = document.getElementById('base_personalizado');
+        if (base && base.value === '') {
+            document.getElementById('baseError').style.display = 'flex';
+            base.style.borderColor = '#ef4444';
+            esValido = false;
+        }
+    }
+
+    // 2. Validar domicilio (si está seleccionado)
+    const entregaDomicilio = document.getElementById('entrega_domicilio');
+    if (entregaDomicilio && entregaDomicilio.checked) {
+        // Validar dirección
+        const direccion = document.getElementById('direccion');
+        if (direccion && direccion.value.trim() === '') {
+            document.getElementById('direccionError').style.display = 'flex';
+            direccion.style.borderColor = '#ef4444';
+            esValido = false;
+        }
+
+        // Validar hora
+        const hora = document.getElementById('hora_entrega');
+        if (hora && hora.value !== '') {
+            const horaVal = hora.value;
+            const horaNum = parseInt(horaVal.split(':')[0]);
+            const minutoNum = parseInt(horaVal.split(':')[1]);
+            
+            // Validar que la hora esté entre 8:00 y 22:00
+            if (horaNum < 8 || horaNum > 22 || (horaNum === 22 && minutoNum > 0)) {
+                document.getElementById('horaError').style.display = 'flex';
+                hora.style.borderColor = '#ef4444';
+                esValido = false;
+            }
+        }
+    }
+
+    // Si hay errores, mostrar alerta y evitar envío
+    if (!esValido) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Corrige los errores',
+            text: 'Por favor, revisa los campos marcados en rojo.',
+            confirmButtonColor: '#e76e05',
+        });
+        return false;
+    }
+
+    return true;
+}
+
+// Validación en tiempo real de la hora
+document.addEventListener('DOMContentLoaded', function() {
+    const horaInput = document.getElementById('hora_entrega');
+    if (horaInput) {
+        horaInput.addEventListener('input', function() {
+            const horaVal = this.value;
+            const horaError = document.getElementById('horaError');
+            if (horaVal !== '') {
+                const horaNum = parseInt(horaVal.split(':')[0]);
+                const minutoNum = parseInt(horaVal.split(':')[1]);
+                if (horaNum < 8 || horaNum > 22 || (horaNum === 22 && minutoNum > 0)) {
+                    horaError.style.display = 'flex';
+                    this.style.borderColor = '#ef4444';
+                } else {
+                    horaError.style.display = 'none';
+                    this.style.borderColor = '';
+                }
+            } else {
+                horaError.style.display = 'none';
+                this.style.borderColor = '';
+            }
+        });
+    }
+
+    // Validar dirección en tiempo real
+    const direccionInput = document.getElementById('direccion');
+    if (direccionInput) {
+        direccionInput.addEventListener('input', function() {
+            const dirError = document.getElementById('direccionError');
+            if (this.value.trim() !== '') {
+                dirError.style.display = 'none';
+                this.style.borderColor = '';
+            } else {
+                dirError.style.display = 'flex';
+                this.style.borderColor = '#ef4444';
+            }
+        });
+    }
+
+    // Validar base en tiempo real
+    const baseInput = document.getElementById('base_personalizado');
+    if (baseInput) {
+        baseInput.addEventListener('change', function() {
+            const baseError = document.getElementById('baseError');
+            if (this.value !== '') {
+                baseError.style.display = 'none';
+                this.style.borderColor = '';
+            } else {
+                baseError.style.display = 'flex';
+                this.style.borderColor = '#ef4444';
+            }
+        });
     }
 });
 </script>

@@ -10,12 +10,12 @@
 
         <!-- TÍTULO -->
         <div class="form-header">
-            <h2><i class="fa-regular fa-pen-to-square"></i> Editar Usuario</h2>
+            <h2><i class="fa-regular "></i> Editar Usuario</h2>
             <p>Actualiza la información del usuario</p>
         </div>
 
         <!-- FORMULARIO -->
-        <form method="post" id="editarForm" onsubmit="return validarFormulario()">
+        <form method="post" id="editarForm" novalidate>
             {% csrf_token %}
 
             <!-- ===== CAMPOS ===== -->
@@ -24,7 +24,7 @@
                 <div class="form-group">
                     <label><i class="fa-regular fa-user"></i> Usuario</label>
                     <input type="text" id="username" name="username" value="{{ usuario.username }}" required>
-                    <small id="usernameError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
+                    <small id="usernameError" class="error-msg">
                         <i class="fa-regular fa-circle-exclamation"></i> Solo se permiten letras y espacios
                     </small>
                 </div>
@@ -32,27 +32,43 @@
                 <div class="form-group">
                     <label><i class="fa-regular fa-envelope"></i> Correo</label>
                     <input type="email" id="email" name="email" value="{{ usuario.email }}" required>
-                    <small id="emailError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
+                    <small id="emailError" class="error-msg">
                         <i class="fa-regular fa-circle-exclamation"></i> Ingresa un correo válido
+                    </small>
+                    <small id="emailDuplicadoError" class="error-msg" style="display: none;">
+                        <i class="fa-regular fa-circle-exclamation"></i> Este correo ya está registrado por otro usuario
                     </small>
                 </div>
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-lock"></i> Nueva Contraseña</label>
-                    <input type="password" id="password" name="password" placeholder="• • • • • • • • • • • •">
-                    <small id="passwordError" style="color: #dc2626; font-size: 12px; display: none; margin-top: 4px;">
-                        <i class="fa-regular fa-circle-exclamation"></i> Mínimo 8 caracteres, mayúscula, minúscula, número y símbolo
+                    <div class="password-wrapper">
+                        <input type="password" id="password" name="password" placeholder="• • • • • • • • • • • •">
+                        <button type="button" id="togglePassword" class="btn-toggle-pass">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-requirements">
+                        <small id="reqLength" class="req-item"><i class="fa-regular fa-circle"></i> Mínimo 8 caracteres</small>
+                        <small id="reqMayus" class="req-item"><i class="fa-regular fa-circle"></i> Mayúscula</small>
+                        <small id="reqMinus" class="req-item"><i class="fa-regular fa-circle"></i> Minúscula</small>
+                        <small id="reqNum" class="req-item"><i class="fa-regular fa-circle"></i> Número</small>
+                        <small id="reqSimbol" class="req-item"><i class="fa-regular fa-circle"></i> Símbolo (@$!%*?&_-)</small>
+                    </div>
+                    <small id="passwordError" class="error-msg">
+                        <i class="fa-regular fa-circle-exclamation"></i> La contraseña no cumple con los requisitos
                     </small>
-                    <small style="color: #6b7280; font-size: 11px; margin-top: 3px;">
-                        <i class="fa-regular fa-info-circle"></i> Dejar vacío para mantener la contraseña actual
+                    <small class="help-text">
+                        <i class="fa-regular "></i> Dejar vacío para mantener la contraseña actual
                     </small>
                 </div>
 
                 <div class="form-group">
                     <label><i class="fa-regular fa-badge-check"></i> Rol</label>
                     <select name="rol" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="administrador" {% if usuario.rol == 'administrador' %}selected{% endif %}>Administrador</option>
                         <option value="cocinero" {% if usuario.rol == 'cocinero' %}selected{% endif %}>Cocinero</option>
-                        <option value="admin" {% if usuario.rol == 'admin' %}selected{% endif %}>Administrador</option>
                     </select>
                 </div>
 
@@ -60,11 +76,11 @@
 
             <!-- ===== BOTONES ===== -->
             <div class="form-actions">
-                <button type="submit" class="btn-save">
+                <button type="submit" class="btn-save" id="btnGuardar">
                     <i class="fa-regular fa-floppy-disk"></i> Actualizar
                 </button>
                 <a href="{% url 'lista_usuarios' %}" class="btn-cancel">
-                    <i class="fa-regular fa-xmark"></i> Cancelar
+                    <i class="fa-regular "></i> Cancelar
                 </a>
             </div>
 
@@ -74,98 +90,222 @@
 
 <!-- ========== JAVASCRIPT DE VALIDACIÓN ========== -->
 <script>
-function validarFormulario() {
-    // Limpiar mensajes de error anteriores
-    document.getElementById('usernameError').style.display = 'none';
-    document.getElementById('emailError').style.display = 'none';
-    document.getElementById('passwordError').style.display = 'none';
-
-    let esValido = true;
-
-    // 1. VALIDACIÓN DE NOMBRE: solo letras y espacios
-    const username = document.getElementById('username').value.trim();
-    const soloLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
-    if (!soloLetras.test(username)) {
-        document.getElementById('usernameError').style.display = 'block';
-        esValido = false;
-    }
-
-    // 2. VALIDACIÓN DE CORREO: debe ser único (solo un correo)
-    const email = document.getElementById('email').value.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        document.getElementById('emailError').style.display = 'block';
-        esValido = false;
-    }
-
-    // 3. VALIDACIÓN DE CONTRASEÑA SEGURA (solo si se ingresó una nueva)
-    const password = document.getElementById('password').value;
-    if (password.trim() !== '') {
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-])[A-Za-z\d@$!%*?&_\-]{8,}$/;
-        if (!passwordRegex.test(password)) {
-            document.getElementById('passwordError').style.display = 'block';
-            esValido = false;
-        }
-    }
-
-    if (!esValido) {
-        // Enfocar el primer campo con error
-        const primerError = document.querySelector('.form-group input:invalid, .form-group input:not([style*="display: none"])');
-        if (primerError) {
-            primerError.focus();
-        }
-        // Mostrar alerta de error
-        alert('Por favor, corrige los errores en el formulario.');
-        return false;
-    }
-
-    return true;
-}
-
-// Validación en tiempo real mientras el usuario escribe
 document.addEventListener('DOMContentLoaded', function() {
-    // Validar nombre mientras se escribe
-    const usernameInput = document.getElementById('username');
-    usernameInput.addEventListener('input', function() {
+    const username = document.getElementById('username');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const btnGuardar = document.getElementById('btnGuardar');
+    const togglePass = document.getElementById('togglePassword');
+    const usuarioId = '{{ usuario.id }}';
+
+    // Elementos de requisitos
+    const reqLength = document.getElementById('reqLength');
+    const reqMayus = document.getElementById('reqMayus');
+    const reqMinus = document.getElementById('reqMinus');
+    const reqNum = document.getElementById('reqNum');
+    const reqSimbol = document.getElementById('reqSimbol');
+
+    // ========== VALIDACIÓN EN TIEMPO REAL ==========
+
+    // Validar nombre
+    username.addEventListener('input', function() {
         const soloLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
-        if (!soloLetras.test(this.value.trim()) && this.value.trim() !== '') {
-            document.getElementById('usernameError').style.display = 'block';
+        const error = document.getElementById('usernameError');
+        if (this.value.trim() !== '' && !soloLetras.test(this.value.trim())) {
+            error.style.display = 'flex';
+            this.style.borderColor = '#dc2626';
         } else {
-            document.getElementById('usernameError').style.display = 'none';
+            error.style.display = 'none';
+            this.style.borderColor = '#22c55e';
         }
     });
 
-    // Validar correo mientras se escribe
-    const emailInput = document.getElementById('email');
-    emailInput.addEventListener('input', function() {
+    // Validar correo (formato + duplicado excluyendo el usuario actual)
+    email.addEventListener('input', function() {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(this.value.trim()) && this.value.trim() !== '') {
-            document.getElementById('emailError').style.display = 'block';
-        } else {
-            document.getElementById('emailError').style.display = 'none';
-        }
-    });
+        const errorFormato = document.getElementById('emailError');
+        const errorDuplicado = document.getElementById('emailDuplicadoError');
+        const valor = this.value.trim();
 
-    // Validar contraseña mientras se escribe (solo si no está vacía)
-    const passwordInput = document.getElementById('password');
-    passwordInput.addEventListener('input', function() {
-        if (this.value.trim() === '') {
-            document.getElementById('passwordError').style.display = 'none';
+        if (valor === '') {
+            errorFormato.style.display = 'none';
+            errorDuplicado.style.display = 'none';
+            this.style.borderColor = '#e5e7eb';
             return;
         }
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-])[A-Za-z\d@$!%*?&_\-]{8,}$/;
-        if (!passwordRegex.test(this.value)) {
-            document.getElementById('passwordError').style.display = 'block';
+
+        // Validar formato
+        if (!emailRegex.test(valor)) {
+            errorFormato.style.display = 'flex';
+            errorDuplicado.style.display = 'none';
+            this.style.borderColor = '#dc2626';
+            return;
+        }
+
+        errorFormato.style.display = 'none';
+
+        // Validar duplicado mediante AJAX (excluyendo el usuario actual)
+        fetch("{% url 'validar_email_editar' %}?email=" + encodeURIComponent(valor) + "&usuario_id=" + usuarioId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.existe) {
+                    errorDuplicado.style.display = 'flex';
+                    this.style.borderColor = '#dc2626';
+                } else {
+                    errorDuplicado.style.display = 'none';
+                    this.style.borderColor = '#22c55e';
+                }
+            })
+            .catch(() => {
+                errorDuplicado.style.display = 'none';
+            });
+    });
+
+    // Validar contraseña con requisitos visuales (solo si no está vacía)
+    password.addEventListener('input', function() {
+        const val = this.value;
+        const error = document.getElementById('passwordError');
+
+        // Si está vacío, no mostrar errores (es opcional)
+        if (val === '') {
+            error.style.display = 'none';
+            this.style.borderColor = '#e5e7eb';
+            // Restablecer requisitos a estado neutral
+            resetRequirements();
+            return;
+        }
+
+        const checks = {
+            length: val.length >= 8,
+            mayus: /[A-Z]/.test(val),
+            minus: /[a-z]/.test(val),
+            num: /\d/.test(val),
+            simbol: /[@$!%*?&_\-]/.test(val)
+        };
+
+        // Actualizar iconos de requisitos
+        updateRequirement(reqLength, checks.length);
+        updateRequirement(reqMayus, checks.mayus);
+        updateRequirement(reqMinus, checks.minus);
+        updateRequirement(reqNum, checks.num);
+        updateRequirement(reqSimbol, checks.simbol);
+
+        const cumple = Object.values(checks).every(v => v === true);
+
+        if (!cumple) {
+            error.style.display = 'flex';
+            this.style.borderColor = '#dc2626';
         } else {
-            document.getElementById('passwordError').style.display = 'none';
+            error.style.display = 'none';
+            this.style.borderColor = '#22c55e';
         }
     });
+
+    function updateRequirement(element, cumple) {
+        const texto = element.textContent.replace(/^[^ ]+ /, '');
+        if (cumple) {
+            element.innerHTML = '<i class="fa-regular fa-circle-check" style="color: #22c55e;"></i> ' + texto;
+            element.style.color = '#22c55e';
+        } else {
+            element.innerHTML = '<i class="fa-regular fa-circle"></i> ' + texto;
+            element.style.color = '#6b7280';
+        }
+    }
+
+    function resetRequirements() {
+        const items = [reqLength, reqMayus, reqMinus, reqNum, reqSimbol];
+        items.forEach(item => {
+            const texto = item.textContent.replace(/^[^ ]+ /, '');
+            item.innerHTML = '<i class="fa-regular fa-circle"></i> ' + texto;
+            item.style.color = '#6b7280';
+        });
+    }
+
+    // ========== TOGGLE CONTRASEÑA ==========
+    togglePass.addEventListener('click', function() {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.querySelector('i').className = type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+    });
+
+    // ========== VALIDACIÓN AL ENVIAR ==========
+    document.getElementById('editarForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Limpiar errores
+        document.querySelectorAll('.error-msg').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.form-group input').forEach(el => el.style.borderColor = '#e5e7eb');
+        document.querySelector('select[name="rol"]').style.borderColor = '#e5e7eb';
+
+        let esValido = true;
+
+        // 1. Validar nombre
+        const usernameVal = username.value.trim();
+        const soloLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
+        if (!soloLetras.test(usernameVal) || usernameVal === '') {
+            document.getElementById('usernameError').style.display = 'flex';
+            username.style.borderColor = '#dc2626';
+            esValido = false;
+        }
+
+        // 2. Validar correo
+        const emailVal = email.value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailVal) || emailVal === '') {
+            document.getElementById('emailError').style.display = 'flex';
+            email.style.borderColor = '#dc2626';
+            esValido = false;
+        }
+
+        // 3. Validar contraseña (solo si se ingresó)
+        const passVal = password.value;
+        if (passVal !== '') {
+            const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-])[A-Za-z\d@$!%*?&_\-]{8,}$/;
+            if (!passRegex.test(passVal)) {
+                document.getElementById('passwordError').style.display = 'flex';
+                password.style.borderColor = '#dc2626';
+                esValido = false;
+            }
+        }
+
+        // 4. Validar rol
+        const rol = document.querySelector('select[name="rol"]').value;
+        if (rol === '') {
+            document.querySelector('select[name="rol"]').style.borderColor = '#dc2626';
+            esValido = false;
+        }
+
+        if (!esValido) {
+            const primerError = document.querySelector('.form-group input[style*="border-color: #dc2626"], .form-group select[style*="border-color: #dc2626"]');
+            if (primerError) {
+                primerError.focus();
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Corrige los errores',
+                text: 'Por favor, revisa los campos marcados en rojo.',
+                confirmButtonColor: '#6c63ff',
+            });
+            return;
+        }
+
+        this.submit();
+    });
 });
+
+// ========== VALIDACIÓN DE CORREO ÚNICO PARA EDICIÓN (VIEW) ==========
+// Agregar esta función en views.py
+/*
+def validar_email_editar(request):
+    email = request.GET.get('email', '')
+    usuario_id = request.GET.get('usuario_id', '')
+    existe = Usuario.objects.filter(email=email).exclude(id=usuario_id).exists()
+    return JsonResponse({'existe': existe})
+*/
 </script>
 
 <!-- ========== ESTILOS ========== -->
 <style>
-    /* ----- BANNER ----- */
     body {
         background: #f0f2f8;
         min-height: 100vh;
@@ -185,7 +325,6 @@ document.addEventListener('DOMContentLoaded', function() {
         filter: brightness(0.60);
     }
 
-    /* ----- CONTENEDOR ----- */
     .form-wrapper {
         position: relative;
         z-index: 2;
@@ -196,10 +335,9 @@ document.addEventListener('DOMContentLoaded', function() {
         padding: 30px 15px;
     }
 
-    /* ----- TARJETA ----- */
     .form-card {
         width: 100%;
-        max-width: 620px;
+        max-width: 650px;
         background: rgba(255, 255, 255, 0.92);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
@@ -207,7 +345,6 @@ document.addEventListener('DOMContentLoaded', function() {
         padding: 40px 35px;
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15),
                     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-        transition: transform 0.3s ease;
         animation: fadeUp 0.6s ease;
     }
 
@@ -222,7 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /* ----- HEADER ----- */
     .form-header {
         text-align: center;
         margin-bottom: 28px;
@@ -247,7 +383,6 @@ document.addEventListener('DOMContentLoaded', function() {
         margin: 6px 0 0;
     }
 
-    /* ----- GRID ----- */
     .form-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -296,8 +431,90 @@ document.addEventListener('DOMContentLoaded', function() {
         box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.10);
     }
 
-    .form-group input:invalid {
-        border-color: #dc2626;
+    .form-group input::placeholder {
+        color: #9ca3af;
+    }
+
+    /* ----- PASSWORD WRAPPER ----- */
+    .password-wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    .password-wrapper input {
+        padding-right: 48px;
+    }
+
+    .btn-toggle-pass {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 4px 8px;
+        transition: 0.2s;
+        border-radius: 8px;
+    }
+
+    .btn-toggle-pass:hover {
+        color: #6c63ff;
+        background: rgba(108, 99, 255, 0.08);
+    }
+
+    /* ----- REQUISITOS CONTRASEÑA ----- */
+    .password-requirements {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+        margin-top: 4px;
+        padding: 6px 10px;
+        background: rgba(0,0,0,0.03);
+        border-radius: 10px;
+    }
+
+    .req-item {
+        font-size: 11px;
+        color: #6b7280;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .req-item i {
+        font-size: 12px;
+    }
+
+    /* ----- ERRORES ----- */
+    .error-msg {
+        display: none;
+        align-items: center;
+        gap: 4px;
+        color: #dc2626;
+        font-size: 12px;
+        margin-top: 4px;
+        font-weight: 500;
+    }
+
+    .error-msg i {
+        font-size: 14px;
+    }
+
+    .help-text {
+        color: #6b7280;
+        font-size: 11px;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .help-text i {
+        font-size: 12px;
     }
 
     /* ----- BOTONES ----- */
@@ -349,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
         color: #b91c1c;
     }
 
-    /* ----- RESPONSIVE ----- */
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 600px) {
         .form-card {
             padding: 28px 18px;
@@ -362,6 +579,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         .form-header h2 {
             font-size: 22px;
+        }
+        .password-requirements {
+            gap: 2px 8px;
+        }
+        .req-item {
+            font-size: 10px;
         }
     }
 </style>

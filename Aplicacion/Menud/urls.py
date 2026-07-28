@@ -113,4 +113,6 @@ urlpatterns = [
     # PLATO PERSONALIZADO
     path('pedido-personalizado/', views.pedido_personalizado, name='pedido_personalizado'),
     path('agregar-promocion/<int:promo_id>/', views.agregar_promocion_carrito, name='agregar_promocion_carrito'),
+    path('validar-email/', views.validar_email, name='validar_email'),
+    path('validar-email-editar/', views.validar_email_editar, name='validar_email_editar'),
 ]
