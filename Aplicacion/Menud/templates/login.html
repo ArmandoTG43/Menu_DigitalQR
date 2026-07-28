@@ -6,6 +6,7 @@
 <title>Login</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" href="{% static 'tema/food-funday-master/images/rest.ico' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
@@ -55,10 +56,13 @@ body{
 
 .login-card h2{text-align:center;margin-bottom:20px;}
 
-.input-group{margin-bottom:15px;}
+.input-group{
+    margin-bottom:15px;
+    position:relative;
+}
 
 .input-group input{
-    width:100%;padding:12px;border:none;
+    width:100%;padding:12px;padding-right:45px;border:none;
     border-bottom:1px solid white;
     background:transparent;color:white;
 }
@@ -69,16 +73,44 @@ body{
     outline:none;border-bottom:1px solid #ff4b2b;
 }
 
+/* ===== OJITO ===== */
+.btn-toggle-pass {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 6px;
+    transition: 0.3s;
+    border-radius: 6px;
+}
+
+.btn-toggle-pass:hover {
+    color: white;
+}
+
 .btn-login{
     width:100%;background:#e60023;color:white;
     border:none;padding:12px;border-radius:8px;
     margin-top:10px;cursor:pointer;
 }
 
+.btn-login:hover{
+    background:#cc001f;
+}
+
 .btn-register{
     width:100%;margin-top:10px;padding:12px;
     border:1px solid white;background:transparent;
     color:white;border-radius:8px;cursor:pointer;
+}
+
+.btn-register:hover{
+    background:rgba(255,255,255,0.1);
 }
 
 .google-btn{
@@ -145,7 +177,10 @@ body{
         </div>
 
         <div class="input-group">
-            <input type="password" name="password" placeholder="Contraseña" required>
+            <input type="password" name="password" id="password" placeholder="Contraseña" required>
+            <button type="button" class="btn-toggle-pass" id="togglePassword">
+                <i class="fa-regular fa-eye"></i>
+            </button>
         </div>
 
         <!-- OLVIDASTE CONTRASEÑA -->
@@ -163,6 +198,20 @@ body{
     </form>
 
 </div>
+
+<!-- ===== JAVASCRIPT OJITO ===== -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const togglePassword = document.getElementById('togglePassword');
+    const password = document.getElementById('password');
+
+    togglePassword.addEventListener('click', function() {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.querySelector('i').className = type === 'password' ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+    });
+});
+</script>
 
 </body>
 </html>
