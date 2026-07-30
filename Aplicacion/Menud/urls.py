@@ -117,5 +117,5 @@ urlpatterns = [
 
 
     path('personalizar/', views.personalizar_pedido, name='personalizar_pedido'),
-    path('confirmar-pedido/', views.confirmar_pedido, name='confirmar_pedido'),
+    path('confirmar_pedido_personalizado/', views.confirmar_pedido_personalizado, name='confirmar_pedido_personalizado'),
 ]
