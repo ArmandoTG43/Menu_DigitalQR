@@ -1416,7 +1416,7 @@ def personalizar_pedido(request):
     return render(request, 'personalizar_pedido.html', {'platos': platos})
 
 @cliente_required
-def confirmar-pedido-personalizado(request):
+def confirmar_pedido_personalizado(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método no permitido'}, status=405)
     
