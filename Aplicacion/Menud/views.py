@@ -1415,25 +1415,56 @@ def personalizar_pedido(request):
     platos = Producto.objects.all()
     return render(request, 'personalizar_pedido.html', {'platos': platos})
 
+@cliente_required
 def confirmar_pedido(request):
-    if request.method == 'POST':
-        import json
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Método no permitido'}, status=405)
+    
+    try:
         data = json.loads(request.body)
-        # Crear pedido
+        
+        # Obtener mesa
+        mesa_id = request.session.get('mesa_id')
+        if not mesa_id:
+            return JsonResponse({'success': False, 'message': 'No se identificó la mesa'}, status=400)
+        
+        mesa = get_object_or_404(Mesa, id=mesa_id)
+        
+        # Crear el pedido
         pedido = Pedido.objects.create(
-            usuario=request.user,
-            tipo_entrega=data.get('tipo_entrega'),
-            direccion=data.get('direccion', ''),
-            hora_entrega=data.get('hora_entrega', ''),
+            mesa=mesa,
+            es_domicilio=(data.get('tipo_entrega', 'local') == 'domicilio'),
+            direccion_entrega=data.get('direccion', ''),
+            hora_entrega=data.get('hora_entrega', '') or None,
             total=data.get('total', 0),
             estado='recibido'
         )
+        
+        # Guardar usuario si está autenticado
+        if request.user.is_authenticated:
+            pedido.usuario = request.user
+            pedido.save()
+        
+        # Crear detalles del pedido
         for item in data.get('productos', []):
-            DetallePedido.objects.create(
-                pedido=pedido,
-                producto_id=item['id'],
-                cantidad=item['cantidad'],
-                precio=item['precio']
-            )
-        return JsonResponse({'success': True})
-    return JsonResponse({'success': False, 'message': 'Método no permitido'})
+            try:
+                producto = Producto.objects.get(id=item['id'])
+                DetallePedido.objects.create(
+                    pedido=pedido,
+                    producto=producto,
+                    cantidad=item['cantidad']
+                )
+            except Producto.DoesNotExist:
+                continue
+        
+        # Guardar pedido_id en sesión
+        request.session['pedido_id'] = pedido.id
+        
+        return JsonResponse({
+            'success': True,
+            'pedido_id': pedido.id,
+            'redirect_url': f'/crear-pago/{pedido.id}/'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)

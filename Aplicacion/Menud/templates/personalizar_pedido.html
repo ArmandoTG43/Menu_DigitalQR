@@ -8,7 +8,7 @@
 <div class="container">
     <br><br><br><br>
 
-    <h2 class="title"><i class="fa-solid fa-pen-ruler"></i> Personaliza tu Pedido</h2>
+    <h2 class="title"><i class="fa-solid fa-pen-ruler"></i>Plato a tu gusto</h2>
     <p class="subtitle">Selecciona los platos que deseas y arma tu pedido a tu gusto</p>
 
     <div class="personalizar-grid">
@@ -95,11 +95,11 @@
 
                 <div id="formulario-domicilio" style="display: none; margin-top: 12px;">
                     <div class="form-group">
-                        <label for="direccion">📍 Ubicación actual</label>
+                        <label for="direccion">Ubicación actual</label>
                         <input type="text" name="direccion" id="direccion" class="form-control" placeholder="Tu dirección o referencia">
                     </div>
                     <div class="form-group">
-                        <label for="hora_entrega">⏰ Hora de entrega</label>
+                        <label for="hora_entrega">Hora de entrega</label>
                         <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
                         <small>Deja vacío para enviarlo lo más pronto posible</small>
                     </div>
@@ -822,7 +822,7 @@ function confirmarPedido() {
         total: carrito.reduce((sum, item) => sum + item.precio * item.cantidad, 0),
         tipo_entrega: entregaLocal ? 'local' : 'domicilio',
         direccion: entregaLocal ? '' : direccion,
-        hora_entrega: hora || 'lo más pronto posible'
+        hora_entrega: hora || ''
     };
 
     // Enviar pedido (AJAX)
@@ -839,12 +839,19 @@ function confirmarPedido() {
         if (data.success) {
             Swal.fire({
                 icon: 'success',
-                title: '¡Pedido enviado!',
-                text: 'Tu pedido ha sido enviado a cocina',
-                confirmButtonColor: '#22c55e'
+                title: '¡Pedido creado!',
+                text: 'Redirigiendo al pago...',
+                confirmButtonColor: '#22c55e',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
             });
-            carrito = [];
-            actualizarCarrito();
+            
+            // Redirigir a crear_pago
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 1500);
+            
         } else {
             Swal.fire({
                 icon: 'error',
