@@ -1413,7 +1413,7 @@ def validar_email_editar(request):
 @cliente_required
 def personalizar_pedido(request):
     platos = Producto.objects.all()
-    return render(request, 'personalizar.html', {'platos': platos})
+    return render(request, 'personalizar_pedido.html', {'platos': platos})
 
 def confirmar_pedido(request):
     if request.method == 'POST':
