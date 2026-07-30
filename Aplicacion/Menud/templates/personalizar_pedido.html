@@ -25,19 +25,19 @@
 
             <div class="platos-grid" id="platosGrid">
                 {% for plato in platos %}
-                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-imagen="{{ plato.imagen.url }}" draggable="true">
+                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" {% if plato.imagen %}data-imagen="{{ plato.imagen.url }}"{% else %}data-imagen=""{% endif %} draggable="true">
                     <div class="plato-img">
                         {% if plato.imagen %}
                             <img src="{{ plato.imagen.url }}" alt="{{ plato.nombre }}">
                         {% else %}
-                            <img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}">
+                            <img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}" alt="{{ plato.nombre }}">
                         {% endif %}
                     </div>
                     <div class="plato-info">
                         <h4>{{ plato.nombre }}</h4>
                         <p class="plato-desc">{{ plato.descripcion|truncatechars:50 }}</p>
                         <span class="plato-precio"><i class="fa-solid fa-dollar-sign"></i> {{ plato.precio }}</span>
-                        <button class="btn-agregar" onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }}, '{{ plato.imagen.url }}')">
+                        <button class="btn-agregar" onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }}, '{% if plato.imagen %}{{ plato.imagen.url }}{% endif %}')">
                             <i class="fa-solid fa-plus"></i> Agregar
                         </button>
                     </div>
@@ -95,11 +95,11 @@
 
                 <div id="formulario-domicilio" style="display: none; margin-top: 12px;">
                     <div class="form-group">
-                        <label for="direccion"> Ubicación actual</label>
+                        <label for="direccion">📍 Ubicación actual</label>
                         <input type="text" name="direccion" id="direccion" class="form-control" placeholder="Tu dirección o referencia">
                     </div>
                     <div class="form-group">
-                        <label for="hora_entrega"> Hora de entrega</label>
+                        <label for="hora_entrega">⏰ Hora de entrega</label>
                         <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
                         <small>Deja vacío para enviarlo lo más pronto posible</small>
                     </div>
@@ -171,6 +171,20 @@
     border: 1px solid rgba(255,255,255,0.08);
     max-height: 650px;
     overflow-y: auto;
+}
+
+.menu-columna::-webkit-scrollbar {
+    width: 6px;
+}
+
+.menu-columna::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+}
+
+.menu-columna::-webkit-scrollbar-thumb {
+    background: rgba(245,158,11,0.3);
+    border-radius: 10px;
 }
 
 .menu-header {
@@ -343,6 +357,20 @@
     border: 1px solid rgba(255,255,255,0.06);
     max-height: 280px;
     overflow-y: auto;
+}
+
+.carrito-seleccion::-webkit-scrollbar {
+    width: 6px;
+}
+
+.carrito-seleccion::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+}
+
+.carrito-seleccion::-webkit-scrollbar-thumb {
+    background: rgba(245,158,11,0.3);
+    border-radius: 10px;
 }
 
 .carrito-seleccion h4 {
@@ -656,10 +684,13 @@ function actualizarCarrito() {
     carrito.forEach(item => {
         const subtotal = item.precio * item.cantidad;
         totalGeneral += subtotal;
+        const imagenHtml = item.imagen ? 
+            `<img src="${item.imagen}" alt="${item.nombre}">` : 
+            `<img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}" alt="${item.nombre}">`;
         html += `
             <div class="carrito-item">
                 <div class="carrito-item-img">
-                    ${item.imagen ? `<img src="${item.imagen}" alt="${item.nombre}">` : '<img src="{% static "tema/food-funday-master/images/menu-item-thumbnail-01.jpg" %}">'}
+                    ${imagenHtml}
                 </div>
                 <div class="carrito-item-info">
                     <h5>${item.nombre}</h5>
