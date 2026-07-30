@@ -111,8 +111,11 @@ urlpatterns = [
 
     path('resetear/', views.resetear_productos, name='resetear_productos'),
     # PLATO PERSONALIZADO
-    path('pedido-personalizado/', views.pedido_personalizado, name='pedido_personalizado'),
     path('agregar-promocion/<int:promo_id>/', views.agregar_promocion_carrito, name='agregar_promocion_carrito'),
     path('validar-email/', views.validar_email, name='validar_email'),
     path('validar-email-editar/', views.validar_email_editar, name='validar_email_editar'),
+
+
+    path('personalizar/', views.personalizar_pedido, name='personalizar_pedido'),
+    path('confirmar-pedido/', views.confirmar_pedido, name='confirmar_pedido'),
 ]

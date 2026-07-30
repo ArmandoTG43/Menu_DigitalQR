@@ -1384,78 +1384,6 @@ def agregar_promocion_carrito(request, promo_id):
     return redirect('ver_carrito')
 
 
-@cliente_required
-def pedido_personalizado(request):
-    if request.method == 'POST':
-        base = request.POST.get('base_personalizado', '').strip()
-        acompanamientos = request.POST.getlist('acompanamientos')
-        salsas = request.POST.getlist('salsas_personalizado')
-        instrucciones = request.POST.get('instrucciones_personalizado', '').strip()
-        
-        if not base:
-            messages.error(request, " Por favor selecciona una base/proteína para tu plato.")
-            return render(request, 'pedido_personalizado.html')
-
-        # Tabla de precios base
-        precios_base = {
-            'Pollo': 6.00,
-            'Carne': 7.00,
-            'Cerdo': 6.50,
-            'Pescado': 8.00,
-            'Vegetariano': 5.00,
-            'Mixto': 8.50,
-        }
-        
-        precio_base = precios_base.get(base, 5.00)
-        precio_extra = (len(acompanamientos) * 2.00) + (len(salsas) * 1.00)
-        total = precio_base + precio_extra
-        
-        carrito = request.session.get('carrito', {})
-        
-        max_id = 0
-        for key in carrito.keys():
-            try:
-                val = int(key)
-                if val > max_id:
-                    max_id = val
-            except ValueError:
-                pass
-        nuevo_id = max_id + 1000
-        
-        desc_partes = [f"Base: {base} (${precio_base:.2f})"]
-        if acompanamientos:
-            desc_partes.append(f"Acompañamientos (+${len(acompanamientos)*2:.2f}): {', '.join(acompanamientos)}")
-        if salsas:
-            desc_partes.append(f"Salsas (+${len(salsas)*1:.2f}): {', '.join(salsas)}")
-        if instrucciones:
-            desc_partes.append(f"Indicaciones: {instrucciones}")
-            
-        desc_completa = " | ".join(desc_partes)
-        
-        carrito[str(nuevo_id)] = {
-            'id': str(nuevo_id),
-            'nombre': f"Plato Personalizado ({base})",
-            'descripcion': desc_completa,
-            'precio': float(total),
-            'cantidad': 1,
-            'imagen': '',
-            'es_personalizado': True,
-            'instrucciones': instrucciones,
-            'base': base,
-            'acompanamientos': acompanamientos,
-            'salsas': salsas,
-            'precio_extra': float(precio_extra)
-        }
-        
-        request.session['carrito'] = carrito
-        request.session.modified = True
-        
-        messages.success(request, f' Plato personalizado ({base}) agregado por ${total:.2f}')
-        return redirect('ver_carrito')
-    
-    return render(request, 'pedido_personalizado.html')
-
-
 def resetear_productos(request):
     try:
         from Aplicacion.Menud.models import Producto
@@ -1481,3 +1409,31 @@ def validar_email_editar(request):
     usuario_id = request.GET.get('usuario_id', '')
     existe = User.objects.filter(email=email).exclude(id=usuario_id).exists()
     return JsonResponse({'existe': existe})
+
+@cliente_required
+def personalizar_pedido(request):
+    platos = Producto.objects.all()
+    return render(request, 'personalizar.html', {'platos': platos})
+
+def confirmar_pedido(request):
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)
+        # Crear pedido
+        pedido = Pedido.objects.create(
+            usuario=request.user,
+            tipo_entrega=data.get('tipo_entrega'),
+            direccion=data.get('direccion', ''),
+            hora_entrega=data.get('hora_entrega', ''),
+            total=data.get('total', 0),
+            estado='recibido'
+        )
+        for item in data.get('productos', []):
+            DetallePedido.objects.create(
+                pedido=pedido,
+                producto_id=item['id'],
+                cantidad=item['cantidad'],
+                precio=item['precio']
+            )
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})

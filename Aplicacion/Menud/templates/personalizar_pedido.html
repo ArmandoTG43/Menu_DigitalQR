@@ -1,0 +1,837 @@
+{% extends 'plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<div id="banner"></div>
+
+<div class="container">
+    <br><br><br><br>
+
+    <h2 class="title"><i class="fa-solid fa-pen-ruler"></i> Personaliza tu Pedido</h2>
+    <p class="subtitle">Selecciona los platos que deseas y arma tu pedido a tu gusto</p>
+
+    <div class="personalizar-grid">
+
+        <!-- ===== COLUMNA IZQUIERDA: MENÚ ===== -->
+        <div class="menu-columna">
+            <div class="menu-header">
+                <h3><i class="fa-solid fa-utensils"></i> Menú</h3>
+                <div class="buscador-menu">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="buscadorPlatos" placeholder="Buscar plato..." class="buscador-input">
+                </div>
+            </div>
+
+            <div class="platos-grid" id="platosGrid">
+                {% for plato in platos %}
+                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-imagen="{{ plato.imagen.url }}" draggable="true">
+                    <div class="plato-img">
+                        {% if plato.imagen %}
+                            <img src="{{ plato.imagen.url }}" alt="{{ plato.nombre }}">
+                        {% else %}
+                            <img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}">
+                        {% endif %}
+                    </div>
+                    <div class="plato-info">
+                        <h4>{{ plato.nombre }}</h4>
+                        <p class="plato-desc">{{ plato.descripcion|truncatechars:50 }}</p>
+                        <span class="plato-precio"><i class="fa-solid fa-dollar-sign"></i> {{ plato.precio }}</span>
+                        <button class="btn-agregar" onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }}, '{{ plato.imagen.url }}')">
+                            <i class="fa-solid fa-plus"></i> Agregar
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <p>No hay platos disponibles</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- ===== COLUMNA DERECHA: PEDIDO PERSONALIZADO ===== -->
+        <div class="pedido-columna">
+
+            <!-- Área de selección (drop zone) -->
+            <div class="drop-zone" id="dropZone">
+                <i class="fa-solid fa-arrow-pointer"></i>
+                <p>Arrastra un plato aquí o haz clic en "Agregar"</p>
+                <span class="drop-hint">Suelta para agregar al pedido</span>
+            </div>
+
+            <!-- Carrito de selección -->
+            <div class="carrito-seleccion">
+                <h4><i class="fa-solid fa-cart-shopping"></i> Tu selección</h4>
+                <div id="carritoLista">
+                    <p class="carrito-vacio"><i class="fa-regular fa-face-smile"></i> No has seleccionado ningún plato</p>
+                </div>
+
+                <!-- Total -->
+                <div class="carrito-total">
+                    <span>Total:</span>
+                    <strong id="totalPrecio">$0.00</strong>
+                </div>
+            </div>
+
+            <!-- Opciones de entrega -->
+            <div class="entrega-section">
+                <h4><i class="fa-solid fa-truck"></i> Opciones de entrega</h4>
+
+                <div class="opciones-entrega">
+                    <div class="opcion-entrega seleccionada" onclick="seleccionarEntrega('local')">
+                        <input type="radio" name="tipo_entrega" id="entrega_local" value="local" checked>
+                        <label for="entrega_local">
+                            <i class="fa-solid fa-chair"></i> Consumir en el local
+                            <small>Te atenderemos en tu mesa</small>
+                        </label>
+                    </div>
+                    <div class="opcion-entrega" onclick="seleccionarEntrega('domicilio')">
+                        <input type="radio" name="tipo_entrega" id="entrega_domicilio" value="domicilio">
+                        <label for="entrega_domicilio">
+                            <i class="fa-solid fa-truck-fast"></i> Domicilio
+                            <small>Recibe tu pedido donde estés</small>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="formulario-domicilio" style="display: none; margin-top: 12px;">
+                    <div class="form-group">
+                        <label for="direccion"> Ubicación actual</label>
+                        <input type="text" name="direccion" id="direccion" class="form-control" placeholder="Tu dirección o referencia">
+                    </div>
+                    <div class="form-group">
+                        <label for="hora_entrega"> Hora de entrega</label>
+                        <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
+                        <small>Deja vacío para enviarlo lo más pronto posible</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón pagar -->
+            <button class="btn-pagar" onclick="confirmarPedido()" id="btnPagar">
+                <i class="fa-solid fa-credit-card"></i> Pagar y enviar pedido
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ===== ESTILOS ===== */
+#banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: url("{% static 'tema/food-funday-master/images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+    filter: brightness(0.50);
+}
+
+.container {
+    position: relative;
+    z-index: 2;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.title {
+    color: white;
+    font-size: 32px;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.title i {
+    color: #f59e0b;
+    margin-right: 10px;
+}
+
+.subtitle {
+    text-align: center;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 25px;
+    font-size: 15px;
+}
+
+.personalizar-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+/* ===== COLUMNA MENÚ ===== */
+.menu-columna {
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+    max-height: 650px;
+    overflow-y: auto;
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.menu-header h3 {
+    color: white;
+    margin: 0;
+}
+
+.buscador-menu {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 0 12px;
+}
+
+.buscador-menu i {
+    color: rgba(255,255,255,0.3);
+}
+
+.buscador-menu input {
+    background: transparent;
+    border: none;
+    padding: 8px 10px;
+    color: white;
+    outline: none;
+    font-size: 13px;
+    width: 150px;
+}
+
+.buscador-menu input::placeholder {
+    color: rgba(255,255,255,0.3);
+}
+
+.platos-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+
+.plato-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.05);
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+    cursor: grab;
+    transition: 0.3s;
+}
+
+.plato-card:hover {
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(245,158,11,0.2);
+}
+
+.plato-card:active {
+    cursor: grabbing;
+}
+
+.plato-img {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.plato-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.plato-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.plato-info h4 {
+    color: white;
+    font-size: 14px;
+    margin: 0 0 2px 0;
+}
+
+.plato-desc {
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    margin: 0 0 3px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.plato-precio {
+    color: #f59e0b;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.btn-agregar {
+    background: rgba(245,158,11,0.15);
+    color: #f59e0b;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-agregar:hover {
+    background: rgba(245,158,11,0.3);
+}
+
+/* ===== COLUMNA PEDIDO ===== */
+.pedido-columna {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.drop-zone {
+    background: rgba(255,255,255,0.04);
+    border: 2px dashed rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 30px 20px;
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    transition: 0.3s;
+}
+
+.drop-zone.dragover {
+    border-color: #f59e0b;
+    background: rgba(245,158,11,0.05);
+}
+
+.drop-zone i {
+    font-size: 36px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.drop-zone p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.drop-hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.2);
+}
+
+.carrito-seleccion {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255,255,255,0.06);
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.carrito-seleccion h4 {
+    color: white;
+    margin: 0 0 10px 0;
+    font-size: 15px;
+}
+
+.carrito-seleccion h4 i {
+    color: #f59e0b;
+}
+
+.carrito-vacio {
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    font-size: 14px;
+    padding: 15px 0;
+}
+
+.carrito-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    margin-bottom: 6px;
+}
+
+.carrito-item-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.carrito-item-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.carrito-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.carrito-item-info h5 {
+    color: white;
+    font-size: 13px;
+    margin: 0;
+}
+
+.carrito-item-info span {
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+}
+
+.carrito-item-cantidad {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.carrito-item-cantidad button {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.3s;
+}
+
+.carrito-item-cantidad button:hover {
+    background: rgba(245,158,11,0.2);
+}
+
+.carrito-item-cantidad span {
+    color: white;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+}
+
+.carrito-item-precio {
+    color: #f59e0b;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.carrito-total {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin-top: 6px;
+}
+
+.carrito-total span {
+    color: rgba(255,255,255,0.6);
+}
+
+.carrito-total strong {
+    color: white;
+    font-size: 20px;
+}
+
+/* ===== ENTREGA ===== */
+.entrega-section {
+    background: rgba(255,255,255,0.05);
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.entrega-section h4 {
+    color: #f59e0b;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.opciones-entrega {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.opcion-entrega {
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    padding: 8px 10px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: 0.3s;
+    text-align: center;
+}
+
+.opcion-entrega:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.opcion-entrega input[type="radio"] {
+    display: none;
+}
+
+.opcion-entrega label {
+    cursor: pointer;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    display: block;
+}
+
+.opcion-entrega label i {
+    font-size: 18px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.opcion-entrega label small {
+    color: rgba(255,255,255,0.3);
+    font-size: 10px;
+    display: block;
+}
+
+.opcion-entrega.seleccionada {
+    border-color: #f59e0b;
+    background: rgba(245,158,11,0.08);
+}
+
+.opcion-entrega.seleccionada label {
+    color: white;
+}
+
+#formulario-domicilio .form-group {
+    margin-bottom: 8px;
+}
+
+#formulario-domicilio .form-group label {
+    display: block;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+#formulario-domicilio .form-control {
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: white;
+    font-size: 13px;
+}
+
+#formulario-domicilio .form-control:focus {
+    outline: none;
+    border-color: #f59e0b;
+}
+
+#formulario-domicilio small {
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
+}
+
+.btn-pagar {
+    width: 100%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 10px 25px rgba(34,197,94,0.35);
+}
+
+.btn-pagar:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(34,197,94,0.45);
+}
+
+.btn-pagar:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+    .personalizar-grid {
+        grid-template-columns: 1fr;
+    }
+    .menu-columna {
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 600px) {
+    .opciones-entrega {
+        grid-template-columns: 1fr;
+    }
+    .plato-card {
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<script>
+// ===== VARIABLES GLOBALES =====
+let carrito = [];
+let total = 0;
+
+// ===== AGREGAR PLATO AL CARRITO =====
+function agregarAlCarrito(id, nombre, precio, imagen) {
+    const existente = carrito.find(item => item.id === id);
+    if (existente) {
+        existente.cantidad += 1;
+    } else {
+        carrito.push({
+            id: id,
+            nombre: nombre,
+            precio: precio,
+            imagen: imagen || '',
+            cantidad: 1
+        });
+    }
+    actualizarCarrito();
+}
+
+// ===== ELIMINAR PLATO DEL CARRITO =====
+function eliminarDelCarrito(id) {
+    carrito = carrito.filter(item => item.id !== id);
+    actualizarCarrito();
+}
+
+// ===== CAMBIAR CANTIDAD =====
+function cambiarCantidad(id, delta) {
+    const item = carrito.find(i => i.id === id);
+    if (item) {
+        item.cantidad += delta;
+        if (item.cantidad <= 0) {
+            eliminarDelCarrito(id);
+            return;
+        }
+        actualizarCarrito();
+    }
+}
+
+// ===== ACTUALIZAR CARRITO =====
+function actualizarCarrito() {
+    const lista = document.getElementById('carritoLista');
+    const totalSpan = document.getElementById('totalPrecio');
+    const btnPagar = document.getElementById('btnPagar');
+
+    if (carrito.length === 0) {
+        lista.innerHTML = '<p class="carrito-vacio"><i class="fa-regular fa-face-smile"></i> No has seleccionado ningún plato</p>';
+        totalSpan.textContent = '$0.00';
+        btnPagar.disabled = true;
+        return;
+    }
+
+    let html = '';
+    let totalGeneral = 0;
+
+    carrito.forEach(item => {
+        const subtotal = item.precio * item.cantidad;
+        totalGeneral += subtotal;
+        html += `
+            <div class="carrito-item">
+                <div class="carrito-item-img">
+                    ${item.imagen ? `<img src="${item.imagen}" alt="${item.nombre}">` : '<img src="{% static "tema/food-funday-master/images/menu-item-thumbnail-01.jpg" %}">'}
+                </div>
+                <div class="carrito-item-info">
+                    <h5>${item.nombre}</h5>
+                    <span>$${item.precio.toFixed(2)} c/u</span>
+                </div>
+                <div class="carrito-item-cantidad">
+                    <button onclick="cambiarCantidad(${item.id}, -1)"><i class="fa-solid fa-minus"></i></button>
+                    <span>${item.cantidad}</span>
+                    <button onclick="cambiarCantidad(${item.id}, 1)"><i class="fa-solid fa-plus"></i></button>
+                </div>
+                <div class="carrito-item-precio">$${subtotal.toFixed(2)}</div>
+            </div>
+        `;
+    });
+
+    lista.innerHTML = html;
+    totalSpan.textContent = `$${totalGeneral.toFixed(2)}`;
+    btnPagar.disabled = false;
+}
+
+// ===== DRAG & DROP =====
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const platos = document.querySelectorAll('.plato-card');
+
+    platos.forEach(plato => {
+        plato.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                id: parseInt(this.dataset.id),
+                nombre: this.dataset.nombre,
+                precio: parseFloat(this.dataset.precio),
+                imagen: this.dataset.imagen || ''
+            }));
+        });
+    });
+
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', function(e) {
+        this.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            agregarAlCarrito(data.id, data.nombre, data.precio, data.imagen);
+        } catch (error) {
+            console.error('Error al soltar:', error);
+        }
+    });
+});
+
+// ===== SELECCIÓN ENTREGA =====
+function seleccionarEntrega(tipo) {
+    const local = document.getElementById('entrega_local');
+    const domicilio = document.getElementById('entrega_domicilio');
+    const formulario = document.getElementById('formulario-domicilio');
+    const opciones = document.querySelectorAll('.opcion-entrega');
+
+    opciones.forEach(el => el.classList.remove('seleccionada'));
+
+    if (tipo === 'local') {
+        local.checked = true;
+        domicilio.checked = false;
+        formulario.style.display = 'none';
+        document.querySelector('.opcion-entrega:has(#entrega_local)').classList.add('seleccionada');
+    } else {
+        domicilio.checked = true;
+        local.checked = false;
+        formulario.style.display = 'block';
+        document.querySelector('.opcion-entrega:has(#entrega_domicilio)').classList.add('seleccionada');
+    }
+}
+
+// ===== BUSCADOR =====
+document.addEventListener('DOMContentLoaded', function() {
+    const buscador = document.getElementById('buscadorPlatos');
+    const platos = document.querySelectorAll('.plato-card');
+
+    buscador.addEventListener('input', function() {
+        const texto = this.value.toLowerCase().trim();
+        platos.forEach(plato => {
+            const nombre = plato.dataset.nombre.toLowerCase();
+            plato.style.display = nombre.includes(texto) ? 'flex' : 'none';
+        });
+    });
+});
+
+// ===== CONFIRMAR PEDIDO =====
+function confirmarPedido() {
+    if (carrito.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Carrito vacío',
+            text: 'Agrega al menos un plato para continuar',
+            confirmButtonColor: '#f59e0b'
+        });
+        return;
+    }
+
+    const entregaLocal = document.getElementById('entrega_local').checked;
+    const direccion = document.getElementById('direccion')?.value || '';
+    const hora = document.getElementById('hora_entrega')?.value || '';
+
+    if (!entregaLocal && direccion.trim() === '') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Dirección requerida',
+            text: 'Ingresa la dirección para el domicilio',
+            confirmButtonColor: '#f59e0b'
+        });
+        return;
+    }
+
+    // Construir pedido
+    const pedido = {
+        productos: carrito.map(item => ({
+            id: item.id,
+            nombre: item.nombre,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            subtotal: item.precio * item.cantidad
+        })),
+        total: carrito.reduce((sum, item) => sum + item.precio * item.cantidad, 0),
+        tipo_entrega: entregaLocal ? 'local' : 'domicilio',
+        direccion: entregaLocal ? '' : direccion,
+        hora_entrega: hora || 'lo más pronto posible'
+    };
+
+    // Enviar pedido (AJAX)
+    fetch("{% url 'confirmar_pedido' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(pedido)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Pedido enviado!',
+                text: 'Tu pedido ha sido enviado a cocina',
+                confirmButtonColor: '#22c55e'
+            });
+            carrito = [];
+            actualizarCarrito();
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.message || 'Hubo un error al enviar el pedido',
+                confirmButtonColor: '#ef4444'
+            });
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor',
+            confirmButtonColor: '#ef4444'
+        });
+    });
+}
+</script>
+
+{% endblock %}
