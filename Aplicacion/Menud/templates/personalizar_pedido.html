@@ -37,14 +37,17 @@
                 <button class="cat-btn" data-categoria="postres" onclick="filtrarCategoria('postres')">
                     <i class="fa-solid fa-cake"></i> Postres
                 </button>
-                <button class="cat-btn" data-categoria="bebidas-frias" onclick="filtrarCategoria('bebidas-frias')">
+                <button class="cat-btn" data-categoria="bebidas" onclick="filtrarCategoria('bebidas')">
                     <i class="fa-solid fa-wine-bottle"></i> Bebidas Frías
+                </button>
+                <button class="cat-btn" data-categoria="porciones" onclick="filtrarCategoria('porciones')">
+                    <i class="fa-solid fa-utensils"></i> Porciones
                 </button>
             </div>
 
             <div class="platos-grid" id="platosGrid">
                 {% for plato in platos %}
-                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|lower }}" {% if plato.imagen %}data-imagen="{{ plato.imagen.url }}"{% else %}data-imagen=""{% endif %} draggable="true">
+                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|lower|cut:' ' }}" {% if plato.imagen %}data-imagen="{{ plato.imagen.url }}"{% else %}data-imagen=""{% endif %} draggable="true">
                     <div class="plato-img">
                         {% if plato.imagen %}
                             <img src="{{ plato.imagen.url }}" alt="{{ plato.nombre }}">
@@ -295,9 +298,14 @@
     border-left: 4px solid #ec4899;
 }
 
-.plato-card[data-categoria="bebidas-frias"] {
+.plato-card[data-categoria="bebidas"] {
     background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
     border-left: 4px solid #3b82f6;
+}
+
+.plato-card[data-categoria="porciones"] {
+    background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05));
+    border-left: 4px solid #a855f7;
 }
 
 .plato-card[data-categoria="entradas"] {
@@ -305,7 +313,7 @@
     border-left: 4px solid #a855f7;
 }
 
-.plato-card[data-categoria="platos-fuertes"] {
+.plato-card[data-categoria="platosfuertes"] {
     background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
     border-left: 4px solid #ef4444;
 }
@@ -516,20 +524,26 @@
     gap: 6px;
 }
 
+/* ===== BOTONES + Y - AMARILLOS ===== */
 .carrito-item-cantidad button {
-    background: rgba(255,255,255,0.08);
+    background: #f59e0b;
     border: none;
-    color: white;
+    color: #0b0f1a;
     width: 24px;
     height: 24px;
     border-radius: 50%;
     cursor: pointer;
     font-size: 12px;
     transition: 0.3s;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .carrito-item-cantidad button:hover {
-    background: rgba(245,158,11,0.2);
+    background: #e76e05;
+    transform: scale(1.1);
 }
 
 .carrito-item-cantidad span {
