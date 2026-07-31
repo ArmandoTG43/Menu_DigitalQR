@@ -29,10 +29,13 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Usuario 
 
 def admin_required(view_func):
+    """Decorador para vistas solo de administrador"""
+    @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.rol == 'admin':
+        if request.session.get('cliente'):
+            return redirect('menu')
+        if request.user.is_authenticated and hasattr(request.user, 'rol') and request.user.rol == 'admin':
             return view_func(request, *args, **kwargs)
-        messages.error(request, "Acceso denegado. Solo administradores.")
         return redirect('login')
     return wrapper
 
@@ -117,31 +120,13 @@ def eliminar_usuario(request, id):
     
     return render(request, 'usuarios/eliminar.html', {'usuario': usuario})
 
-def admin_required(view_func):
-    """Decorador para vistas solo de administrador"""
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        if request.session.get('cliente'):
-            return redirect('menu')
-        if request.user.is_authenticated and hasattr(request.user, 'rol') and request.user.rol == 'admin':
-            return view_func(request, *args, **kwargs)
-        return redirect('login')
-    return wrapper
+
 
 def cocinero_required(view_func):
     """Decorador para vistas solo de cocinero"""
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if request.user.is_authenticated and hasattr(request.user, 'rol') and request.user.rol == 'cocinero':
-            return view_func(request, *args, **kwargs)
-        return redirect('login')
-    return wrapper
-
-def cliente_required(view_func):
-    """Decorador para vistas solo de clientes (QR)"""
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        if request.session.get('cliente'):
             return view_func(request, *args, **kwargs)
         return redirect('login')
     return wrapper
@@ -516,6 +501,8 @@ def api_pedido_detalle(request, pedido_id):
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
 
+
+
 @admin_required
 def generar_comprobante(request, pedido_id):
     pedido = Pedido.objects.get(id=pedido_id)
@@ -833,18 +820,18 @@ def confirmar_pago(request):
         try:
             pedido_id = request.POST.get('pedido_id')
             metodo = request.POST.get('metodo', 'tarjeta')
-            pedido = get_object_or_404(Pedido, id=pedido_id)  # ← CAMBIADO
+            pedido = get_object_or_404(Pedido, id=pedido_id)
             
             # Verificar si el pedido tiene productos
             if not pedido.tiene_productos():
-                messages.error(request, ' No se puede pagar un pedido sin productos.')
+                messages.error(request, 'No se puede pagar un pedido sin productos.')
                 return redirect('ver_carrito')
             
             # Calcular total actualizado antes de pagar
             total = pedido.calcular_total()
             
             if total == 0:
-                messages.error(request, ' El total del pedido es $0.00. No se puede procesar el pago.')
+                messages.error(request, 'El total del pedido es $0.00. No se puede procesar el pago.')
                 return redirect('ver_carrito')
             
             # Crear o actualizar el pago
@@ -858,19 +845,23 @@ def confirmar_pago(request):
                 }
             )
             
+            # Actualizar estado del pedido para que llegue a cocina
+            pedido.estado = 'pagado'  # o 'recibido' si prefieres
+            pedido.save()
+            
             # Limpiar carrito
             request.session['carrito'] = {}
             request.session.modified = True
             
-            messages.success(request, f' Pago de ${total:.2f} verificado exitosamente.')
+            messages.success(request, f'Pago de ${total:.2f} verificado exitosamente.')
             return redirect('comprobante_pago', pago_id=pago.id)
             
         except Exception as e:
-            print(f" Error en confirmar_pago: {e}")
+            print(f"Error en confirmar_pago: {e}")
             import traceback
             traceback.print_exc()
             
-            messages.error(request, f' Error al procesar el pago: {str(e)}')
+            messages.error(request, f'Error al procesar el pago: {str(e)}')
             return redirect('ver_carrito')
     
     return redirect('ver_carrito')
@@ -1416,54 +1407,246 @@ def personalizar_pedido(request):
     return render(request, 'personalizar_pedido.html', {'platos': platos})
 
 @cliente_required
-def confirmar_pedido_personalizado(request):
+def confirmar_pedido(request):
+    carrito = request.session.get('carrito', {})
+    mesa_id = request.session.get('mesa_id')
+    
+    # Si es usuario autenticado (ej. admin probando), asignar mesa por defecto si falta
+    if not mesa_id and request.user.is_authenticated:
+        mesa_obj = Mesa.objects.first()
+        if not mesa_obj:
+            mesa_obj = Mesa.objects.create(numero=1)
+        mesa_id = mesa_obj.id
+        request.session['mesa_id'] = mesa_id
+        request.session['cliente'] = True
+
+    if not carrito and not request.POST.get('base_personalizado'):
+        messages.error(request, 'No hay productos en el carrito')
+        return redirect('menu')
+    
+    if not mesa_id:
+        messages.error(request, 'No se identificó la mesa')
+        return redirect('login')
+    
+    mesa = get_object_or_404(Mesa, id=mesa_id)
+    
+    # ===== OBTENER OPCIONES DE ENTREGA =====
+    # Primero del POST, si no de la sesión (de personalizar)
+    tipo_entrega = request.POST.get('tipo_entrega') or request.session.get('tipo_entrega', 'local')
+    direccion = request.POST.get('direccion') or request.session.get('direccion', '')
+    hora_entrega = request.POST.get('hora_entrega') or request.session.get('hora_entrega', '')
+    instrucciones_domicilio = request.POST.get('instrucciones_domicilio', '')
+    
+    # Limpiar opciones de entrega de la sesión
+    request.session.pop('tipo_entrega', None)
+    request.session.pop('direccion', None)
+    request.session.pop('hora_entrega', None)
+    # ========================================
+    
+    # Crear el pedido
+    pedido = Pedido.objects.create(
+        mesa=mesa,
+        es_domicilio=(tipo_entrega == 'domicilio'),
+        direccion_entrega=direccion if tipo_entrega == 'domicilio' else '',
+        hora_entrega=hora_entrega if tipo_entrega == 'domicilio' and hora_entrega else None,
+        instrucciones_adicionales=instrucciones_domicilio if tipo_entrega == 'domicilio' else '',
+        estado='recibido'
+    )
+    
+    total = 0.0
+    categoria_personalizada, _ = Categoria.objects.get_or_create(nombre="Personalizados")
+    has_custom = False
+
+    # 1. Procesar items del carrito de la sesión
+    for key, item in carrito.items():
+        if item.get('es_personalizado'):
+            has_custom = True
+            nombre_base = item.get('base', 'Personalizado')
+            precio_item = float(item.get('precio', 0))
+            desc_item = item.get('descripcion', '')
+            
+            producto, created = Producto.objects.get_or_create(
+                nombre=f"Personalizado ({nombre_base})",
+                defaults={
+                    'descripcion': desc_item,
+                    'precio': precio_item,
+                    'categoria': categoria_personalizada
+                }
+            )
+            if not created:
+                producto.precio = precio_item
+                producto.descripcion = desc_item
+                producto.save()
+            
+            cant = int(item.get('cantidad', 1))
+            DetallePedido.objects.create(
+                pedido=pedido,
+                producto=producto,
+                cantidad=cant
+            )
+            
+            total += precio_item * cant
+            
+            if not hasattr(pedido, 'personalizado'):
+                acomps = item.get('acompanamientos', [])
+                salsas_list = item.get('salsas', [])
+                acomps_str = ', '.join(acomps) if isinstance(acomps, list) else str(acomps)
+                salsas_str = ', '.join(salsas_list) if isinstance(salsas_list, list) else str(salsas_list)
+
+                PedidoPersonalizado.objects.create(
+                    pedido=pedido,
+                    base=nombre_base,
+                    acompañamientos=acomps_str,
+                    salsas=salsas_str,
+                    instrucciones=item.get('instrucciones', ''),
+                    precio_extra=float(item.get('precio_extra', 0))
+                )
+        else:
+            try:
+                producto = Producto.objects.get(id=int(key))
+                cantidad = int(item.get('cantidad', 1))
+                
+                DetallePedido.objects.create(
+                    pedido=pedido,
+                    producto=producto,
+                    cantidad=cantidad
+                )
+                total += float(producto.precio) * cantidad
+            except (Producto.DoesNotExist, ValueError):
+                continue
+
+    # 2. Procesar plato personalizado (si viene del carrito normal)
+    inline_base = request.POST.get('base_personalizado', '').strip()
+    if inline_base:
+        has_custom = True
+        inline_acomps = request.POST.getlist('acompanamientos')
+        inline_salsas = request.POST.getlist('salsas_personalizado')
+        inline_instr = request.POST.get('instrucciones_personalizado', '').strip()
+
+        precios_base = {
+            'Pollo': 6.00,
+            'Carne': 7.00,
+            'Cerdo': 6.50,
+            'Pescado': 8.00,
+            'Vegetariano': 5.00,
+            'Mixto': 8.50,
+        }
+        base_price = precios_base.get(inline_base, 5.00)
+        extra_price = (len(inline_acomps) * 2.00) + (len(inline_salsas) * 1.00)
+        custom_total = base_price + extra_price
+
+        desc_partes = [f"Base: {inline_base} (${base_price:.2f})"]
+        if inline_acomps:
+            desc_partes.append(f"Acompañamientos (+${len(inline_acomps)*2:.2f}): {', '.join(inline_acomps)}")
+        if inline_salsas:
+            desc_partes.append(f"Salsas (+${len(inline_salsas)*1:.2f}): {', '.join(inline_salsas)}")
+        if inline_instr:
+            desc_partes.append(f"Indicaciones: {inline_instr}")
+
+        desc_completa = " | ".join(desc_partes)
+
+        producto_custom, created = Producto.objects.get_or_create(
+            nombre=f"Personalizado ({inline_base})",
+            defaults={
+                'descripcion': desc_completa,
+                'precio': custom_total,
+                'categoria': categoria_personalizada
+            }
+        )
+        if not created:
+            producto_custom.precio = custom_total
+            producto_custom.descripcion = desc_completa
+            producto_custom.save()
+
+        DetallePedido.objects.create(
+            pedido=pedido,
+            producto=producto_custom,
+            cantidad=1
+        )
+
+        total += custom_total
+
+        if not hasattr(pedido, 'personalizado'):
+            PedidoPersonalizado.objects.create(
+                pedido=pedido,
+                base=inline_base,
+                acompañamientos=', '.join(inline_acomps),
+                salsas=', '.join(inline_salsas),
+                instrucciones=inline_instr,
+                precio_extra=extra_price
+            )
+
+    pedido.es_personalizado = has_custom
+
+    # ========== APLICAR DESCUENTO DE PROMOCIÓN ==========
+    promocion_data = request.session.get('promocion_aplicada')
+    if promocion_data:
+        if promocion_data['tipo'] == 'porcentaje':
+            total = total * (1 - promocion_data['valor'] / 100)
+        else:
+            total = total - promocion_data['valor']
+        total = max(0, round(total, 2))
+        del request.session['promocion_aplicada']
+    # =====================================================
+
+    pedido.total = round(total, 2)
+    pedido.save()
+    
+    # Vaciar el carrito
+    request.session['carrito'] = {}
+    request.session['pedido_id'] = pedido.id
+    request.session['cliente'] = True
+    request.session.modified = True
+    
+    messages.success(request, f'Pedido #{pedido.id} confirmado por ${total:.2f}')
+    return redirect('crear_pago', pedido_id=pedido.id)
+
+
+@cliente_required
+def agregar_carrito_personalizado(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método no permitido'}, status=405)
     
     try:
         data = json.loads(request.body)
+        productos = data.get('productos', [])
+        tipo_entrega = data.get('tipo_entrega', 'local')
+        direccion = data.get('direccion', '')
+        hora_entrega = data.get('hora_entrega', '')
         
-        # Obtener mesa
-        mesa_id = request.session.get('mesa_id')
-        if not mesa_id:
-            return JsonResponse({'success': False, 'message': 'No se identificó la mesa'}, status=400)
+        if not productos:
+            return JsonResponse({'success': False, 'message': 'No hay productos'}, status=400)
         
-        mesa = get_object_or_404(Mesa, id=mesa_id)
+        # Obtener el carrito de la sesión
+        carrito = request.session.get('carrito', {})
         
-        # Crear el pedido
-        pedido = Pedido.objects.create(
-            mesa=mesa,
-            es_domicilio=(data.get('tipo_entrega', 'local') == 'domicilio'),
-            direccion_entrega=data.get('direccion', ''),
-            hora_entrega=data.get('hora_entrega', '') or None,
-            total=data.get('total', 0),
-            estado='recibido'
-        )
+        # Agregar cada producto al carrito de sesión
+        for item in productos:
+            producto_id = str(item['id'])
+            if producto_id in carrito:
+                carrito[producto_id]['cantidad'] += item['cantidad']
+            else:
+                carrito[producto_id] = {
+                    'id': item['id'],
+                    'nombre': item['nombre'],
+                    'descripcion': item.get('descripcion', ''),
+                    'precio': float(item['precio']),
+                    'cantidad': item['cantidad'],
+                    'imagen': item.get('imagen', '')
+                }
         
-        # Guardar usuario si está autenticado
-        if request.user.is_authenticated:
-            pedido.usuario = request.user
-            pedido.save()
+        # Guardar opciones de entrega en sesión
+        request.session['tipo_entrega'] = tipo_entrega
+        request.session['direccion'] = direccion
+        request.session['hora_entrega'] = hora_entrega
         
-        # Crear detalles del pedido
-        for item in data.get('productos', []):
-            try:
-                producto = Producto.objects.get(id=item['id'])
-                DetallePedido.objects.create(
-                    pedido=pedido,
-                    producto=producto,
-                    cantidad=item['cantidad']
-                )
-            except Producto.DoesNotExist:
-                continue
-        
-        # Guardar pedido_id en sesión
-        request.session['pedido_id'] = pedido.id
+        # Guardar carrito en sesión
+        request.session['carrito'] = carrito
+        request.session.modified = True
         
         return JsonResponse({
             'success': True,
-            'pedido_id': pedido.id,
-            'redirect_url': f'/crear-pago/{pedido.id}/'
+            'redirect_url': '/carrito/'
         })
         
     except Exception as e:
