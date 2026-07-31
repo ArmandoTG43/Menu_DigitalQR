@@ -37,7 +37,7 @@
                 <button class="cat-btn" data-categoria="postres" onclick="filtrarCategoria('postres')">
                     <i class="fa-solid fa-cake"></i> Postres
                 </button>
-                <button class="cat-btn" data-categoria="bebidas" onclick="filtrarCategoria('bebidas')">
+                <button class="cat-btn" data-categoria="bebidas-frias" onclick="filtrarCategoria('bebidas-frias')">
                     <i class="fa-solid fa-wine-bottle"></i> Bebidas Frías
                 </button>
                 <button class="cat-btn" data-categoria="porciones" onclick="filtrarCategoria('porciones')">
@@ -47,7 +47,7 @@
 
             <div class="platos-grid" id="platosGrid">
                 {% for plato in platos %}
-                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|lower|cut:' ' }}" {% if plato.imagen %}data-imagen="{{ plato.imagen.url }}"{% else %}data-imagen=""{% endif %} draggable="true">
+                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|slugify }}" {% if plato.imagen %}data-imagen="{{ plato.imagen.url }}"{% else %}data-imagen=""{% endif %} draggable="true">
                     <div class="plato-img">
                         {% if plato.imagen %}
                             <img src="{{ plato.imagen.url }}" alt="{{ plato.nombre }}">
@@ -298,7 +298,7 @@
     border-left: 4px solid #ec4899;
 }
 
-.plato-card[data-categoria="bebidas"] {
+.plato-card[data-categoria="bebidas-frias"] {
     background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
     border-left: 4px solid #3b82f6;
 }
