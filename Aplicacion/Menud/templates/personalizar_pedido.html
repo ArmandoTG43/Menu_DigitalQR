@@ -92,7 +92,8 @@
     background-size: cover;
     background-position: center;
     z-index: 1;
-    filter: brightness(0.50);
+    filter: brightness(0.60);
+    
 }
 
 .container {
@@ -137,6 +138,7 @@
     border: 1px solid rgba(255,255,255,0.08);
     max-height: 650px;
     overflow-y: auto;
+    border: 1px solid #cbd5e1;
 }
 
 .menu-columna::-webkit-scrollbar {
@@ -173,6 +175,7 @@
     background: rgba(255,255,255,0.08);
     border-radius: 10px;
     padding: 0 12px;
+    border: 1px solid #ba1d02;
 }
 
 .buscador-menu i {
@@ -323,6 +326,7 @@
     border: 1px solid rgba(255,255,255,0.06);
     max-height: 280px;
     overflow-y: auto;
+    border: 1px solid #cbd5e1;
 }
 
 .carrito-seleccion::-webkit-scrollbar {
@@ -642,7 +646,7 @@ function confirmarPedido() {
     // Deshabilitar botón
     const btn = document.getElementById('btnPagar');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Agregando al carrito...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Agregando...';
 
     // Enviar al carrito
     fetch("{% url 'agregar_carrito_personalizado' %}", {
@@ -658,20 +662,8 @@ function confirmarPedido() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: '¡Agregado al carrito!',
-                text: 'Redirigiendo al carrito para pagar...',
-                confirmButtonColor: '#22c55e',
-                timer: 1500,
-                timerProgressBar: true,
-                showConfirmButton: false
-            });
-            
-            setTimeout(() => {
-                window.location.href = data.redirect_url;
-            }, 1500);
-            
+            //  REDIRIGIR AL CARRITO
+            window.location.href = "{% url 'ver_carrito' %}";
         } else {
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-cart-plus"></i> Agregar al carrito';
