@@ -72,41 +72,7 @@
                 </div>
             </div>
 
-            <!-- Opciones de entrega -->
-            <div class="entrega-section">
-                <h4><i class="fa-solid fa-truck"></i> Opciones de entrega</h4>
-
-                <div class="opciones-entrega">
-                    <div class="opcion-entrega seleccionada" onclick="seleccionarEntrega('local')">
-                        <input type="radio" name="tipo_entrega" id="entrega_local" value="local" checked>
-                        <label for="entrega_local">
-                            <i class="fa-solid fa-chair"></i> Consumir en el local
-                            <small>Te atenderemos en tu mesa</small>
-                        </label>
-                    </div>
-                    <div class="opcion-entrega" onclick="seleccionarEntrega('domicilio')">
-                        <input type="radio" name="tipo_entrega" id="entrega_domicilio" value="domicilio">
-                        <label for="entrega_domicilio">
-                            <i class="fa-solid fa-truck-fast"></i> Domicilio
-                            <small>Recibe tu pedido donde estés</small>
-                        </label>
-                    </div>
-                </div>
-
-                <div id="formulario-domicilio" style="display: none; margin-top: 12px;">
-                    <div class="form-group">
-                        <label for="direccion">📍 Ubicación actual</label>
-                        <input type="text" name="direccion" id="direccion" class="form-control" placeholder="Tu dirección o referencia">
-                    </div>
-                    <div class="form-group">
-                        <label for="hora_entrega">⏰ Hora de entrega</label>
-                        <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
-                        <small>Deja vacío para enviarlo lo más pronto posible</small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botón pagar -->
+            <!-- Botón agregar al carrito -->
             <button class="btn-pagar" onclick="confirmarPedido()" id="btnPagar">
                 <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
             </button>
@@ -482,103 +448,6 @@
     font-size: 20px;
 }
 
-/* ===== ENTREGA ===== */
-.entrega-section {
-    background: rgba(255,255,255,0.05);
-    border-radius: 16px;
-    padding: 14px 16px;
-    border: 1px solid rgba(255,255,255,0.06);
-}
-
-.entrega-section h4 {
-    color: #f59e0b;
-    margin: 0 0 10px 0;
-    font-size: 14px;
-}
-
-.opciones-entrega {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-}
-
-.opcion-entrega {
-    background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-    padding: 8px 10px;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: 0.3s;
-    text-align: center;
-}
-
-.opcion-entrega:hover {
-    background: rgba(255,255,255,0.08);
-}
-
-.opcion-entrega input[type="radio"] {
-    display: none;
-}
-
-.opcion-entrega label {
-    cursor: pointer;
-    color: rgba(255,255,255,0.6);
-    font-size: 12px;
-    display: block;
-}
-
-.opcion-entrega label i {
-    font-size: 18px;
-    display: block;
-    margin-bottom: 2px;
-}
-
-.opcion-entrega label small {
-    color: rgba(255,255,255,0.3);
-    font-size: 10px;
-    display: block;
-}
-
-.opcion-entrega.seleccionada {
-    border-color: #f59e0b;
-    background: rgba(245,158,11,0.08);
-}
-
-.opcion-entrega.seleccionada label {
-    color: white;
-}
-
-#formulario-domicilio .form-group {
-    margin-bottom: 8px;
-}
-
-#formulario-domicilio .form-group label {
-    display: block;
-    color: rgba(255,255,255,0.6);
-    font-size: 12px;
-    margin-bottom: 2px;
-}
-
-#formulario-domicilio .form-control {
-    width: 100%;
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.04);
-    color: white;
-    font-size: 13px;
-}
-
-#formulario-domicilio .form-control:focus {
-    outline: none;
-    border-color: #f59e0b;
-}
-
-#formulario-domicilio small {
-    color: rgba(255,255,255,0.3);
-    font-size: 11px;
-}
-
 .btn-pagar {
     width: 100%;
     background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -615,9 +484,6 @@
 }
 
 @media (max-width: 600px) {
-    .opciones-entrega {
-        grid-template-columns: 1fr;
-    }
     .plato-card {
         flex-wrap: wrap;
     }
@@ -627,7 +493,6 @@
 <script>
 // ===== VARIABLES GLOBALES =====
 let carrito = [];
-let total = 0;
 
 // ===== AGREGAR PLATO AL CARRITO =====
 function agregarAlCarrito(id, nombre, precio, imagen) {
@@ -748,28 +613,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// ===== SELECCIÓN ENTREGA =====
-function seleccionarEntrega(tipo) {
-    const local = document.getElementById('entrega_local');
-    const domicilio = document.getElementById('entrega_domicilio');
-    const formulario = document.getElementById('formulario-domicilio');
-    const opciones = document.querySelectorAll('.opcion-entrega');
-
-    opciones.forEach(el => el.classList.remove('seleccionada'));
-
-    if (tipo === 'local') {
-        local.checked = true;
-        domicilio.checked = false;
-        formulario.style.display = 'none';
-        document.querySelector('.opcion-entrega:has(#entrega_local)').classList.add('seleccionada');
-    } else {
-        domicilio.checked = true;
-        local.checked = false;
-        formulario.style.display = 'block';
-        document.querySelector('.opcion-entrega:has(#entrega_domicilio)').classList.add('seleccionada');
-    }
-}
-
 // ===== BUSCADOR =====
 document.addEventListener('DOMContentLoaded', function() {
     const buscador = document.getElementById('buscadorPlatos');
@@ -796,20 +639,6 @@ function confirmarPedido() {
         return;
     }
 
-    const entregaLocal = document.getElementById('entrega_local').checked;
-    const direccion = document.getElementById('direccion')?.value || '';
-    const hora = document.getElementById('hora_entrega')?.value || '';
-
-    if (!entregaLocal && direccion.trim() === '') {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Dirección requerida',
-            text: 'Ingresa la dirección para el domicilio',
-            confirmButtonColor: '#f59e0b'
-        });
-        return;
-    }
-
     // Deshabilitar botón
     const btn = document.getElementById('btnPagar');
     btn.disabled = true;
@@ -823,10 +652,7 @@ function confirmarPedido() {
             'X-CSRFToken': '{{ csrf_token }}'
         },
         body: JSON.stringify({
-            productos: carrito,
-            tipo_entrega: entregaLocal ? 'local' : 'domicilio',
-            direccion: direccion,
-            hora_entrega: hora
+            productos: carrito
         })
     })
     .then(response => response.json())
