@@ -190,7 +190,13 @@ def menu_unificado(request, mesa_id=None):
         request.session['cliente'] = True
         
         categorias = Categoria.objects.all()
+        
+        # ===== FILTRAR POR CATEGORÍA PARA CLIENTE =====
+        categoria_id = request.GET.get('categoria')
         productos = Producto.objects.all()
+        if categoria_id:
+            productos = productos.filter(categoria_id=categoria_id)
+        # =============================================
         
         carrito = request.session.get('carrito', {})
         total_items = sum(item.get('cantidad', 0) for item in carrito.values())
@@ -216,14 +222,13 @@ def menu_unificado(request, mesa_id=None):
             productos = productos.filter(categoria_id=categoria_id)
         categorias = Categoria.objects.all()
         
-        #  TAMBIÉN ENVIAR total_items PARA ADMIN/COCINERO (si tienen carrito)
         carrito = request.session.get('carrito', {})
         total_items = sum(item.get('cantidad', 0) for item in carrito.values())
         
         return render(request, 'menu.html', {
             'productos': productos,
             'categorias': categorias,
-            'total_items': total_items,  # 👈 TAMBIÉN AQUÍ
+            'total_items': total_items,
         })
     
 @admin_required

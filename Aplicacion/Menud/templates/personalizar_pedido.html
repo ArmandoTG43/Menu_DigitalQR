@@ -23,9 +23,28 @@
                 </div>
             </div>
 
+            <!-- ===== CATEGORÍAS ===== -->
+            <div class="categorias-personalizar">
+                <button class="cat-btn active" data-categoria="todos" onclick="filtrarCategoria('todos')">
+                    <i class="fa-solid fa-grid-2"></i> Todos
+                </button>
+                <button class="cat-btn" data-categoria="adicionales" onclick="filtrarCategoria('adicionales')">
+                    <i class="fa-solid fa-bowl-food"></i> Adicionales
+                </button>
+                <button class="cat-btn" data-categoria="pastas" onclick="filtrarCategoria('pastas')">
+                    <i class="fa-solid fa-spaghetti-monster-flying"></i> Pastas
+                </button>
+                <button class="cat-btn" data-categoria="postres" onclick="filtrarCategoria('postres')">
+                    <i class="fa-solid fa-cake"></i> Postres
+                </button>
+                <button class="cat-btn" data-categoria="bebidas-frias" onclick="filtrarCategoria('bebidas-frias')">
+                    <i class="fa-solid fa-wine-bottle"></i> Bebidas Frías
+                </button>
+            </div>
+
             <div class="platos-grid" id="platosGrid">
                 {% for plato in platos %}
-                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" {% if plato.imagen %}data-imagen="{{ plato.imagen.url }}"{% else %}data-imagen=""{% endif %} draggable="true">
+                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|lower }}" {% if plato.imagen %}data-imagen="{{ plato.imagen.url }}"{% else %}data-imagen=""{% endif %} draggable="true">
                     <div class="plato-img">
                         {% if plato.imagen %}
                             <img src="{{ plato.imagen.url }}" alt="{{ plato.nombre }}">
@@ -175,7 +194,7 @@
     background: rgba(255,255,255,0.08);
     border-radius: 10px;
     padding: 0 12px;
-    border: 1px solid #ba1d02;
+    border: 1px solid #f59e0b;
 }
 
 .buscador-menu i {
@@ -196,6 +215,53 @@
     color: rgba(255,255,255,0.3);
 }
 
+/* ===== CATEGORÍAS PERSONALIZAR ===== */
+.categorias-personalizar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.cat-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cat-btn:hover {
+    background: rgba(245,158,11,0.15);
+    color: white;
+    border-color: rgba(245,158,11,0.3);
+    transform: translateY(-2px);
+}
+
+.cat-btn.active {
+    background: #f59e0b;
+    color: #0b0f1a;
+    border-color: #f59e0b;
+    font-weight: 600;
+}
+
+.cat-btn i {
+    font-size: 13px;
+}
+
+.cat-btn.active i {
+    color: #0b0f1a;
+}
+
+/* ===== TARJETAS CON COLORES ===== */
 .platos-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -206,17 +272,53 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    background: rgba(255,255,255,0.05);
     padding: 10px 14px;
     border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.06);
     cursor: grab;
-    transition: 0.3s;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Colores por categoría */
+.plato-card[data-categoria="adicionales"] {
+    background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05));
+    border-left: 4px solid #22c55e;
+}
+
+.plato-card[data-categoria="pastas"] {
+    background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+    border-left: 4px solid #f59e0b;
+}
+
+.plato-card[data-categoria="postres"] {
+    background: linear-gradient(135deg, rgba(236,72,153,0.15), rgba(236,72,153,0.05));
+    border-left: 4px solid #ec4899;
+}
+
+.plato-card[data-categoria="bebidas-frias"] {
+    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
+    border-left: 4px solid #3b82f6;
+}
+
+.plato-card[data-categoria="entradas"] {
+    background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05));
+    border-left: 4px solid #a855f7;
+}
+
+.plato-card[data-categoria="platos-fuertes"] {
+    background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+    border-left: 4px solid #ef4444;
+}
+
+.plato-card[data-categoria="bebidas-calientes"] {
+    background: linear-gradient(135deg, rgba(251,146,60,0.15), rgba(251,146,60,0.05));
+    border-left: 4px solid #fb923c;
 }
 
 .plato-card:hover {
     background: rgba(255,255,255,0.10);
     border-color: rgba(245,158,11,0.2);
+    transform: translateX(4px);
 }
 
 .plato-card:active {
@@ -229,6 +331,7 @@
     flex-shrink: 0;
     border-radius: 10px;
     overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.08);
 }
 
 .plato-img img {
@@ -246,6 +349,12 @@
     color: white;
     font-size: 14px;
     margin: 0 0 2px 0;
+    font-weight: 600;
+}
+
+.plato-info h4 i {
+    color: #f59e0b;
+    margin-right: 6px;
 }
 
 .plato-desc {
@@ -279,6 +388,7 @@
 
 .btn-agregar:hover {
     background: rgba(245,158,11,0.3);
+    transform: scale(1.05);
 }
 
 /* ===== COLUMNA PEDIDO ===== */
@@ -491,12 +601,46 @@
     .plato-card {
         flex-wrap: wrap;
     }
+    .categorias-personalizar {
+        gap: 5px;
+    }
+    .cat-btn {
+        font-size: 10px;
+        padding: 4px 10px;
+    }
 }
 </style>
 
 <script>
 // ===== VARIABLES GLOBALES =====
 let carrito = [];
+
+// ===== FILTRAR POR CATEGORÍA =====
+function filtrarCategoria(categoria) {
+    const platos = document.querySelectorAll('.plato-card');
+    const botones = document.querySelectorAll('.cat-btn');
+    
+    // Actualizar botones activos
+    botones.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.categoria === categoria) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Filtrar platos
+    platos.forEach(plato => {
+        const platoCategoria = plato.dataset.categoria || '';
+        if (categoria === 'todos' || platoCategoria === categoria) {
+            plato.style.display = 'flex';
+        } else {
+            plato.style.display = 'none';
+        }
+    });
+    
+    // Limpiar buscador
+    document.getElementById('buscadorPlatos').value = '';
+}
 
 // ===== AGREGAR PLATO AL CARRITO =====
 function agregarAlCarrito(id, nombre, precio, imagen) {
@@ -624,9 +768,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     buscador.addEventListener('input', function() {
         const texto = this.value.toLowerCase().trim();
+        const categoriaActiva = document.querySelector('.cat-btn.active');
+        const categoriaFiltro = categoriaActiva ? categoriaActiva.dataset.categoria : 'todos';
+        
         platos.forEach(plato => {
             const nombre = plato.dataset.nombre.toLowerCase();
-            plato.style.display = nombre.includes(texto) ? 'flex' : 'none';
+            const platoCategoria = plato.dataset.categoria || '';
+            
+            // Verificar categoría
+            let coincideCategoria = categoriaFiltro === 'todos' || platoCategoria === categoriaFiltro;
+            // Verificar búsqueda
+            let coincideBusqueda = texto === '' || nombre.includes(texto);
+            
+            if (coincideCategoria && coincideBusqueda) {
+                plato.style.display = 'flex';
+            } else {
+                plato.style.display = 'none';
+            }
         });
     });
 });
@@ -662,7 +820,6 @@ function confirmarPedido() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            //  REDIRIGIR AL CARRITO
             window.location.href = "{% url 'ver_carrito' %}";
         } else {
             btn.disabled = false;
