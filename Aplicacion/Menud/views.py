@@ -270,8 +270,11 @@ def cocina(request):
 def cambiar_estado(request, pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
     
+    # Estados permitidos y su siguiente estado
     if pedido.estado == "recibido":
         pedido.estado = "en_preparacion"
+    elif pedido.estado == "pagado":          # ← AGREGAR ESTA LÍNEA
+        pedido.estado = "en_preparacion"     # ← AGREGAR ESTA LÍNEA
     elif pedido.estado == "en_preparacion":
         pedido.estado = "listo"
     elif pedido.estado == "listo":
@@ -281,7 +284,7 @@ def cambiar_estado(request, pedido_id):
         return redirect('cocina')
     
     pedido.save()
-    messages.success(request, f"Pedido #{pedido.id} → {pedido.estado}")
+    messages.success(request, f"Pedido #{pedido.id} → {pedido.get_estado_display()}")
     return redirect('cocina')
 
 @cocinero_required
