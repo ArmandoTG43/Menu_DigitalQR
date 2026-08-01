@@ -269,11 +269,19 @@ def cocina(request):
 @cocinero_required  
 def cambiar_estado(request, pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
-    if pedido.estado == "pendiente":
+    
+    if pedido.estado == "recibido":
         pedido.estado = "en_preparacion"
     elif pedido.estado == "en_preparacion":
         pedido.estado = "listo"
+    elif pedido.estado == "listo":
+        pedido.estado = "entregado"
+    else:
+        messages.warning(request, f"Estado '{pedido.estado}' no se puede cambiar")
+        return redirect('cocina')
+    
     pedido.save()
+    messages.success(request, f"Pedido #{pedido.id} → {pedido.estado}")
     return redirect('cocina')
 
 @cocinero_required
