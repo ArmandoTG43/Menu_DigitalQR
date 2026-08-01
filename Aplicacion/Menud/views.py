@@ -761,28 +761,27 @@ def generar_comprobante(request, pedido_id):
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="comprobante_pedido_{pedido.id}.pdf"'
         
-        doc = SimpleDocTemplate(response, pagesize=(612, 792))  # Carta
+        doc = SimpleDocTemplate(response, pagesize=(612, 792))
         styles = getSampleStyleSheet()
         
-        # Estilo personalizado para títulos
         titulo_style = ParagraphStyle(
             'TituloStyle',
             parent=styles['Title'],
             fontSize=18,
             textColor=colors.HexColor('#e76e05'),
-            alignment=1  # Centrado
+            alignment=1
         )
         
         contenido = []
         
-        # ===== TÍTULO =====
+        # TÍTULO
         contenido.append(Paragraph("FREEDOM LOUNGE LATACUNGA", titulo_style))
         contenido.append(Paragraph("COMPROBANTE DE PAGO", titulo_style))
         contenido.append(Spacer(1, 20))
         
-        # ===== DATOS DEL PEDIDO =====
+        # DATOS DEL PEDIDO
         contenido.append(Paragraph(f"<b>Pedido #:</b> {pedido.id}", styles['Normal']))
-        contenido.append(Paragraph(f"<b>Fecha:</b> {pedido.fecha_creacion.strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+        contenido.append(Paragraph(f"<b>Fecha:</b> {pedido.fecha_hora.strftime('%d/%m/%Y %H:%M')}", styles['Normal']))  # ← CAMBIADO
         contenido.append(Paragraph(f"<b>Mesa:</b> {pedido.mesa.numero if pedido.mesa else 'Domicilio'}", styles['Normal']))
         contenido.append(Paragraph(f"<b>Estado:</b> {pedido.get_estado_display()}", styles['Normal']))
         contenido.append(Paragraph(f"<b>Tipo de entrega:</b> {'Domicilio' if pedido.es_domicilio else 'Local'}", styles['Normal']))
@@ -792,11 +791,10 @@ def generar_comprobante(request, pedido_id):
             contenido.append(Paragraph(f"<b>Hora de entrega:</b> {pedido.hora_entrega}", styles['Normal']))
         contenido.append(Spacer(1, 15))
         
-        # ===== TABLA DE PRODUCTOS =====
+        # TABLA DE PRODUCTOS
         contenido.append(Paragraph("<b>Productos:</b>", styles['Normal']))
         contenido.append(Spacer(1, 5))
         
-        # Datos para la tabla
         data = []
         data.append(["Cant.", "Producto", "Precio", "Subtotal"])
         
@@ -808,7 +806,6 @@ def generar_comprobante(request, pedido_id):
                 f"${detalle.cantidad * detalle.producto.precio:.2f}"
             ])
         
-        # Crear la tabla
         if len(data) > 1:
             tabla = Table(data, colWidths=[0.5*inch, 3*inch, 1*inch, 1*inch])
             tabla.setStyle(TableStyle([
@@ -832,24 +829,22 @@ def generar_comprobante(request, pedido_id):
         
         contenido.append(Spacer(1, 15))
         
-        # ===== TOTAL =====
-        # Estilo para el total
+        # TOTAL
         total_style = ParagraphStyle(
             'TotalStyle',
             parent=styles['Normal'],
             fontSize=16,
             textColor=colors.HexColor('#e76e05'),
-            alignment=2  # Derecha
+            alignment=2
         )
         contenido.append(Paragraph(f"<b>TOTAL:</b> ${pedido.total:.2f}", total_style))
         contenido.append(Spacer(1, 20))
         
-        # ===== PIE DE PÁGINA =====
+        # PIE DE PÁGINA
         contenido.append(Paragraph("¡Gracias por su preferencia!", styles['Normal']))
         contenido.append(Paragraph("Freedom Lounge Latacunga", styles['Normal']))
         contenido.append(Paragraph(f"Generado: {timezone.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
         
-        # Construir el PDF
         doc.build(contenido)
         return response
         
