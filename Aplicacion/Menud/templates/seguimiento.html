@@ -96,11 +96,11 @@
     <!-- ===== BOTONES DE COMPROBANTE (SOLO CLIENTE) ===== -->
     <div class="comprobante-botones" id="comprobante-botones" style="display: none;">
         <a href="{% url 'comprobante_pdf' pedido.id %}" class="btn-pdf" target="_blank">
-            <i class="fa-solid fa-file-pdf"></i> Descargar Comprobante PDF
+            <i class="fa-solid fa-file-pdf"></i> Descargar PDF
         </a>
-        <a href="{% url 'comprobante_pago' pedido.id %}" class="btn-ver">
+        <button onclick="abrirModal()" class="btn-ver">
             <i class="fa-solid fa-eye"></i> Ver Comprobante
-        </a>
+        </button>
     </div>
     <!-- ================================================ -->
 
@@ -110,6 +110,28 @@
         <span>Cargando información...</span>
     </div>
 
+</div>
+
+<!-- ===== MODAL COMPROBANTE ===== -->
+<div id="modalComprobante" class="modal-comprobante" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-receipt"></i> Comprobante de Pago</h3>
+            <button class="modal-close" onclick="cerrarModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <div style="text-align:center;padding:20px;color:#9ca3af;">
+                <i class="fa-solid fa-spinner fa-pulse"></i> Cargando...
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="descargarPDF()" class="btn-pdf" style="width:100%;justify-content:center;">
+                <i class="fa-solid fa-file-pdf"></i> Descargar PDF
+            </button>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -437,6 +459,145 @@ body {
     box-shadow: 0 8px 25px rgba(220,38,38,0.4);
 }
 
+/* ===== MODAL COMPROBANTE ===== */
+.modal-comprobante {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #1e293b;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: rgba(231,110,5,0.1);
+    border-radius: 20px 20px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+}
+
+.modal-header h3 i {
+    color: #e76e05;
+    margin-right: 10px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 28px;
+    cursor: pointer;
+    transition: 0.3s;
+    padding: 0 5px;
+}
+
+.modal-close:hover {
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 20px 22px;
+    color: white;
+}
+
+.modal-body .info-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.modal-body .info-line .label {
+    color: #9ca3af;
+}
+
+.modal-body .info-line .value {
+    color: white;
+    font-weight: 500;
+}
+
+.modal-body .productos-modal {
+    margin-top: 15px;
+}
+
+.modal-body .producto-modal-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 14px;
+}
+
+.modal-body .producto-modal-item .nombre {
+    color: white;
+}
+
+.modal-body .producto-modal-item .precio {
+    color: #f59e0b;
+}
+
+.modal-body .total-modal {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    margin-top: 10px;
+    border-top: 2px solid rgba(231,110,5,0.3);
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.modal-body .total-modal .total-label {
+    color: white;
+}
+
+.modal-body .total-modal .total-value {
+    color: #f59e0b;
+}
+
+.modal-footer {
+    padding: 15px 22px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
 @media (max-width: 500px) {
     .info-card {
         flex-direction: column;
@@ -468,6 +629,10 @@ body {
     }
     .btn-ver, .btn-pdf {
         justify-content: center;
+    }
+    .modal-content {
+        max-width: 100%;
+        margin: 10px;
     }
 }
 </style>
@@ -540,6 +705,116 @@ function actualizarTiempo() {
 
 setInterval(actualizarTiempo, 1000);
 
+// ===== MODAL FUNCTIONS =====
+function abrirModal() {
+    const modal = document.getElementById('modalComprobante');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    cargarDatosComprobante();
+}
+
+function cerrarModal() {
+    const modal = document.getElementById('modalComprobante');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function descargarPDF() {
+    window.location.href = "{% url 'comprobante_pdf' pedido.id %}";
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModal();
+    }
+});
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalComprobante').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModal();
+    }
+});
+
+async function cargarDatosComprobante() {
+    try {
+        const res = await fetch(`/api/pedido/${pedidoId}/`);
+        const pedido = await res.json();
+        
+        const body = document.getElementById('modalBody');
+        
+        let productosHtml = '';
+        if (pedido.productos && pedido.productos.length > 0) {
+            pedido.productos.forEach(p => {
+                const subtotal = (p.precio * p.cantidad).toFixed(2);
+                productosHtml += `
+                    <div class="producto-modal-item">
+                        <span class="nombre">${p.nombre} x${p.cantidad}</span>
+                        <span class="precio">$${subtotal}</span>
+                    </div>
+                `;
+            });
+        }
+        
+        const estadoMap = {
+            'recibido': 'Recibido',
+            'pagado': 'Pagado',
+            'en_preparacion': 'En preparación',
+            'listo': 'Listo',
+            'entregado': 'Entregado'
+        };
+        
+        const estadoColor = pedido.estado === 'entregado' ? '#22c55e' : '#f59e0b';
+        
+        body.innerHTML = `
+            <div class="info-line">
+                <span class="label">Pedido</span>
+                <span class="value">#${pedido.id}</span>
+            </div>
+            <div class="info-line">
+                <span class="label">Fecha</span>
+                <span class="value">${pedido.fecha_hora ? new Date(pedido.fecha_hora).toLocaleString() : 'N/A'}</span>
+            </div>
+            <div class="info-line">
+                <span class="label">Mesa</span>
+                <span class="value">${pedido.mesa || 'Domicilio'}</span>
+            </div>
+            <div class="info-line">
+                <span class="label">Estado</span>
+                <span class="value" style="color: ${estadoColor};">${estadoMap[pedido.estado] || pedido.estado}</span>
+            </div>
+            <div class="info-line">
+                <span class="label">Entrega</span>
+                <span class="value">${pedido.es_domicilio ? '🚚 Domicilio' : '🪑 Local'}</span>
+            </div>
+            ${pedido.direccion_entrega ? `
+                <div class="info-line">
+                    <span class="label">Dirección</span>
+                    <span class="value">${pedido.direccion_entrega}</span>
+                </div>
+            ` : ''}
+            <div class="productos-modal">
+                <h4 style="color:#e76e05;margin-bottom:10px;"><i class="fa-solid fa-utensils"></i> Productos</h4>
+                ${productosHtml}
+            </div>
+            <div class="total-modal">
+                <span class="total-label">Total</span>
+                <span class="total-value">$${pedido.total ? pedido.total.toFixed(2) : '0.00'}</span>
+            </div>
+        `;
+        
+    } catch (error) {
+        document.getElementById('modalBody').innerHTML = `
+            <div style="text-align:center;color:#ef4444;padding:20px;">
+                <i class="fa-solid fa-exclamation-triangle"></i><br>
+                Error al cargar los datos
+            </div>
+        `;
+    }
+}
+
+// ===== ACTUALIZAR PEDIDO =====
 async function actualizar() {
     try {
         const res = await fetch(`/api/pedido/${pedidoId}/`);
@@ -564,18 +839,11 @@ async function actualizar() {
         estadoActual.style.borderColor = "rgba(231,110,5,0.3)";
         mensajeEstado.style.background = "rgba(0,0,0,0.5)";
 
-        // Ocultar comprobante por defecto
         comprobanteBotones.style.display = "none";
 
         let estadoNombre = "";
 
-        if (pedido.estado === "pendiente") {
-            estadoNombre = "Pedido recibido";
-            estadoTexto.textContent = " Pedido recibido";
-            estadoIcono.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
-            document.getElementById("step1").classList.add("active");
-            mensajeEstado.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> <span>Tu pedido ha sido recibido. Pronto comenzaremos a prepararlo.</span>';
-        } else if (pedido.estado === "recibido") {
+        if (pedido.estado === "pendiente" || pedido.estado === "recibido") {
             estadoNombre = "Pedido recibido";
             estadoTexto.textContent = " Pedido recibido";
             estadoIcono.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
@@ -603,7 +871,6 @@ async function actualizar() {
             document.getElementById("step3").classList.add("active");
             mensajeEstado.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> <span>¡Tu pedido está listo para servirse o enviarse!</span>';
             mensajeEstado.style.background = "rgba(34,197,94,0.2)";
-            // Mostrar comprobante cuando está listo
             comprobanteBotones.style.display = "flex";
         } else if (pedido.estado === "entregado") {
             estadoNombre = "Pedido Entregado";
@@ -616,7 +883,6 @@ async function actualizar() {
             estadoActual.style.borderColor = "rgba(34,197,94,0.3)";
             mensajeEstado.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #22c55e;"></i> <span>¡Buen provecho! Gracias por tu preferencia.</span>';
             mensajeEstado.style.background = "rgba(34,197,94,0.2)";
-            // Mostrar comprobante cuando está entregado
             comprobanteBotones.style.display = "flex";
         }
 
