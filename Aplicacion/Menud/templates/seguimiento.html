@@ -98,7 +98,7 @@
         <a href="{% url 'comprobante_pdf' pedido.id %}" class="btn-pdf" target="_blank">
             <i class="fa-solid fa-file-pdf"></i> Descargar Comprobante PDF
         </a>
-        <a href="{% url 'comprobante_pago' pedido.pago.id %}" class="btn-ver">
+        <a href="{% url 'comprobante_pago' pedido.id %}" class="btn-ver">
             <i class="fa-solid fa-eye"></i> Ver Comprobante
         </a>
     </div>
