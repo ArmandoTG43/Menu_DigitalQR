@@ -518,22 +518,6 @@ def api_pedido_detalle(request, pedido_id):
         return JsonResponse({'error': str(e)}, status=400)
 
 
-
-@admin_required
-def generar_comprobante(request, pedido_id):
-    pedido = Pedido.objects.get(id=pedido_id)
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="pedido_{pedido.id}.pdf"'
-    doc = SimpleDocTemplate(response)
-    styles = getSampleStyleSheet()
-    contenido = []
-    contenido.append(Paragraph(f"Pedido #{pedido.id}", styles['Title']))
-    contenido.append(Paragraph(f"Mesa: {pedido.mesa.numero}", styles['Normal']))
-    contenido.append(Paragraph(f"Total: ${pedido.total}", styles['Normal']))
-    contenido.append(Paragraph("Estado: Pagado", styles['Normal']))
-    doc.build(contenido)
-    return response
-
 def cliente_required(view_func):
     """Decorador para vistas de clientes (QR) o usuarios autenticados"""
     @wraps(view_func)
@@ -760,6 +744,121 @@ def agregar_carrito(request, producto_id):
     # Si no, redirigir normalmente
     messages.success(request, f' {producto.nombre} agregado al carrito')
     return redirect('menu')
+
+@cliente_required
+def generar_comprobante(request, pedido_id):
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    
+    try:
+        pedido = get_object_or_404(Pedido, id=pedido_id)
+        
+        # Obtener los detalles del pedido
+        detalles = DetallePedido.objects.filter(pedido=pedido)
+        
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="comprobante_pedido_{pedido.id}.pdf"'
+        
+        doc = SimpleDocTemplate(response, pagesize=(612, 792))  # Carta
+        styles = getSampleStyleSheet()
+        
+        # Estilo personalizado para títulos
+        titulo_style = ParagraphStyle(
+            'TituloStyle',
+            parent=styles['Title'],
+            fontSize=18,
+            textColor=colors.HexColor('#e76e05'),
+            alignment=1  # Centrado
+        )
+        
+        contenido = []
+        
+        # ===== TÍTULO =====
+        contenido.append(Paragraph("FREEDOM LOUNGE LATACUNGA", titulo_style))
+        contenido.append(Paragraph("COMPROBANTE DE PAGO", titulo_style))
+        contenido.append(Spacer(1, 20))
+        
+        # ===== DATOS DEL PEDIDO =====
+        contenido.append(Paragraph(f"<b>Pedido #:</b> {pedido.id}", styles['Normal']))
+        contenido.append(Paragraph(f"<b>Fecha:</b> {pedido.fecha_creacion.strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+        contenido.append(Paragraph(f"<b>Mesa:</b> {pedido.mesa.numero if pedido.mesa else 'Domicilio'}", styles['Normal']))
+        contenido.append(Paragraph(f"<b>Estado:</b> {pedido.get_estado_display()}", styles['Normal']))
+        contenido.append(Paragraph(f"<b>Tipo de entrega:</b> {'Domicilio' if pedido.es_domicilio else 'Local'}", styles['Normal']))
+        if pedido.direccion_entrega:
+            contenido.append(Paragraph(f"<b>Dirección:</b> {pedido.direccion_entrega}", styles['Normal']))
+        if pedido.hora_entrega:
+            contenido.append(Paragraph(f"<b>Hora de entrega:</b> {pedido.hora_entrega}", styles['Normal']))
+        contenido.append(Spacer(1, 15))
+        
+        # ===== TABLA DE PRODUCTOS =====
+        contenido.append(Paragraph("<b>Productos:</b>", styles['Normal']))
+        contenido.append(Spacer(1, 5))
+        
+        # Datos para la tabla
+        data = []
+        data.append(["Cant.", "Producto", "Precio", "Subtotal"])
+        
+        for detalle in detalles:
+            data.append([
+                str(detalle.cantidad),
+                detalle.producto.nombre,
+                f"${detalle.producto.precio:.2f}",
+                f"${detalle.cantidad * detalle.producto.precio:.2f}"
+            ])
+        
+        # Crear la tabla
+        if len(data) > 1:
+            tabla = Table(data, colWidths=[0.5*inch, 3*inch, 1*inch, 1*inch])
+            tabla.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e76e05')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('TOPPADDING', (0, 0), (-1, 0), 10),
+                ('BACKGROUND', (0, 1), (-1, -2), colors.HexColor('#f8f9fa')),
+                ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 10),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+                ('ALIGN', (2, 1), (3, -1), 'RIGHT'),
+            ]))
+            contenido.append(tabla)
+        else:
+            contenido.append(Paragraph("No hay productos en este pedido", styles['Normal']))
+        
+        contenido.append(Spacer(1, 15))
+        
+        # ===== TOTAL =====
+        # Estilo para el total
+        total_style = ParagraphStyle(
+            'TotalStyle',
+            parent=styles['Normal'],
+            fontSize=16,
+            textColor=colors.HexColor('#e76e05'),
+            alignment=2  # Derecha
+        )
+        contenido.append(Paragraph(f"<b>TOTAL:</b> ${pedido.total:.2f}", total_style))
+        contenido.append(Spacer(1, 20))
+        
+        # ===== PIE DE PÁGINA =====
+        contenido.append(Paragraph("¡Gracias por su preferencia!", styles['Normal']))
+        contenido.append(Paragraph("Freedom Lounge Latacunga", styles['Normal']))
+        contenido.append(Paragraph(f"Generado: {timezone.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
+        
+        # Construir el PDF
+        doc.build(contenido)
+        return response
+        
+    except Pedido.DoesNotExist:
+        messages.error(request, "Pedido no encontrado")
+        return redirect('menu')
+    except Exception as e:
+        messages.error(request, f"Error al generar comprobante: {str(e)}")
+        return redirect('menu')
 
 @cliente_required
 def ver_carrito(request):
