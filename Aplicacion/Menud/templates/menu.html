@@ -3,18 +3,14 @@
 
 {% block contenido %}
 
-<!-- BANNER COMO FONDO FIJO -->
 <div id="banner" class="banner full-screen-mode parallax"></div>
 
-<!-- CONTENIDO ENCIMA DEL BANNER -->
 <div class="container content-app">
    
-    <!-- HEADER -->
     <div class="menu-header">
          <h2><i class="fa-solid"></i>PLATOS DEL DÍA</h2>
 
         <div class="btn-group-header ">
-            <!-- SOLO ADMIN: Botón Agregar -->
             {% if not request.session.cliente and user.is_authenticated and user.rol == 'admin' %}
             <a href="{% url 'agregar_producto' %}" class="btn-add">
                 <i class="fa-solid fa-plus"></i> Agregar
@@ -35,7 +31,6 @@
         </div>
     </div>
 
-    <!-- BUSCADOR -->
     <div class="buscador">
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -46,7 +41,6 @@
         </div>
     </div>
 
-    <!-- CATEGORÍAS -->
     <div class="categorias">
         <a href="{% url 'menu' %}" class="cat {% if not request.GET.categoria %}active{% endif %}" data-categoria="todos">
             <i class="fa-solid fa-grid-2"></i> Todos
@@ -59,7 +53,6 @@
         {% endfor %}
     </div>
 
-    <!-- GRID -->
     <div class="grid-menu" id="gridMenu">
 
         {% for producto in productos %}
@@ -85,7 +78,6 @@
 
                 <div class="precio-acciones">
                     <div class="acciones">
-                        <!-- SOLO CLIENTE: Personalizar y Agregar -->
                         {% if request.session.cliente %}
                         <button class="icon-customize" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
                             <i class="fa-solid fa-pen-ruler"></i>
@@ -98,7 +90,6 @@
                         </form>
                         {% endif %}
 
-                        <!-- SOLO ADMIN: Editar y Eliminar -->
                         {% if not request.session.cliente and user.is_authenticated and user.rol == 'admin' %}
                         <a href="{% url 'editar_producto' producto.id %}" class="icon-edit">
                             <i class="fa-solid fa-pencil"></i>
@@ -128,7 +119,6 @@
 
     </div>
 
-    <!-- MENSAJE CUANDO NO HAY RESULTADOS -->
     <div id="sinResultados" class="no-results" style="display: none;">
         <i class="fa-solid fa-face-frown"></i>
         <p>No se encontraron platos con ese nombre</p>
@@ -137,7 +127,6 @@
 </div>
 <br> 
 
-<!-- ===== MODAL PERSONALIZACIÓN ===== -->
 <div id="modalPersonalizar" class="modal-personalizar" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -158,18 +147,14 @@
             <input type="hidden" id="platoNombre">
             <input type="hidden" id="platoPrecioBase">
 
-            <!-- ===== LAYOUT ===== -->
             <div class="personalizar-layout">
-                <!-- INGREDIENTES -->
                 <div class="ingredientes-lista">
                     <h4><i class="fa-solid fa-carrot"></i> Ingredientes</h4>
-                    <p style="color:#9ca3af;font-size:12px;margin-bottom:10px;">Haz clic en "+" o arrastra para agregar</p>
+                    <p style="color:#9ca3af;font-size:12px;margin-bottom:10px;">Haz clic en "+" para agregar</p>
                     <div class="ingredientes-grid" id="ingredientesGrid">
-                        <!-- Se carga dinámicamente -->
                     </div>
                 </div>
 
-                <!-- DROP ZONE -->
                 <div class="drop-zone-ingredientes" id="dropZoneIngredientes">
                     <div class="drop-zone-content">
                         <i class="fa-solid fa-arrow-pointer"></i>
@@ -179,7 +164,6 @@
                 </div>
             </div>
 
-            <!-- INGREDIENTES SELECCIONADOS -->
             <div class="ingredientes-seleccionados" id="ingredientesSeleccionados">
                 <h4><i class="fa-solid fa-list-check"></i> Ingredientes seleccionados</h4>
                 <div id="listaSeleccionados">
@@ -187,7 +171,6 @@
                 </div>
             </div>
 
-            <!-- TOTAL -->
             <div class="total-personalizado">
                 <span>Total del plato:</span>
                 <span id="totalPersonalizado">$0.00</span>
@@ -559,7 +542,6 @@ body {
     display: none;
 }
 
-/* ===== MODAL ===== */
 .modal-personalizar {
     position: fixed;
     top: 0;
@@ -761,7 +743,7 @@ body {
 .selected-ingrediente {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     background: rgba(245,158,11,0.15);
     color: white;
     padding: 4px 12px;
@@ -778,6 +760,40 @@ body {
     cursor: pointer;
     font-size: 12px;
     padding: 0 2px;
+}
+
+.selected-ingrediente .btn-remove:hover {
+    transform: scale(1.2);
+}
+
+.selected-ingrediente .btn-mas,
+.selected-ingrediente .btn-menos {
+    background: #f59e0b;
+    border: none;
+    color: #0b0f1a;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.selected-ingrediente .btn-mas:hover,
+.selected-ingrediente .btn-menos:hover {
+    background: #e76e05;
+    transform: scale(1.1);
+}
+
+.selected-ingrediente .cantidad-ingrediente {
+    color: white;
+    font-weight: 600;
+    min-width: 16px;
+    text-align: center;
 }
 
 .total-personalizado {
@@ -867,7 +883,6 @@ body {
 </style>
 
 <script>
-// ===== INGREDIENTES POR PLATO =====
 const ingredientesPorPlato = {
     'hamburguesa': [
         { nombre: 'Queso extra', precio: 1.50 },
@@ -911,7 +926,6 @@ const ingredientesPorPlato = {
 let platoActual = {};
 let ingredientesSeleccionados = [];
 
-// ===== BUSCADOR =====
 document.addEventListener('DOMContentLoaded', function() {
     const buscadorInput = document.getElementById('buscadorInput');
     const limpiarBtn = document.getElementById('limpiarBusqueda');
@@ -969,7 +983,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// ===== ABRIR PERSONALIZACIÓN =====
 function abrirPersonalizacion(id, nombre, precio, imagen) {
     platoActual = {
         id: id,
@@ -994,7 +1007,6 @@ function abrirPersonalizacion(id, nombre, precio, imagen) {
     document.body.style.overflow = 'hidden';
 }
 
-// ===== CARGAR INGREDIENTES =====
 function cargarIngredientes(nombrePlato) {
     const grid = document.getElementById('ingredientesGrid');
     const nombreLower = nombrePlato.toLowerCase();
@@ -1037,7 +1049,6 @@ function cargarIngredientes(nombrePlato) {
     });
 }
 
-// ===== AGREGAR INGREDIENTE =====
 function agregarIngrediente(index) {
     const items = document.querySelectorAll('.ingrediente-item');
     const item = items[index];
@@ -1045,22 +1056,39 @@ function agregarIngrediente(index) {
         const nombre = item.dataset.nombre;
         const precio = parseFloat(item.dataset.precio);
         const existente = ingredientesSeleccionados.find(i => i.nombre === nombre);
-        if (!existente) {
-            ingredientesSeleccionados.push({ nombre, precio });
-            actualizarTotalPersonalizado();
-            actualizarListaSeleccionados();
+        if (existente) {
+            existente.cantidad += 1;
+        } else {
+            ingredientesSeleccionados.push({ 
+                nombre: nombre, 
+                precio: precio,
+                cantidad: 1
+            });
         }
+        actualizarTotalPersonalizado();
+        actualizarListaSeleccionados();
     }
 }
 
-// ===== ELIMINAR INGREDIENTE =====
 function eliminarIngrediente(nombre) {
     ingredientesSeleccionados = ingredientesSeleccionados.filter(i => i.nombre !== nombre);
     actualizarTotalPersonalizado();
     actualizarListaSeleccionados();
 }
 
-// ===== ACTUALIZAR LISTA SELECCIONADOS =====
+function cambiarCantidadIngrediente(nombre, delta) {
+    const item = ingredientesSeleccionados.find(i => i.nombre === nombre);
+    if (item) {
+        item.cantidad += delta;
+        if (item.cantidad <= 0) {
+            eliminarIngrediente(nombre);
+            return;
+        }
+        actualizarTotalPersonalizado();
+        actualizarListaSeleccionados();
+    }
+}
+
 function actualizarListaSeleccionados() {
     const container = document.getElementById('listaSeleccionados');
     if (ingredientesSeleccionados.length === 0) {
@@ -1073,6 +1101,13 @@ function actualizarListaSeleccionados() {
         html += `
             <span class="selected-ingrediente">
                 ${ing.nombre} (+$${ing.precio.toFixed(2)})
+                <button class="btn-menos" onclick="cambiarCantidadIngrediente('${ing.nombre}', -1)">
+                    <i class="fa-solid fa-minus"></i>
+                </button>
+                <span class="cantidad-ingrediente">${ing.cantidad}</span>
+                <button class="btn-mas" onclick="cambiarCantidadIngrediente('${ing.nombre}', 1)">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
                 <button class="btn-remove" onclick="eliminarIngrediente('${ing.nombre}')">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -1082,20 +1117,18 @@ function actualizarListaSeleccionados() {
     container.innerHTML = html;
 }
 
-// ===== ACTUALIZAR TOTAL =====
 function actualizarTotalPersonalizado() {
     const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
     let totalExtras = 0;
     
     ingredientesSeleccionados.forEach(ing => {
-        totalExtras += ing.precio;
+        totalExtras += ing.precio * ing.cantidad;
     });
     
     const total = precioBase + totalExtras;
     document.getElementById('totalPersonalizado').textContent = `$${total.toFixed(2)}`;
 }
 
-// ===== DROP ZONE =====
 document.addEventListener('DOMContentLoaded', function() {
     const dropZone = document.getElementById('dropZoneIngredientes');
     
@@ -1114,24 +1147,28 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const data = JSON.parse(e.dataTransfer.getData('text/plain'));
             const existente = ingredientesSeleccionados.find(i => i.nombre === data.nombre);
-            if (!existente) {
-                ingredientesSeleccionados.push({ nombre: data.nombre, precio: data.precio });
-                actualizarTotalPersonalizado();
-                actualizarListaSeleccionados();
+            if (existente) {
+                existente.cantidad += 1;
+            } else {
+                ingredientesSeleccionados.push({ 
+                    nombre: data.nombre, 
+                    precio: data.precio,
+                    cantidad: 1
+                });
             }
+            actualizarTotalPersonalizado();
+            actualizarListaSeleccionados();
         } catch (error) {
             console.error('Error al soltar:', error);
         }
     });
 });
 
-// ===== CERRAR MODAL =====
 function cerrarModal() {
     document.getElementById('modalPersonalizar').style.display = 'none';
     document.body.style.overflow = '';
 }
 
-// ===== AGREGAR PERSONALIZADO (VERSIÓN CORRECTA) =====
 function agregarPersonalizado() {
     const id = document.getElementById('platoId').value;
     const nombre = document.getElementById('platoNombre').value;
@@ -1151,8 +1188,8 @@ function agregarPersonalizado() {
     let ingredientesList = [];
     
     ingredientesSeleccionados.forEach(ing => {
-        totalExtras += ing.precio;
-        ingredientesList.push(ing.nombre);
+        totalExtras += ing.precio * ing.cantidad;
+        ingredientesList.push(ing.nombre + ' x' + ing.cantidad);
     });
     
     const total = precioBase + totalExtras;
@@ -1182,7 +1219,7 @@ function agregarPersonalizado() {
             document.getElementById('cartCount').textContent = data.count;
             Swal.fire({
                 icon: 'success',
-                title: '¡Agregado!',
+                title: 'Agregado!',
                 text: `${nombrePersonalizado} agregado al carrito`,
                 confirmButtonColor: '#f59e0b',
                 timer: 2000,
@@ -1208,14 +1245,12 @@ function agregarPersonalizado() {
     });
 }
 
-// ===== CERRAR MODAL CON ESC =====
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         cerrarModal();
     }
 });
 
-// ===== CERRAR MODAL CLICK FUERA =====
 document.getElementById('modalPersonalizar').addEventListener('click', function(e) {
     if (e.target === this) {
         cerrarModal();
