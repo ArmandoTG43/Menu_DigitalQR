@@ -9,7 +9,7 @@
     <br><br><br><br>
 
     <h2 class="title"><i class="fa-solid fa-pen-ruler"></i> Plato a tu gusto</h2>
-    <p class="subtitle">Selecciona un plato y personaliza sus ingredientes a tu gusto</p>
+    <p class="subtitle">Selecciona un plato y personaliza sus ingredientes</p>
 
     <!-- ===== CATEGORÍAS ===== -->
     <div class="categorias-personalizar">
@@ -36,7 +36,7 @@
     <!-- ===== GRID DE PLATOS ===== -->
     <div class="platos-grid" id="platosGrid">
         {% for plato in platos %}
-        <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|slugify }}" data-imagen="{% if plato.imagen %}{{ plato.imagen.url }}{% endif %}" onclick="abrirModalPersonalizar('{{ plato.id }}', '{{ plato.nombre }}', '{{ plato.precio }}', '{% if plato.imagen %}{{ plato.imagen.url }}{% endif %}')">
+        <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|slugify }}" data-imagen="{% if plato.imagen %}{{ plato.imagen.url }}{% endif %}" onclick="abrirPersonalizacion('{{ plato.id }}', '{{ plato.nombre }}', '{{ plato.precio }}', '{% if plato.imagen %}{{ plato.imagen.url }}{% endif %}')">
             <div class="plato-img">
                 {% if plato.imagen %}
                     <img src="{{ plato.imagen.url }}" alt="{{ plato.nombre }}">
@@ -74,7 +74,7 @@
     </div>
 </div>
 
-<!-- ===== MODAL PERSONALIZAR ===== -->
+<!-- ===== MODAL PERSONALIZACIÓN ===== -->
 <div id="modalPersonalizar" class="modal-personalizar" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -95,106 +95,32 @@
             <input type="hidden" id="platoNombre">
             <input type="hidden" id="platoPrecioBase">
 
-            <!-- ===== INGREDIENTES ===== -->
-            <div class="ingredientes-section">
-                <h4><i class="fa-solid fa-carrot"></i> Ingredientes</h4>
-                <p style="color:#9ca3af;font-size:13px;margin-bottom:15px;">Selecciona o arrastra los ingredientes que deseas agregar</p>
-
-                <div class="ingredientes-grid" id="ingredientesGrid">
-                    <!-- INGREDIENTE 1 -->
-                    <div class="ingrediente-item" data-nombre="Queso extra" data-precio="1.50" onclick="toggleIngrediente(this)">
-                        <div class="ingrediente-info">
-                            <span class="ingrediente-nombre">🧀 Queso extra</span>
-                            <span class="ingrediente-precio">+$1.50</span>
-                        </div>
-                        <div class="ingrediente-check">
-                            <i class="fa-regular fa-circle"></i>
-                        </div>
+            <!-- ===== INGREDIENTES A LA IZQUIERDA ===== -->
+            <div class="personalizar-layout">
+                <div class="ingredientes-lista">
+                    <h4><i class="fa-solid fa-carrot"></i> Ingredientes</h4>
+                    <p style="color:#9ca3af;font-size:12px;margin-bottom:10px;">Arrastra o haz clic en "+" para agregar</p>
+                    <div class="ingredientes-grid" id="ingredientesGrid">
+                        <!-- Se carga dinámicamente -->
                     </div>
+                </div>
 
-                    <!-- INGREDIENTE 2 -->
-                    <div class="ingrediente-item" data-nombre="Papas extra" data-precio="2.00" onclick="toggleIngrediente(this)">
-                        <div class="ingrediente-info">
-                            <span class="ingrediente-nombre">🍟 Papas extra</span>
-                            <span class="ingrediente-precio">+$2.00</span>
-                        </div>
-                        <div class="ingrediente-check">
-                            <i class="fa-regular fa-circle"></i>
-                        </div>
-                    </div>
-
-                    <!-- INGREDIENTE 3 -->
-                    <div class="ingrediente-item" data-nombre="Lechuga extra" data-precio="0.50" onclick="toggleIngrediente(this)">
-                        <div class="ingrediente-info">
-                            <span class="ingrediente-nombre">🥬 Lechuga extra</span>
-                            <span class="ingrediente-precio">+$0.50</span>
-                        </div>
-                        <div class="ingrediente-check">
-                            <i class="fa-regular fa-circle"></i>
-                        </div>
-                    </div>
-
-                    <!-- INGREDIENTE 4 -->
-                    <div class="ingrediente-item" data-nombre="Tomate extra" data-precio="0.50" onclick="toggleIngrediente(this)">
-                        <div class="ingrediente-info">
-                            <span class="ingrediente-nombre">🍅 Tomate extra</span>
-                            <span class="ingrediente-precio">+$0.50</span>
-                        </div>
-                        <div class="ingrediente-check">
-                            <i class="fa-regular fa-circle"></i>
-                        </div>
-                    </div>
-
-                    <!-- INGREDIENTE 5 -->
-                    <div class="ingrediente-item" data-nombre="Cebolla extra" data-precio="0.50" onclick="toggleIngrediente(this)">
-                        <div class="ingrediente-info">
-                            <span class="ingrediente-nombre">🧅 Cebolla extra</span>
-                            <span class="ingrediente-precio">+$0.50</span>
-                        </div>
-                        <div class="ingrediente-check">
-                            <i class="fa-regular fa-circle"></i>
-                        </div>
-                    </div>
-
-                    <!-- INGREDIENTE 6 -->
-                    <div class="ingrediente-item" data-nombre="Salsa extra" data-precio="1.00" onclick="toggleIngrediente(this)">
-                        <div class="ingrediente-info">
-                            <span class="ingrediente-nombre">🌶️ Salsa extra</span>
-                            <span class="ingrediente-precio">+$1.00</span>
-                        </div>
-                        <div class="ingrediente-check">
-                            <i class="fa-regular fa-circle"></i>
-                        </div>
-                    </div>
-
-                    <!-- INGREDIENTE 7 -->
-                    <div class="ingrediente-item" data-nombre="Tocino extra" data-precio="2.50" onclick="toggleIngrediente(this)">
-                        <div class="ingrediente-info">
-                            <span class="ingrediente-nombre">🥓 Tocino extra</span>
-                            <span class="ingrediente-precio">+$2.50</span>
-                        </div>
-                        <div class="ingrediente-check">
-                            <i class="fa-regular fa-circle"></i>
-                        </div>
-                    </div>
-
-                    <!-- INGREDIENTE 8 -->
-                    <div class="ingrediente-item" data-nombre="Huevo extra" data-precio="1.00" onclick="toggleIngrediente(this)">
-                        <div class="ingrediente-info">
-                            <span class="ingrediente-nombre">🍳 Huevo extra</span>
-                            <span class="ingrediente-precio">+$1.00</span>
-                        </div>
-                        <div class="ingrediente-check">
-                            <i class="fa-regular fa-circle"></i>
-                        </div>
+                <!-- ===== ÁREA DE SELECCIÓN (DROP ZONE) ===== -->
+                <div class="drop-zone-ingredientes" id="dropZoneIngredientes">
+                    <div class="drop-zone-content">
+                        <i class="fa-solid fa-arrow-pointer"></i>
+                        <p>Arrastra un ingrediente aquí</p>
+                        <span class="drop-hint">Suelta para agregar</span>
                     </div>
                 </div>
             </div>
 
-            <!-- ===== INSTRUCCIONES ===== -->
-            <div class="instrucciones-section">
-                <h4><i class="fa-solid fa-pen"></i> Instrucciones especiales</h4>
-                <textarea id="instruccionesEspeciales" placeholder="Ej: Sin cebolla, bien cocido, extra picante..." rows="2"></textarea>
+            <!-- ===== INGREDIENTES SELECCIONADOS ===== -->
+            <div class="ingredientes-seleccionados" id="ingredientesSeleccionados">
+                <h4><i class="fa-solid fa-list-check"></i> Ingredientes seleccionados</h4>
+                <div id="listaSeleccionados">
+                    <p style="color:rgba(255,255,255,0.3);font-size:13px;">No has seleccionado ingredientes</p>
+                </div>
             </div>
 
             <!-- ===== TOTAL PERSONALIZADO ===== -->
@@ -467,7 +393,7 @@
 .modal-content {
     background: #1e293b;
     border-radius: 20px;
-    max-width: 550px;
+    max-width: 700px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
@@ -521,89 +447,156 @@
     padding: 20px 22px;
 }
 
-/* ===== INGREDIENTES ===== */
-.ingredientes-grid {
+/* ===== LAYOUT PERSONALIZAR ===== */
+.personalizar-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+/* ===== INGREDIENTES LISTA ===== */
+.ingredientes-lista h4 {
+    color: white;
+    margin: 0 0 8px 0;
+    font-size: 15px;
+}
+
+.ingredientes-lista h4 i {
+    color: #f59e0b;
+}
+
+.ingredientes-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 .ingrediente-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 14px;
+    padding: 8px 12px;
     background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-    border: 2px solid transparent;
-    cursor: pointer;
+    border-radius: 8px;
+    cursor: grab;
     transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.06);
 }
 
 .ingrediente-item:hover {
     background: rgba(255,255,255,0.08);
 }
 
-.ingrediente-item.seleccionado {
-    border-color: #f59e0b;
-    background: rgba(245,158,11,0.08);
+.ingrediente-item:active {
+    cursor: grabbing;
 }
 
-.ingrediente-item.seleccionado .ingrediente-check i {
-    color: #f59e0b;
-}
-
-.ingrediente-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.ingrediente-nombre {
+.ingrediente-item .ingrediente-nombre {
     color: white;
     font-size: 13px;
 }
 
-.ingrediente-precio {
+.ingrediente-item .ingrediente-precio {
     color: rgba(255,255,255,0.4);
     font-size: 11px;
 }
 
-.ingrediente-check i {
-    font-size: 20px;
-    color: rgba(255,255,255,0.2);
+.ingrediente-item .btn-add-ingrediente {
+    background: rgba(245,158,11,0.15);
+    color: #f59e0b;
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
     transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* ===== INSTRUCCIONES ===== */
-.instrucciones-section {
-    margin-top: 18px;
+.ingrediente-item .btn-add-ingrediente:hover {
+    background: rgba(245,158,11,0.3);
 }
 
-.instrucciones-section h4 {
+/* ===== DROP ZONE ===== */
+.drop-zone-ingredientes {
+    background: rgba(255,255,255,0.04);
+    border: 2px dashed rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    transition: 0.3s;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drop-zone-ingredientes.dragover {
+    border-color: #f59e0b;
+    background: rgba(245,158,11,0.05);
+}
+
+.drop-zone-ingredientes .drop-zone-content i {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.drop-zone-ingredientes .drop-zone-content p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.drop-zone-ingredientes .drop-hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.2);
+}
+
+/* ===== INGREDIENTES SELECCIONADOS ===== */
+.ingredientes-seleccionados {
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 10px;
+}
+
+.ingredientes-seleccionados h4 {
     color: white;
     margin: 0 0 8px 0;
-    font-size: 15px;
+    font-size: 14px;
 }
 
-.instrucciones-section h4 i {
+.ingredientes-seleccionados h4 i {
     color: #f59e0b;
 }
 
-.instrucciones-section textarea {
-    width: 100%;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.04);
+.selected-ingrediente {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(245,158,11,0.15);
     color: white;
-    font-size: 13px;
-    resize: vertical;
-    font-family: inherit;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin: 3px 4px 3px 0;
+    border: 1px solid rgba(245,158,11,0.2);
 }
 
-.instrucciones-section textarea:focus {
-    outline: none;
-    border-color: rgba(245,158,11,0.3);
+.selected-ingrediente .btn-remove {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 2px;
 }
 
 /* ===== TOTAL PERSONALIZADO ===== */
@@ -611,7 +604,7 @@
     display: flex;
     justify-content: space-between;
     padding: 14px 0;
-    margin-top: 16px;
+    margin-top: 12px;
     border-top: 1px solid rgba(255,255,255,0.06);
     font-size: 18px;
     font-weight: 700;
@@ -673,7 +666,7 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .ingredientes-grid {
+    .personalizar-layout {
         grid-template-columns: 1fr;
     }
     .platos-grid {
@@ -708,10 +701,51 @@
 <script>
 // ===== VARIABLES GLOBALES =====
 let carrito = [];
-let ingredientesSeleccionados = [];
 let platoActual = {};
+let ingredientesSeleccionados = [];
 
-// ===== FILTRAR POR CATEGORÍA =====
+// ===== INGREDIENTES POR PLATO =====
+const ingredientesPorPlato = {
+    'hamburguesa': [
+        { nombre: 'Queso extra', precio: 1.50 },
+        { nombre: 'Papas extra', precio: 2.00 },
+        { nombre: 'Lechuga extra', precio: 0.50 },
+        { nombre: 'Tomate extra', precio: 0.50 },
+        { nombre: 'Cebolla extra', precio: 0.50 },
+        { nombre: 'Tocino extra', precio: 2.50 },
+        { nombre: 'Salsa extra', precio: 1.00 },
+        { nombre: 'Huevo extra', precio: 1.00 }
+    ],
+    'pizza': [
+        { nombre: 'Queso extra', precio: 1.50 },
+        { nombre: 'Pepperoni extra', precio: 2.00 },
+        { nombre: 'Champiñones', precio: 1.00 },
+        { nombre: 'Aceitunas', precio: 1.00 },
+        { nombre: 'Jamón extra', precio: 2.00 },
+        { nombre: 'Piña extra', precio: 1.50 },
+        { nombre: 'Chorizo extra', precio: 2.00 }
+    ],
+    'pasta': [
+        { nombre: 'Queso parmesano', precio: 1.50 },
+        { nombre: 'Pollo extra', precio: 2.50 },
+        { nombre: 'Champiñones', precio: 1.00 },
+        { nombre: 'Salsa extra', precio: 1.50 },
+        { nombre: 'Jamón extra', precio: 2.00 },
+        { nombre: 'Albahaca', precio: 0.50 }
+    ],
+    'default': [
+        { nombre: 'Queso extra', precio: 1.50 },
+        { nombre: 'Papas extra', precio: 2.00 },
+        { nombre: 'Lechuga extra', precio: 0.50 },
+        { nombre: 'Tomate extra', precio: 0.50 },
+        { nombre: 'Cebolla extra', precio: 0.50 },
+        { nombre: 'Salsa extra', precio: 1.00 },
+        { nombre: 'Tocino extra', precio: 2.50 },
+        { nombre: 'Huevo extra', precio: 1.00 }
+    ]
+};
+
+// ===== FILTRAR CATEGORÍA =====
 function filtrarCategoria(categoria) {
     const platos = document.querySelectorAll('.plato-card');
     const botones = document.querySelectorAll('.cat-btn');
@@ -733,8 +767,8 @@ function filtrarCategoria(categoria) {
     });
 }
 
-// ===== ABRIR MODAL PERSONALIZAR =====
-function abrirModalPersonalizar(id, nombre, precio, imagen) {
+// ===== ABRIR PERSONALIZACIÓN =====
+function abrirPersonalizacion(id, nombre, precio, imagen) {
     platoActual = {
         id: id,
         nombre: nombre,
@@ -750,35 +784,101 @@ function abrirModalPersonalizar(id, nombre, precio, imagen) {
     document.getElementById('modalPrecioBase').textContent = `$${parseFloat(precio).toFixed(2)}`;
     document.getElementById('modalImagen').src = imagen || '{% static "tema/food-funday-master/images/menu-item-thumbnail-01.jpg" %}';
     
-    // Resetear ingredientes
-    document.querySelectorAll('.ingrediente-item').forEach(el => {
-        el.classList.remove('seleccionado');
-        el.querySelector('.ingrediente-check i').className = 'fa-regular fa-circle';
-    });
-    
-    document.getElementById('instruccionesEspeciales').value = '';
+    cargarIngredientes(nombre);
     actualizarTotalPersonalizado();
+    actualizarListaSeleccionados();
     
     document.getElementById('modalPersonalizar').style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
 
-// ===== CERRAR MODAL =====
-function cerrarModal() {
-    document.getElementById('modalPersonalizar').style.display = 'none';
-    document.body.style.overflow = '';
+// ===== CARGAR INGREDIENTES =====
+function cargarIngredientes(nombrePlato) {
+    const grid = document.getElementById('ingredientesGrid');
+    const nombreLower = nombrePlato.toLowerCase();
+    
+    let ingredientes = [];
+    
+    for (const [key, value] of Object.entries(ingredientesPorPlato)) {
+        if (nombreLower.includes(key)) {
+            ingredientes = value;
+            break;
+        }
+    }
+    
+    if (ingredientes.length === 0) {
+        ingredientes = ingredientesPorPlato['default'];
+    }
+    
+    grid.innerHTML = '';
+    ingredientes.forEach((ing, index) => {
+        grid.innerHTML += `
+            <div class="ingrediente-item" draggable="true" data-index="${index}" data-nombre="${ing.nombre}" data-precio="${ing.precio}">
+                <div>
+                    <span class="ingrediente-nombre">${ing.nombre}</span>
+                    <span class="ingrediente-precio">+$${ing.precio.toFixed(2)}</span>
+                </div>
+                <button class="btn-add-ingrediente" onclick="agregarIngrediente(${index})">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        `;
+    });
+    
+    // Configurar drag & drop
+    document.querySelectorAll('.ingrediente-item').forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                nombre: this.dataset.nombre,
+                precio: parseFloat(this.dataset.precio)
+            }));
+        });
+    });
 }
 
-// ===== TOGGLE INGREDIENTE =====
-function toggleIngrediente(element) {
-    element.classList.toggle('seleccionado');
-    const icon = element.querySelector('.ingrediente-check i');
-    if (element.classList.contains('seleccionado')) {
-        icon.className = 'fa-regular fa-circle-check';
-    } else {
-        icon.className = 'fa-regular fa-circle';
+// ===== AGREGAR INGREDIENTE (desde botón +) =====
+function agregarIngrediente(index) {
+    const items = document.querySelectorAll('.ingrediente-item');
+    const item = items[index];
+    if (item) {
+        const nombre = item.dataset.nombre;
+        const precio = parseFloat(item.dataset.precio);
+        const existente = ingredientesSeleccionados.find(i => i.nombre === nombre);
+        if (!existente) {
+            ingredientesSeleccionados.push({ nombre, precio });
+            actualizarTotalPersonalizado();
+            actualizarListaSeleccionados();
+        }
     }
+}
+
+// ===== ELIMINAR INGREDIENTE =====
+function eliminarIngrediente(nombre) {
+    ingredientesSeleccionados = ingredientesSeleccionados.filter(i => i.nombre !== nombre);
     actualizarTotalPersonalizado();
+    actualizarListaSeleccionados();
+}
+
+// ===== ACTUALIZAR LISTA DE SELECCIONADOS =====
+function actualizarListaSeleccionados() {
+    const container = document.getElementById('listaSeleccionados');
+    if (ingredientesSeleccionados.length === 0) {
+        container.innerHTML = '<p style="color:rgba(255,255,255,0.3);font-size:13px;">No has seleccionado ingredientes</p>';
+        return;
+    }
+    
+    let html = '';
+    ingredientesSeleccionados.forEach(ing => {
+        html += `
+            <span class="selected-ingrediente">
+                ${ing.nombre} (+$${ing.precio.toFixed(2)})
+                <button class="btn-remove" onclick="eliminarIngrediente('${ing.nombre}')">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </span>
+        `;
+    });
+    container.innerHTML = html;
 }
 
 // ===== ACTUALIZAR TOTAL PERSONALIZADO =====
@@ -786,12 +886,48 @@ function actualizarTotalPersonalizado() {
     const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
     let totalExtras = 0;
     
-    document.querySelectorAll('.ingrediente-item.seleccionado').forEach(el => {
-        totalExtras += parseFloat(el.dataset.precio) || 0;
+    ingredientesSeleccionados.forEach(ing => {
+        totalExtras += ing.precio;
     });
     
     const total = precioBase + totalExtras;
     document.getElementById('totalPersonalizado').textContent = `$${total.toFixed(2)}`;
+}
+
+// ===== CONFIGURAR DROP ZONE =====
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZoneIngredientes');
+    
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    
+    dropZone.addEventListener('dragleave', function(e) {
+        this.classList.remove('dragover');
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const existente = ingredientesSeleccionados.find(i => i.nombre === data.nombre);
+            if (!existente) {
+                ingredientesSeleccionados.push({ nombre: data.nombre, precio: data.precio });
+                actualizarTotalPersonalizado();
+                actualizarListaSeleccionados();
+            }
+        } catch (error) {
+            console.error('Error al soltar:', error);
+        }
+    });
+});
+
+// ===== CERRAR MODAL =====
+function cerrarModal() {
+    document.getElementById('modalPersonalizar').style.display = 'none';
+    document.body.style.overflow = '';
 }
 
 // ===== AGREGAR PERSONALIZADO AL CARRITO =====
@@ -799,14 +935,13 @@ function agregarPersonalizado() {
     const id = document.getElementById('platoId').value;
     const nombre = document.getElementById('platoNombre').value;
     const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
-    const instrucciones = document.getElementById('instruccionesEspeciales').value.trim();
     
     let totalExtras = 0;
     let ingredientesList = [];
     
-    document.querySelectorAll('.ingrediente-item.seleccionado').forEach(el => {
-        totalExtras += parseFloat(el.dataset.precio) || 0;
-        ingredientesList.push(el.dataset.nombre);
+    ingredientesSeleccionados.forEach(ing => {
+        totalExtras += ing.precio;
+        ingredientesList.push(ing.nombre);
     });
     
     const total = precioBase + totalExtras;
@@ -814,8 +949,11 @@ function agregarPersonalizado() {
         ? `${nombre} (${ingredientesList.join(', ')})`
         : nombre;
     
-    // Verificar si ya existe en el carrito
-    const existente = carrito.find(item => item.id === id && item.ingredientes === ingredientesList.join(','));
+    const existente = carrito.find(item => 
+        item.id === id && 
+        item.ingredientes === ingredientesList.join(',')
+    );
+    
     if (existente) {
         existente.cantidad += 1;
     } else {
@@ -825,9 +963,7 @@ function agregarPersonalizado() {
             precio: total,
             imagen: platoActual.imagen || '',
             cantidad: 1,
-            ingredientes: ingredientesList.join(', '),
-            instrucciones: instrucciones,
-            es_personalizado: true
+            ingredientes: ingredientesList.join(', ')
         });
     }
     
@@ -865,7 +1001,6 @@ function actualizarCarrito() {
                 <div class="carrito-item-info">
                     <h5>${item.nombre}</h5>
                     <span>$${item.precio.toFixed(2)} c/u</span>
-                    ${item.instrucciones ? `<span style="color:#f59e0b;font-size:11px;">📝 ${item.instrucciones}</span>` : ''}
                 </div>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <span style="color:#f59e0b;font-weight:600;">x${item.cantidad}</span>
