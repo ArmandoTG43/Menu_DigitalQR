@@ -19,7 +19,7 @@
         <div>
 
             {% for item in productos %}
-            <div class="item-card">
+            <div class="item-card {% if item.es_personalizado %}personalizado{% endif %}">
 
                 <!-- IMAGEN -->
                 <div class="item-img">
@@ -32,10 +32,34 @@
 
                 <!-- INFO -->
                 <div class="item-info">
-                    <h5><i class="fa-solid fa-utensils"></i> {{ item.nombre }}</h5>
-                    <p class="desc">
-                        {{ item.descripcion }}
-                    </p>
+                    <h5>
+                        <i class="fa-solid fa-utensils"></i> {{ item.nombre }}
+                        {% if item.es_personalizado %}
+                            <span class="badge-personalizado">
+                                <i class="fa-solid fa-pen-ruler"></i> Personalizado
+                            </span>
+                        {% endif %}
+                    </h5>
+                    
+                    <!-- MOSTRAR INGREDIENTES SI ES PERSONALIZADO -->
+                    {% if item.ingredientes %}
+                        <div class="ingredientes-detalle">
+                            <i class="fa-solid fa-carrot"></i> 
+                            <strong>Ingredientes extras:</strong> 
+                            {% if item.ingredientes is string %}
+                                {{ item.ingredientes }}
+                            {% else %}
+                                {{ item.ingredientes|join:', ' }}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- MOSTRAR DESCRIPCIÓN ORIGINAL -->
+                    {% if item.descripcion_original %}
+                        <p class="desc">{{ item.descripcion_original }}</p>
+                    {% else %}
+                        <p class="desc">{{ item.descripcion }}</p>
+                    {% endif %}
 
                     <!-- CONTROLES -->
                     <div class="cantidad">
@@ -284,6 +308,11 @@ body {
     border: 1px solid #cbd5e1;
 }
 
+.item-card.personalizado {
+    border-color: #f59e0b;
+    background: rgba(245,158,11,0.08);
+}
+
 .item-img img {
     width: 90px;
     height: 90px;
@@ -300,6 +329,10 @@ body {
     margin: 0;
     color: #dc3545;
     font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .item-info h5 i {
@@ -313,6 +346,37 @@ body {
     margin: 5px 0;
 }
 
+/* ===== BADGE PERSONALIZADO ===== */
+.badge-personalizado {
+    background: rgba(245,158,11,0.2);
+    color: #f59e0b;
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid rgba(245,158,11,0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ===== INGREDIENTES DETALLE ===== */
+.ingredientes-detalle {
+    background: rgba(245,158,11,0.08);
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin: 4px 0 8px 0;
+    font-size: 13px;
+    color: #f59e0b;
+    border-left: 3px solid #f59e0b;
+}
+
+.ingredientes-detalle i {
+    color: #f59e0b;
+    margin-right: 6px;
+}
+
+/* ===== CONTROLES ===== */
 .cantidad {
     display: flex;
     align-items: center;
@@ -746,6 +810,9 @@ body {
     .btn-ver-menu, .btn-personalizado-link {
         width: 100%;
         justify-content: center;
+    }
+    .item-info h5 {
+        font-size: 16px;
     }
 }
 </style>

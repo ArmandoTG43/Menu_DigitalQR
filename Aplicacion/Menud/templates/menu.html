@@ -1197,13 +1197,18 @@ function agregarPersonalizado() {
         ? `${nombre} (${ingredientesList.join(', ')})`
         : nombre;
     
+    const btn = document.querySelector('.btn-agregar-personalizado');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Agregando...';
+    
     const url = "/carrito/agregar/" + id + "/";
     
     fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}'
         },
         body: JSON.stringify({
             nombre: nombrePersonalizado,
@@ -1214,6 +1219,9 @@ function agregarPersonalizado() {
     })
     .then(response => response.json())
     .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-plus"></i> Agregar al carrito';
+        
         if (data.success) {
             cerrarModal();
             document.getElementById('cartCount').textContent = data.count;
@@ -1225,6 +1233,10 @@ function agregarPersonalizado() {
                 timer: 2000,
                 timerProgressBar: true
             });
+            // Redirigir al carrito después de 1.5 segundos
+            setTimeout(() => {
+                window.location.href = "{% url 'ver_carrito' %}";
+            }, 1500);
         } else {
             Swal.fire({
                 icon: 'error',
@@ -1235,6 +1247,8 @@ function agregarPersonalizado() {
         }
     })
     .catch(error => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-plus"></i> Agregar al carrito';
         console.error('Error:', error);
         Swal.fire({
             icon: 'error',

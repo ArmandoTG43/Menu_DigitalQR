@@ -726,10 +726,13 @@ def agregar_carrito(request, producto_id):
             precio_personalizado = data.get('precio', float(producto.precio))
             ingredientes = data.get('ingredientes', [])
             
-            if str(producto_id) in carrito:
-                carrito[str(producto_id)]['cantidad'] += 1
+            # Crear una clave única para el producto personalizado
+            clave = str(producto_id)
+            
+            if clave in carrito:
+                carrito[clave]['cantidad'] += 1
             else:
-                carrito[str(producto_id)] = {
+                carrito[clave] = {
                     'id': producto.id,
                     'nombre': nombre_personalizado,
                     'descripcion': producto.descripcion,
@@ -741,6 +744,8 @@ def agregar_carrito(request, producto_id):
                 }
             
             request.session['carrito'] = carrito
+            request.session.modified = True
+            
             total_items = sum(item['cantidad'] for item in carrito.values())
             
             return JsonResponse({
@@ -751,6 +756,8 @@ def agregar_carrito(request, producto_id):
             
         except json.JSONDecodeError:
             return JsonResponse({'success': False, 'mensaje': 'Error en los datos'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'mensaje': str(e)}, status=500)
     
     # Si es petición normal (no AJAX)
     if str(producto_id) in carrito:
@@ -766,6 +773,7 @@ def agregar_carrito(request, producto_id):
         }
     
     request.session['carrito'] = carrito
+    request.session.modified = True
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         total_items = sum(item['cantidad'] for item in carrito.values())
