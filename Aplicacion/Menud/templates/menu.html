@@ -6,7 +6,7 @@
 <!-- BANNER COMO FONDO FIJO -->
 <div id="banner" class="banner full-screen-mode parallax"></div>
 
-<!--  CONTENIDO ENCIMA DEL BANNER -->
+<!-- CONTENIDO ENCIMA DEL BANNER -->
 <div class="container content-app">
    
     <!-- HEADER -->
@@ -14,7 +14,7 @@
          <h2><i class="fa-solid"></i>PLATOS DEL DÍA</h2>
 
         <div class="btn-group-header ">
-            <!--  SOLO ADMIN: Botón Agregar -->
+            <!-- SOLO ADMIN: Botón Agregar -->
             {% if not request.session.cliente and user.is_authenticated and user.rol == 'admin' %}
             <a href="{% url 'agregar_producto' %}" class="btn-add">
                 <i class="fa-solid fa-plus"></i> Agregar
@@ -22,7 +22,6 @@
             <a href="{% url 'lista_promociones' %}" class="btn-add">
                 <i class="fa-solid fa-plus"></i> Promociones
             </a>
-
             {% endif %}
 
             {% if request.session.cliente %}
@@ -64,9 +63,9 @@
     <div class="grid-menu" id="gridMenu">
 
         {% for producto in productos %}
-        <div class="card-app" data-nombre="{{ producto.nombre|lower }}" data-id="{{ producto.id }}">
+        <div class="card-app" data-nombre="{{ producto.nombre|lower }}" data-id="{{ producto.id }}" data-precio="{{ producto.precio }}" data-imagen="{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}">
 
-            <div class="img-box">
+            <div class="img-box" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
                 {% if producto.imagen %}
                     <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
                 {% else %}
@@ -76,14 +75,21 @@
 
             <div class="content">
 
-                <h5><i class="fa-solid fa-utensils"></i> {{ producto.nombre }}</h5>
+                <h5 onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')" style="cursor:pointer;">
+                    <i class="fa-solid fa-utensils"></i> {{ producto.nombre }}
+                </h5>
 
-                <p>{{ producto.descripcion|truncatechars:60 }}</p>
+                <p onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')" style="cursor:pointer;">
+                    {{ producto.descripcion|truncatechars:60 }}
+                </p>
 
                 <div class="precio-acciones">
                     <div class="acciones">
-                        <!-- SOLO CLIENTE: Agregar al carrito -->
+                        <!-- SOLO CLIENTE: Personalizar y Agregar -->
                         {% if request.session.cliente %}
+                        <button class="icon-customize" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
+                            <i class="fa-solid fa-pen-ruler"></i>
+                        </button>
                         <form method="POST" action="{% url 'agregar_carrito' producto.id %}">
                             {% csrf_token %}
                             <button class="icon-cart">
@@ -130,6 +136,72 @@
 
 </div>
 <br> 
+
+<!-- ===== MODAL PERSONALIZACIÓN ===== -->
+<div id="modalPersonalizar" class="modal-personalizar" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-header-info">
+                <img id="modalImagen" src="" alt="" style="width:60px;height:60px;border-radius:10px;object-fit:cover;">
+                <div>
+                    <h3 id="modalNombre">Nombre del plato</h3>
+                    <span id="modalPrecioBase" style="color:#f59e0b;font-weight:bold;">$0.00</span>
+                </div>
+            </div>
+            <button class="modal-close" onclick="cerrarModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <input type="hidden" id="platoId">
+            <input type="hidden" id="platoNombre">
+            <input type="hidden" id="platoPrecioBase">
+
+            <!-- ===== LAYOUT ===== -->
+            <div class="personalizar-layout">
+                <!-- INGREDIENTES -->
+                <div class="ingredientes-lista">
+                    <h4><i class="fa-solid fa-carrot"></i> Ingredientes</h4>
+                    <p style="color:#9ca3af;font-size:12px;margin-bottom:10px;">Haz clic en "+" o arrastra para agregar</p>
+                    <div class="ingredientes-grid" id="ingredientesGrid">
+                        <!-- Se carga dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- DROP ZONE -->
+                <div class="drop-zone-ingredientes" id="dropZoneIngredientes">
+                    <div class="drop-zone-content">
+                        <i class="fa-solid fa-arrow-pointer"></i>
+                        <p>Arrastra un ingrediente aquí</p>
+                        <span class="drop-hint">Suelta para agregar</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INGREDIENTES SELECCIONADOS -->
+            <div class="ingredientes-seleccionados" id="ingredientesSeleccionados">
+                <h4><i class="fa-solid fa-list-check"></i> Ingredientes seleccionados</h4>
+                <div id="listaSeleccionados">
+                    <p style="color:rgba(255,255,255,0.3);font-size:13px;">No has seleccionado ingredientes</p>
+                </div>
+            </div>
+
+            <!-- TOTAL -->
+            <div class="total-personalizado">
+                <span>Total del plato:</span>
+                <span id="totalPersonalizado">$0.00</span>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn-agregar-personalizado" onclick="agregarPersonalizado()">
+                <i class="fa-solid fa-plus"></i> Agregar al carrito
+            </button>
+        </div>
+    </div>
+</div>
 
 <style>
 body {
@@ -247,6 +319,7 @@ body {
 .search-box input::placeholder {
     color: #9ca3af;
 }
+
 .btn-group-header {
     display: flex;        
     align-items: center;  
@@ -324,6 +397,10 @@ body {
     box-shadow: 0 15px 35px rgba(0,0,0,0.5);
 }
 
+.img-box {
+    cursor: pointer;
+}
+
 .img-box img {
     width: 100%;
     height: 160px;
@@ -342,6 +419,7 @@ body {
     font-size: 16px;
     font-weight: 700;
     color: white;
+    cursor: pointer;
 }
 
 .content h5 i {
@@ -353,6 +431,7 @@ body {
 .content p {
     font-size: 12px;
     color: #9ca3af;
+    cursor: pointer;
 }
 
 .precio-acciones {
@@ -378,6 +457,21 @@ body {
 .price-box i {
     font-size: 14px;
     margin-right: 3px;
+}
+
+.icon-customize {
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-size: 20px;
+    transition: 0.3s;
+    color: #f59e0b;
+}
+
+.icon-customize:hover {
+    color: #e76e05;
+    transform: scale(1.15);
 }
 
 .icon-cart,
@@ -464,9 +558,360 @@ body {
 .card-app.oculto {
     display: none;
 }
+
+/* ===== MODAL ===== */
+.modal-personalizar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #1e293b;
+    border-radius: 20px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(245,158,11,0.05);
+    border-radius: 20px 20px 0 0;
+}
+
+.modal-header-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.modal-header-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 28px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.modal-close:hover {
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 20px 22px;
+}
+
+.personalizar-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.ingredientes-lista h4 {
+    color: white;
+    margin: 0 0 8px 0;
+    font-size: 15px;
+}
+
+.ingredientes-lista h4 i {
+    color: #f59e0b;
+}
+
+.ingredientes-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.ingrediente-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.ingrediente-item:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.ingrediente-item:active {
+    cursor: grabbing;
+}
+
+.ingrediente-item .ingrediente-nombre {
+    color: white;
+    font-size: 13px;
+}
+
+.ingrediente-item .ingrediente-precio {
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+}
+
+.ingrediente-item .btn-add-ingrediente {
+    background: rgba(245,158,11,0.15);
+    color: #f59e0b;
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ingrediente-item .btn-add-ingrediente:hover {
+    background: rgba(245,158,11,0.3);
+}
+
+.drop-zone-ingredientes {
+    background: rgba(255,255,255,0.04);
+    border: 2px dashed rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: rgba(255,255,255,0.3);
+    transition: 0.3s;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drop-zone-ingredientes.dragover {
+    border-color: #f59e0b;
+    background: rgba(245,158,11,0.05);
+}
+
+.drop-zone-ingredientes .drop-zone-content i {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.drop-zone-ingredientes .drop-zone-content p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.drop-zone-ingredientes .drop-hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.2);
+}
+
+.ingredientes-seleccionados {
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 10px;
+}
+
+.ingredientes-seleccionados h4 {
+    color: white;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.ingredientes-seleccionados h4 i {
+    color: #f59e0b;
+}
+
+.selected-ingrediente {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(245,158,11,0.15);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin: 3px 4px 3px 0;
+    border: 1px solid rgba(245,158,11,0.2);
+}
+
+.selected-ingrediente .btn-remove {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 2px;
+}
+
+.total-personalizado {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0;
+    margin-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.total-personalizado span:first-child {
+    color: white;
+}
+
+.total-personalizado span:last-child {
+    color: #f59e0b;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 22px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.btn-cancelar {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.6);
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-cancelar:hover {
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+}
+
+.btn-agregar-personalizado {
+    flex: 2;
+    padding: 12px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f59e0b, #e76e05);
+    color: #0b0f1a;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-agregar-personalizado:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(245,158,11,0.3);
+}
+
+@media (max-width: 768px) {
+    .personalizar-layout {
+        grid-template-columns: 1fr;
+    }
+    .modal-content {
+        max-width: 100%;
+        margin: 10px;
+        border-radius: 16px;
+    }
+}
+
+@media (max-width: 500px) {
+    .modal-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .modal-close {
+        align-self: flex-end;
+    }
+}
 </style>
 
 <script>
+// ===== INGREDIENTES POR PLATO =====
+const ingredientesPorPlato = {
+    'hamburguesa': [
+        { nombre: 'Queso extra', precio: 1.50 },
+        { nombre: 'Papas extra', precio: 2.00 },
+        { nombre: 'Lechuga extra', precio: 0.50 },
+        { nombre: 'Tomate extra', precio: 0.50 },
+        { nombre: 'Cebolla extra', precio: 0.50 },
+        { nombre: 'Tocino extra', precio: 2.50 },
+        { nombre: 'Salsa extra', precio: 1.00 },
+        { nombre: 'Huevo extra', precio: 1.00 }
+    ],
+    'pizza': [
+        { nombre: 'Queso extra', precio: 1.50 },
+        { nombre: 'Pepperoni extra', precio: 2.00 },
+        { nombre: 'Champiñones', precio: 1.00 },
+        { nombre: 'Aceitunas', precio: 1.00 },
+        { nombre: 'Jamón extra', precio: 2.00 },
+        { nombre: 'Piña extra', precio: 1.50 },
+        { nombre: 'Chorizo extra', precio: 2.00 }
+    ],
+    'pasta': [
+        { nombre: 'Queso parmesano', precio: 1.50 },
+        { nombre: 'Pollo extra', precio: 2.50 },
+        { nombre: 'Champiñones', precio: 1.00 },
+        { nombre: 'Salsa extra', precio: 1.50 },
+        { nombre: 'Jamón extra', precio: 2.00 },
+        { nombre: 'Albahaca', precio: 0.50 }
+    ],
+    'default': [
+        { nombre: 'Queso extra', precio: 1.50 },
+        { nombre: 'Papas extra', precio: 2.00 },
+        { nombre: 'Lechuga extra', precio: 0.50 },
+        { nombre: 'Tomate extra', precio: 0.50 },
+        { nombre: 'Cebolla extra', precio: 0.50 },
+        { nombre: 'Salsa extra', precio: 1.00 },
+        { nombre: 'Tocino extra', precio: 2.50 },
+        { nombre: 'Huevo extra', precio: 1.00 }
+    ]
+};
+
+let platoActual = {};
+let ingredientesSeleccionados = [];
+
+// ===== BUSCADOR =====
 document.addEventListener('DOMContentLoaded', function() {
     const buscadorInput = document.getElementById('buscadorInput');
     const limpiarBtn = document.getElementById('limpiarBusqueda');
@@ -515,8 +960,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     filtrarProductos();
 
-    // 🔥 ELIMINÉ LA LLAMADA A actualizarContadorCarrito() porque no existe
-
     const categoriasLinks = document.querySelectorAll('.categorias a');
     categoriasLinks.forEach(link => {
         link.addEventListener('click', function(e) {
@@ -524,6 +967,241 @@ document.addEventListener('DOMContentLoaded', function() {
             filtrarProductos();
         });
     });
+});
+
+// ===== ABRIR PERSONALIZACIÓN =====
+function abrirPersonalizacion(id, nombre, precio, imagen) {
+    platoActual = {
+        id: id,
+        nombre: nombre,
+        precio: parseFloat(precio),
+        imagen: imagen
+    };
+    ingredientesSeleccionados = [];
+    
+    document.getElementById('platoId').value = id;
+    document.getElementById('platoNombre').value = nombre;
+    document.getElementById('platoPrecioBase').value = precio;
+    document.getElementById('modalNombre').textContent = nombre;
+    document.getElementById('modalPrecioBase').textContent = `$${parseFloat(precio).toFixed(2)}`;
+    document.getElementById('modalImagen').src = imagen || '{% static "tema/food-funday-master/images/menu-item-thumbnail-01.jpg" %}';
+    
+    cargarIngredientes(nombre);
+    actualizarTotalPersonalizado();
+    actualizarListaSeleccionados();
+    
+    document.getElementById('modalPersonalizar').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+// ===== CARGAR INGREDIENTES =====
+function cargarIngredientes(nombrePlato) {
+    const grid = document.getElementById('ingredientesGrid');
+    const nombreLower = nombrePlato.toLowerCase();
+    
+    let ingredientes = [];
+    
+    for (const [key, value] of Object.entries(ingredientesPorPlato)) {
+        if (nombreLower.includes(key)) {
+            ingredientes = value;
+            break;
+        }
+    }
+    
+    if (ingredientes.length === 0) {
+        ingredientes = ingredientesPorPlato['default'];
+    }
+    
+    grid.innerHTML = '';
+    ingredientes.forEach((ing, index) => {
+        grid.innerHTML += `
+            <div class="ingrediente-item" draggable="true" data-index="${index}" data-nombre="${ing.nombre}" data-precio="${ing.precio}">
+                <div>
+                    <span class="ingrediente-nombre">${ing.nombre}</span>
+                    <span class="ingrediente-precio">+$${ing.precio.toFixed(2)}</span>
+                </div>
+                <button class="btn-add-ingrediente" onclick="agregarIngrediente(${index})">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        `;
+    });
+    
+    document.querySelectorAll('.ingrediente-item').forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                nombre: this.dataset.nombre,
+                precio: parseFloat(this.dataset.precio)
+            }));
+        });
+    });
+}
+
+// ===== AGREGAR INGREDIENTE =====
+function agregarIngrediente(index) {
+    const items = document.querySelectorAll('.ingrediente-item');
+    const item = items[index];
+    if (item) {
+        const nombre = item.dataset.nombre;
+        const precio = parseFloat(item.dataset.precio);
+        const existente = ingredientesSeleccionados.find(i => i.nombre === nombre);
+        if (!existente) {
+            ingredientesSeleccionados.push({ nombre, precio });
+            actualizarTotalPersonalizado();
+            actualizarListaSeleccionados();
+        }
+    }
+}
+
+// ===== ELIMINAR INGREDIENTE =====
+function eliminarIngrediente(nombre) {
+    ingredientesSeleccionados = ingredientesSeleccionados.filter(i => i.nombre !== nombre);
+    actualizarTotalPersonalizado();
+    actualizarListaSeleccionados();
+}
+
+// ===== ACTUALIZAR LISTA SELECCIONADOS =====
+function actualizarListaSeleccionados() {
+    const container = document.getElementById('listaSeleccionados');
+    if (ingredientesSeleccionados.length === 0) {
+        container.innerHTML = '<p style="color:rgba(255,255,255,0.3);font-size:13px;">No has seleccionado ingredientes</p>';
+        return;
+    }
+    
+    let html = '';
+    ingredientesSeleccionados.forEach(ing => {
+        html += `
+            <span class="selected-ingrediente">
+                ${ing.nombre} (+$${ing.precio.toFixed(2)})
+                <button class="btn-remove" onclick="eliminarIngrediente('${ing.nombre}')">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </span>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// ===== ACTUALIZAR TOTAL =====
+function actualizarTotalPersonalizado() {
+    const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
+    let totalExtras = 0;
+    
+    ingredientesSeleccionados.forEach(ing => {
+        totalExtras += ing.precio;
+    });
+    
+    const total = precioBase + totalExtras;
+    document.getElementById('totalPersonalizado').textContent = `$${total.toFixed(2)}`;
+}
+
+// ===== DROP ZONE =====
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZoneIngredientes');
+    
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    
+    dropZone.addEventListener('dragleave', function(e) {
+        this.classList.remove('dragover');
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const existente = ingredientesSeleccionados.find(i => i.nombre === data.nombre);
+            if (!existente) {
+                ingredientesSeleccionados.push({ nombre: data.nombre, precio: data.precio });
+                actualizarTotalPersonalizado();
+                actualizarListaSeleccionados();
+            }
+        } catch (error) {
+            console.error('Error al soltar:', error);
+        }
+    });
+});
+
+// ===== CERRAR MODAL =====
+function cerrarModal() {
+    document.getElementById('modalPersonalizar').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// ===== AGREGAR PERSONALIZADO =====
+function agregarPersonalizado() {
+    const id = document.getElementById('platoId').value;
+    const nombre = document.getElementById('platoNombre').value;
+    const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
+    
+    let totalExtras = 0;
+    let ingredientesList = [];
+    
+    ingredientesSeleccionados.forEach(ing => {
+        totalExtras += ing.precio;
+        ingredientesList.push(ing.nombre);
+    });
+    
+    const total = precioBase + totalExtras;
+    const nombrePersonalizado = ingredientesList.length > 0 
+        ? `${nombre} (${ingredientesList.join(', ')})`
+        : nombre;
+    
+    // Enviar al carrito via AJAX igual que el carrito normal
+    fetch("{% url 'agregar_carrito' id %}?personalizado=true", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            nombre: nombrePersonalizado,
+            precio: total,
+            ingredientes: ingredientesList
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            cerrarModal();
+            // Actualizar contador del carrito
+            document.getElementById('cartCount').textContent = data.count;
+            Swal.fire({
+                icon: 'success',
+                title: '¡Agregado!',
+                text: `${nombrePersonalizado} agregado al carrito`,
+                confirmButtonColor: '#f59e0b',
+                timer: 2000,
+                timerProgressBar: true
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo agregar al carrito',
+            confirmButtonColor: '#ef4444'
+        });
+    });
+}
+
+// ===== CERRAR MODAL CON ESC =====
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModal();
+    }
+});
+
+// ===== CERRAR MODAL CLICK FUERA =====
+document.getElementById('modalPersonalizar').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModal();
+    }
 });
 </script>
 

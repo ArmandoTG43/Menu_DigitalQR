@@ -116,7 +116,6 @@ urlpatterns = [
     path('validar-email-editar/', views.validar_email_editar, name='validar_email_editar'),
 
 
-    path('personalizar/', views.personalizar_pedido, name='personalizar_pedido'),
     path('agregar-carrito-personalizado/', views.agregar_carrito_personalizado, name='agregar_carrito_personalizado'),
 ]
 
