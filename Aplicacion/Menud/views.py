@@ -716,8 +716,43 @@ def confirmar_pedido(request):
 @cliente_required
 def agregar_carrito(request, producto_id):
     carrito = request.session.get('carrito', {})
-    producto = Producto.objects.get(id=producto_id)
+    producto = get_object_or_404(Producto, id=producto_id)
     
+    # Si es petición AJAX con personalización
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            data = json.loads(request.body)
+            nombre_personalizado = data.get('nombre', producto.nombre)
+            precio_personalizado = data.get('precio', float(producto.precio))
+            ingredientes = data.get('ingredientes', [])
+            
+            if str(producto_id) in carrito:
+                carrito[str(producto_id)]['cantidad'] += 1
+            else:
+                carrito[str(producto_id)] = {
+                    'id': producto.id,
+                    'nombre': nombre_personalizado,
+                    'descripcion': producto.descripcion,
+                    'precio': precio_personalizado,
+                    'cantidad': 1,
+                    'imagen': producto.imagen.url if producto.imagen else '',
+                    'ingredientes': ingredientes,
+                    'es_personalizado': True
+                }
+            
+            request.session['carrito'] = carrito
+            total_items = sum(item['cantidad'] for item in carrito.values())
+            
+            return JsonResponse({
+                'success': True,
+                'mensaje': f'{nombre_personalizado} agregado al carrito',
+                'count': total_items
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'mensaje': 'Error en los datos'}, status=400)
+    
+    # Si es petición normal (no AJAX)
     if str(producto_id) in carrito:
         carrito[str(producto_id)]['cantidad'] += 1
     else:
@@ -732,7 +767,6 @@ def agregar_carrito(request, producto_id):
     
     request.session['carrito'] = carrito
     
-    # Si es petición AJAX, devolver JSON
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         total_items = sum(item['cantidad'] for item in carrito.values())
         return JsonResponse({
@@ -741,8 +775,7 @@ def agregar_carrito(request, producto_id):
             'count': total_items
         })
     
-    # Si no, redirigir normalmente
-    messages.success(request, f' {producto.nombre} agregado al carrito')
+    messages.success(request, f'{producto.nombre} agregado al carrito')
     return redirect('menu')
 
 @cliente_required

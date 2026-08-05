@@ -1131,78 +1131,7 @@ function cerrarModal() {
     document.body.style.overflow = '';
 }
 
-// ===== AGREGAR PERSONALIZADO =====
-function agregarPersonalizado() {
-    const id = document.getElementById('platoId').value;
-    const nombre = document.getElementById('platoNombre').value;
-    const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
-    
-    let totalExtras = 0;
-    let ingredientesList = [];
-    
-    ingredientesSeleccionados.forEach(ing => {
-        totalExtras += ing.precio;
-        ingredientesList.push(ing.nombre);
-    });
-    
-    const total = precioBase + totalExtras;
-    const nombrePersonalizado = ingredientesList.length > 0 
-        ? `${nombre} (${ingredientesList.join(', ')})`
-        : nombre;
-    
-    // Enviar al carrito via AJAX igual que el carrito normal
-    fetch("{% url 'agregar_carrito' id %}?personalizado=true", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({
-            nombre: nombrePersonalizado,
-            precio: total,
-            ingredientes: ingredientesList
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            cerrarModal();
-            // Actualizar contador del carrito
-            document.getElementById('cartCount').textContent = data.count;
-            Swal.fire({
-                icon: 'success',
-                title: '¡Agregado!',
-                text: `${nombrePersonalizado} agregado al carrito`,
-                confirmButtonColor: '#f59e0b',
-                timer: 2000,
-                timerProgressBar: true
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudo agregar al carrito',
-            confirmButtonColor: '#ef4444'
-        });
-    });
-}
-
-// ===== CERRAR MODAL CON ESC =====
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        cerrarModal();
-    }
-});
-
-// ===== CERRAR MODAL CLICK FUERA =====
-document.getElementById('modalPersonalizar').addEventListener('click', function(e) {
-    if (e.target === this) {
-        cerrarModal();
-    }
-});
+// ===== AGREGAR PERSONALIZADO (VERSIÓN CORRECTA) =====
 function agregarPersonalizado() {
     const id = document.getElementById('platoId').value;
     const nombre = document.getElementById('platoNombre').value;
@@ -1231,8 +1160,8 @@ function agregarPersonalizado() {
         ? `${nombre} (${ingredientesList.join(', ')})`
         : nombre;
     
-    // Usar la URL con el ID correcto
-    const url = `/carrito/agregar/${id}/`;
+    // URL DIRECTA - SIN {% url %}
+    const url = "/carrito/agregar/" + id + "/";
     
     fetch(url, {
         method: 'POST',
@@ -1279,6 +1208,20 @@ function agregarPersonalizado() {
         });
     });
 }
+
+// ===== CERRAR MODAL CON ESC =====
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModal();
+    }
+});
+
+// ===== CERRAR MODAL CLICK FUERA =====
+document.getElementById('modalPersonalizar').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModal();
+    }
+});
 </script>
 
 {% endblock %}
