@@ -1160,7 +1160,6 @@ function agregarPersonalizado() {
         ? `${nombre} (${ingredientesList.join(', ')})`
         : nombre;
     
-    // URL DIRECTA - SIN {% url %}
     const url = "/carrito/agregar/" + id + "/";
     
     fetch(url, {
