@@ -1203,6 +1203,82 @@ document.getElementById('modalPersonalizar').addEventListener('click', function(
         cerrarModal();
     }
 });
+function agregarPersonalizado() {
+    const id = document.getElementById('platoId').value;
+    const nombre = document.getElementById('platoNombre').value;
+    const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
+    
+    if (!id) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo identificar el plato',
+            confirmButtonColor: '#ef4444'
+        });
+        return;
+    }
+    
+    let totalExtras = 0;
+    let ingredientesList = [];
+    
+    ingredientesSeleccionados.forEach(ing => {
+        totalExtras += ing.precio;
+        ingredientesList.push(ing.nombre);
+    });
+    
+    const total = precioBase + totalExtras;
+    const nombrePersonalizado = ingredientesList.length > 0 
+        ? `${nombre} (${ingredientesList.join(', ')})`
+        : nombre;
+    
+    // Usar la URL con el ID correcto
+    const url = `/carrito/agregar/${id}/`;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            nombre: nombrePersonalizado,
+            precio: total,
+            ingredientes: ingredientesList,
+            personalizado: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            cerrarModal();
+            document.getElementById('cartCount').textContent = data.count;
+            Swal.fire({
+                icon: 'success',
+                title: '¡Agregado!',
+                text: `${nombrePersonalizado} agregado al carrito`,
+                confirmButtonColor: '#f59e0b',
+                timer: 2000,
+                timerProgressBar: true
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.mensaje || 'No se pudo agregar al carrito',
+                confirmButtonColor: '#ef4444'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor',
+            confirmButtonColor: '#ef4444'
+        });
+    });
+}
 </script>
 
 {% endblock %}

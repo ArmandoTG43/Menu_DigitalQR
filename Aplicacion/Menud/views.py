@@ -1713,51 +1713,67 @@ def confirmar_pedido(request):
 
 
 @cliente_required
-def agregar_carrito_personalizado(request):
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'message': 'Método no permitido'}, status=405)
+def agregar_carrito(request, producto_id):
+    carrito = request.session.get('carrito', {})
+    producto = get_object_or_404(Producto, id=producto_id)
     
-    try:
-        data = json.loads(request.body)
-        productos = data.get('productos', [])
-        tipo_entrega = data.get('tipo_entrega', 'local')
-        direccion = data.get('direccion', '')
-        hora_entrega = data.get('hora_entrega', '')
-        
-        if not productos:
-            return JsonResponse({'success': False, 'message': 'No hay productos'}, status=400)
-        
-        # Obtener el carrito de la sesión
-        carrito = request.session.get('carrito', {})
-        
-        # Agregar cada producto al carrito de sesión
-        for item in productos:
-            producto_id = str(item['id'])
-            if producto_id in carrito:
-                carrito[producto_id]['cantidad'] += item['cantidad']
+    # Si es petición AJAX con personalización
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            data = json.loads(request.body)
+            nombre_personalizado = data.get('nombre', producto.nombre)
+            precio_personalizado = data.get('precio', float(producto.precio))
+            ingredientes = data.get('ingredientes', [])
+            
+            # Crear un producto virtual o guardar en carrito
+            if str(producto_id) in carrito:
+                carrito[str(producto_id)]['cantidad'] += 1
             else:
-                carrito[producto_id] = {
-                    'id': item['id'],
-                    'nombre': item['nombre'],
-                    'descripcion': item.get('descripcion', ''),
-                    'precio': float(item['precio']),
-                    'cantidad': item['cantidad'],
-                    'imagen': item.get('imagen', '')
+                carrito[str(producto_id)] = {
+                    'id': producto.id,
+                    'nombre': nombre_personalizado,
+                    'descripcion': producto.descripcion,
+                    'precio': precio_personalizado,
+                    'cantidad': 1,
+                    'imagen': producto.imagen.url if producto.imagen else '',
+                    'ingredientes': ingredientes,
+                    'es_personalizado': True
                 }
-        
-        # Guardar opciones de entrega en sesión
-        request.session['tipo_entrega'] = tipo_entrega
-        request.session['direccion'] = direccion
-        request.session['hora_entrega'] = hora_entrega
-        
-        # Guardar carrito en sesión
-        request.session['carrito'] = carrito
-        request.session.modified = True
-        
+            
+            request.session['carrito'] = carrito
+            total_items = sum(item['cantidad'] for item in carrito.values())
+            
+            return JsonResponse({
+                'success': True,
+                'mensaje': f'{nombre_personalizado} agregado al carrito',
+                'count': total_items
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'mensaje': 'Error en los datos'}, status=400)
+    
+    # Si es petición normal
+    if str(producto_id) in carrito:
+        carrito[str(producto_id)]['cantidad'] += 1
+    else:
+        carrito[str(producto_id)] = {
+            'id': producto.id,
+            'nombre': producto.nombre,
+            'descripcion': producto.descripcion,
+            'precio': float(producto.precio),
+            'cantidad': 1,
+            'imagen': producto.imagen.url if producto.imagen else ''
+        }
+    
+    request.session['carrito'] = carrito
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        total_items = sum(item['cantidad'] for item in carrito.values())
         return JsonResponse({
             'success': True,
-            'redirect_url': '/carrito/'
+            'mensaje': f'{producto.nombre} agregado al carrito',
+            'count': total_items
         })
-        
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+    
+    messages.success(request, f'{producto.nombre} agregado al carrito')
+    return redirect('menu')
