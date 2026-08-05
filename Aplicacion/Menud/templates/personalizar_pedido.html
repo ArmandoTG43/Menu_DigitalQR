@@ -9,101 +9,212 @@
     <br><br><br><br>
 
     <h2 class="title"><i class="fa-solid fa-pen-ruler"></i> Plato a tu gusto</h2>
-    <p class="subtitle">Selecciona los platos que deseas y arma tu pedido a tu gusto</p>
+    <p class="subtitle">Selecciona un plato y personaliza sus ingredientes a tu gusto</p>
 
-    <div class="personalizar-grid">
+    <!-- ===== CATEGORÍAS ===== -->
+    <div class="categorias-personalizar">
+        <button class="cat-btn active" data-categoria="todos" onclick="filtrarCategoria('todos')">
+            <i class="fa-solid fa-grid-2"></i> Todos
+        </button>
+        <button class="cat-btn" data-categoria="adicionales" onclick="filtrarCategoria('adicionales')">
+            <i class="fa-solid fa-bowl-food"></i> Adicionales
+        </button>
+        <button class="cat-btn" data-categoria="pastas" onclick="filtrarCategoria('pastas')">
+            <i class="fa-solid fa-spaghetti-monster-flying"></i> Pastas
+        </button>
+        <button class="cat-btn" data-categoria="postres" onclick="filtrarCategoria('postres')">
+            <i class="fa-solid fa-cake"></i> Postres
+        </button>
+        <button class="cat-btn" data-categoria="bebidas-frias" onclick="filtrarCategoria('bebidas-frias')">
+            <i class="fa-solid fa-wine-bottle"></i> Bebidas Frías
+        </button>
+        <button class="cat-btn" data-categoria="porciones" onclick="filtrarCategoria('porciones')">
+            <i class="fa-solid fa-utensils"></i> Porciones
+        </button>
+    </div>
 
-        <!-- ===== COLUMNA IZQUIERDA: MENÚ ===== -->
-        <div class="menu-columna">
-            <div class="menu-header">
-                <h3><i class="fa-solid fa-utensils"></i> Menú</h3>
-                <div class="buscador-menu">
-                    <i class="fa-solid fa-search"></i>
-                    <input type="text" id="buscadorPlatos" placeholder="Buscar plato..." class="buscador-input">
+    <!-- ===== GRID DE PLATOS ===== -->
+    <div class="platos-grid" id="platosGrid">
+        {% for plato in platos %}
+        <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|slugify }}" data-imagen="{% if plato.imagen %}{{ plato.imagen.url }}{% endif %}" onclick="abrirModalPersonalizar('{{ plato.id }}', '{{ plato.nombre }}', '{{ plato.precio }}', '{% if plato.imagen %}{{ plato.imagen.url }}{% endif %}')">
+            <div class="plato-img">
+                {% if plato.imagen %}
+                    <img src="{{ plato.imagen.url }}" alt="{{ plato.nombre }}">
+                {% else %}
+                    <img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}" alt="{{ plato.nombre }}">
+                {% endif %}
+            </div>
+            <div class="plato-info">
+                <h4>{{ plato.nombre }}</h4>
+                <p class="plato-desc">{{ plato.descripcion|truncatechars:50 }}</p>
+                <div class="plato-footer">
+                    <span class="plato-precio"><i class="fa-solid fa-dollar-sign"></i> {{ plato.precio }}</span>
+                    <span class="plato-click"><i class="fa-solid fa-hand-pointer"></i> Personalizar</span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color:white;">No hay platos disponibles</p>
+        {% endfor %}
+    </div>
+
+    <!-- ===== CARRITO DE SELECCIÓN ===== -->
+    <div class="carrito-seleccion">
+        <h4><i class="fa-solid fa-cart-shopping"></i> Tu selección</h4>
+        <div id="carritoLista">
+            <p class="carrito-vacio"><i class="fa-regular fa-face-smile"></i> No has seleccionado ningún plato</p>
+        </div>
+        <div class="carrito-total">
+            <span>Total:</span>
+            <strong id="totalPrecio">$0.00</strong>
+        </div>
+        <button class="btn-pagar" onclick="confirmarPedido()" id="btnPagar">
+            <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
+        </button>
+    </div>
+</div>
+
+<!-- ===== MODAL PERSONALIZAR ===== -->
+<div id="modalPersonalizar" class="modal-personalizar" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-header-info">
+                <img id="modalImagen" src="" alt="" style="width:60px;height:60px;border-radius:10px;object-fit:cover;">
+                <div>
+                    <h3 id="modalNombre">Nombre del plato</h3>
+                    <span id="modalPrecioBase" style="color:#f59e0b;font-weight:bold;">$0.00</span>
+                </div>
+            </div>
+            <button class="modal-close" onclick="cerrarModal()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <input type="hidden" id="platoId">
+            <input type="hidden" id="platoNombre">
+            <input type="hidden" id="platoPrecioBase">
+
+            <!-- ===== INGREDIENTES ===== -->
+            <div class="ingredientes-section">
+                <h4><i class="fa-solid fa-carrot"></i> Ingredientes</h4>
+                <p style="color:#9ca3af;font-size:13px;margin-bottom:15px;">Selecciona o arrastra los ingredientes que deseas agregar</p>
+
+                <div class="ingredientes-grid" id="ingredientesGrid">
+                    <!-- INGREDIENTE 1 -->
+                    <div class="ingrediente-item" data-nombre="Queso extra" data-precio="1.50" onclick="toggleIngrediente(this)">
+                        <div class="ingrediente-info">
+                            <span class="ingrediente-nombre">🧀 Queso extra</span>
+                            <span class="ingrediente-precio">+$1.50</span>
+                        </div>
+                        <div class="ingrediente-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+                    </div>
+
+                    <!-- INGREDIENTE 2 -->
+                    <div class="ingrediente-item" data-nombre="Papas extra" data-precio="2.00" onclick="toggleIngrediente(this)">
+                        <div class="ingrediente-info">
+                            <span class="ingrediente-nombre">🍟 Papas extra</span>
+                            <span class="ingrediente-precio">+$2.00</span>
+                        </div>
+                        <div class="ingrediente-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+                    </div>
+
+                    <!-- INGREDIENTE 3 -->
+                    <div class="ingrediente-item" data-nombre="Lechuga extra" data-precio="0.50" onclick="toggleIngrediente(this)">
+                        <div class="ingrediente-info">
+                            <span class="ingrediente-nombre">🥬 Lechuga extra</span>
+                            <span class="ingrediente-precio">+$0.50</span>
+                        </div>
+                        <div class="ingrediente-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+                    </div>
+
+                    <!-- INGREDIENTE 4 -->
+                    <div class="ingrediente-item" data-nombre="Tomate extra" data-precio="0.50" onclick="toggleIngrediente(this)">
+                        <div class="ingrediente-info">
+                            <span class="ingrediente-nombre">🍅 Tomate extra</span>
+                            <span class="ingrediente-precio">+$0.50</span>
+                        </div>
+                        <div class="ingrediente-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+                    </div>
+
+                    <!-- INGREDIENTE 5 -->
+                    <div class="ingrediente-item" data-nombre="Cebolla extra" data-precio="0.50" onclick="toggleIngrediente(this)">
+                        <div class="ingrediente-info">
+                            <span class="ingrediente-nombre">🧅 Cebolla extra</span>
+                            <span class="ingrediente-precio">+$0.50</span>
+                        </div>
+                        <div class="ingrediente-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+                    </div>
+
+                    <!-- INGREDIENTE 6 -->
+                    <div class="ingrediente-item" data-nombre="Salsa extra" data-precio="1.00" onclick="toggleIngrediente(this)">
+                        <div class="ingrediente-info">
+                            <span class="ingrediente-nombre">🌶️ Salsa extra</span>
+                            <span class="ingrediente-precio">+$1.00</span>
+                        </div>
+                        <div class="ingrediente-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+                    </div>
+
+                    <!-- INGREDIENTE 7 -->
+                    <div class="ingrediente-item" data-nombre="Tocino extra" data-precio="2.50" onclick="toggleIngrediente(this)">
+                        <div class="ingrediente-info">
+                            <span class="ingrediente-nombre">🥓 Tocino extra</span>
+                            <span class="ingrediente-precio">+$2.50</span>
+                        </div>
+                        <div class="ingrediente-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+                    </div>
+
+                    <!-- INGREDIENTE 8 -->
+                    <div class="ingrediente-item" data-nombre="Huevo extra" data-precio="1.00" onclick="toggleIngrediente(this)">
+                        <div class="ingrediente-info">
+                            <span class="ingrediente-nombre">🍳 Huevo extra</span>
+                            <span class="ingrediente-precio">+$1.00</span>
+                        </div>
+                        <div class="ingrediente-check">
+                            <i class="fa-regular fa-circle"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- ===== CATEGORÍAS ===== -->
-            <div class="categorias-personalizar">
-                <button class="cat-btn active" data-categoria="todos" onclick="filtrarCategoria('todos')">
-                    <i class="fa-solid fa-grid-2"></i> Todos
-                </button>
-                <button class="cat-btn" data-categoria="adicionales" onclick="filtrarCategoria('adicionales')">
-                    <i class="fa-solid fa-bowl-food"></i> Adicionales
-                </button>
-                <button class="cat-btn" data-categoria="pastas" onclick="filtrarCategoria('pastas')">
-                    <i class="fa-solid fa-spaghetti-monster-flying"></i> Pastas
-                </button>
-                <button class="cat-btn" data-categoria="postres" onclick="filtrarCategoria('postres')">
-                    <i class="fa-solid fa-cake"></i> Postres
-                </button>
-                <button class="cat-btn" data-categoria="bebidas-frias" onclick="filtrarCategoria('bebidas-frias')">
-                    <i class="fa-solid fa-wine-bottle"></i> Bebidas Frías
-                </button>
-                <button class="cat-btn" data-categoria="porciones" onclick="filtrarCategoria('porciones')">
-                    <i class="fa-solid fa-utensils"></i> Porciones
-                </button>
+            <!-- ===== INSTRUCCIONES ===== -->
+            <div class="instrucciones-section">
+                <h4><i class="fa-solid fa-pen"></i> Instrucciones especiales</h4>
+                <textarea id="instruccionesEspeciales" placeholder="Ej: Sin cebolla, bien cocido, extra picante..." rows="2"></textarea>
             </div>
 
-            <div class="platos-grid" id="platosGrid">
-                {% for plato in platos %}
-                <div class="plato-card" data-id="{{ plato.id }}" data-nombre="{{ plato.nombre }}" data-precio="{{ plato.precio }}" data-categoria="{{ plato.categoria.nombre|slugify }}" {% if plato.imagen %}data-imagen="{{ plato.imagen.url }}"{% else %}data-imagen=""{% endif %} draggable="true">
-                    <div class="plato-img">
-                        {% if plato.imagen %}
-                            <img src="{{ plato.imagen.url }}" alt="{{ plato.nombre }}">
-                        {% else %}
-                            <img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}" alt="{{ plato.nombre }}">
-                        {% endif %}
-                    </div>
-                    <div class="plato-info">
-                        <h4>{{ plato.nombre }}</h4>
-                        <p class="plato-desc">{{ plato.descripcion|truncatechars:50 }}</p>
-                        <span class="plato-precio"><i class="fa-solid fa-dollar-sign"></i> {{ plato.precio }}</span>
-                        <button class="btn-agregar" onclick="agregarAlCarrito({{ plato.id }}, '{{ plato.nombre }}', {{ plato.precio }}, '{% if plato.imagen %}{{ plato.imagen.url }}{% endif %}')">
-                            <i class="fa-solid fa-plus"></i> Agregar
-                        </button>
-                    </div>
-                </div>
-                {% empty %}
-                <p>No hay platos disponibles</p>
-                {% endfor %}
+            <!-- ===== TOTAL PERSONALIZADO ===== -->
+            <div class="total-personalizado">
+                <span>Total del plato:</span>
+                <span id="totalPersonalizado">$0.00</span>
             </div>
         </div>
 
-        <!-- ===== COLUMNA DERECHA: PEDIDO PERSONALIZADO ===== -->
-        <div class="pedido-columna">
-
-            <!-- Área de selección (drop zone) -->
-            <div class="drop-zone" id="dropZone">
-                <i class="fa-solid fa-arrow-pointer"></i>
-                <p>Arrastra un plato aquí o haz clic en "Agregar"</p>
-                <span class="drop-hint">Suelta para agregar al pedido</span>
-            </div>
-
-            <!-- Carrito de selección -->
-            <div class="carrito-seleccion">
-                <h4><i class="fa-solid fa-cart-shopping"></i> Tu selección</h4>
-                <div id="carritoLista">
-                    <p class="carrito-vacio"><i class="fa-regular fa-face-smile"></i> No has seleccionado ningún plato</p>
-                </div>
-
-                <!-- Total -->
-                <div class="carrito-total">
-                    <span>Total:</span>
-                    <strong id="totalPrecio">$0.00</strong>
-                </div>
-            </div>
-
-            <!-- Botón agregar al carrito -->
-            <button class="btn-pagar" onclick="confirmarPedido()" id="btnPagar">
-                <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
+        <div class="modal-footer">
+            <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn-agregar-personalizado" onclick="agregarPersonalizado()">
+                <i class="fa-solid fa-plus"></i> Agregar al carrito
             </button>
         </div>
     </div>
 </div>
 
 <style>
-/* ===== ESTILOS ===== */
+/* ===== ESTILOS GENERALES ===== */
 #banner {
     position: fixed;
     top: 0;
@@ -115,7 +226,6 @@
     background-position: center;
     z-index: 1;
     filter: brightness(0.60);
-    
 }
 
 .container {
@@ -145,97 +255,23 @@
     font-size: 15px;
 }
 
-.personalizar-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 25px;
-}
-
-/* ===== COLUMNA MENÚ ===== */
-.menu-columna {
-    background: rgba(255,255,255,0.06);
-    backdrop-filter: blur(12px);
-    border-radius: 20px;
-    padding: 20px;
-    border: 1px solid rgba(255,255,255,0.08);
-    max-height: 650px;
-    overflow-y: auto;
-    border: 1px solid #cbd5e1;
-}
-
-.menu-columna::-webkit-scrollbar {
-    width: 6px;
-}
-
-.menu-columna::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-}
-
-.menu-columna::-webkit-scrollbar-thumb {
-    background: rgba(245,158,11,0.3);
-    border-radius: 10px;
-}
-
-.menu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.menu-header h3 {
-    color: white;
-    margin: 0;
-}
-
-.buscador-menu {
-    display: flex;
-    align-items: center;
-    background: rgba(255,255,255,0.08);
-    border-radius: 10px;
-    padding: 0 12px;
-    border: 1px solid #f59e0b;
-}
-
-.buscador-menu i {
-    color: rgba(255,255,255,0.3);
-}
-
-.buscador-menu input {
-    background: transparent;
-    border: none;
-    padding: 8px 10px;
-    color: white;
-    outline: none;
-    font-size: 13px;
-    width: 150px;
-}
-
-.buscador-menu input::placeholder {
-    color: rgba(255,255,255,0.3);
-}
-
-/* ===== CATEGORÍAS PERSONALIZAR ===== */
+/* ===== CATEGORÍAS ===== */
 .categorias-personalizar {
     display: flex;
     gap: 8px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    justify-content: center;
 }
 
 .cat-btn {
-    padding: 6px 14px;
+    padding: 8px 18px;
     border-radius: 20px;
     border: 1px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.05);
     color: rgba(255,255,255,0.6);
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
@@ -246,7 +282,6 @@
     background: rgba(245,158,11,0.15);
     color: white;
     border-color: rgba(245,158,11,0.3);
-    transform: translateY(-2px);
 }
 
 .cat-btn.active {
@@ -256,90 +291,34 @@
     font-weight: 600;
 }
 
-.cat-btn i {
-    font-size: 13px;
-}
-
-.cat-btn.active i {
-    color: #0b0f1a;
-}
-
-/* ===== TARJETAS CON COLORES ===== */
+/* ===== GRID DE PLATOS ===== */
 .platos-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
 }
 
 .plato-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 14px;
-    border-radius: 14px;
-    cursor: grab;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255,255,255,0.06);
-}
-
-/* Colores por categoría */
-.plato-card[data-categoria="adicionales"] {
-    background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05));
-    border-left: 4px solid #22c55e;
-}
-
-.plato-card[data-categoria="pastas"] {
-    background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
-    border-left: 4px solid #f59e0b;
-}
-
-.plato-card[data-categoria="postres"] {
-    background: linear-gradient(135deg, rgba(236,72,153,0.15), rgba(236,72,153,0.05));
-    border-left: 4px solid #ec4899;
-}
-
-.plato-card[data-categoria="bebidas-frias"] {
-    background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05));
-    border-left: 4px solid #3b82f6;
-}
-
-.plato-card[data-categoria="porciones"] {
-    background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05));
-    border-left: 4px solid #a855f7;
-}
-
-.plato-card[data-categoria="entradas"] {
-    background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05));
-    border-left: 4px solid #a855f7;
-}
-
-.plato-card[data-categoria="platosfuertes"] {
-    background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
-    border-left: 4px solid #ef4444;
-}
-
-.plato-card[data-categoria="bebidas-calientes"] {
-    background: linear-gradient(135deg, rgba(251,146,60,0.15), rgba(251,146,60,0.05));
-    border-left: 4px solid #fb923c;
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
 .plato-card:hover {
-    background: rgba(255,255,255,0.10);
-    border-color: rgba(245,158,11,0.2);
-    transform: translateX(4px);
-}
-
-.plato-card:active {
-    cursor: grabbing;
+    transform: translateY(-5px);
+    border-color: rgba(245,158,11,0.3);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
 .plato-img {
-    width: 60px;
-    height: 60px;
-    flex-shrink: 0;
-    border-radius: 10px;
+    width: 100%;
+    height: 160px;
     overflow: hidden;
-    border: 2px solid rgba(255,255,255,0.08);
 }
 
 .plato-img img {
@@ -349,122 +328,54 @@
 }
 
 .plato-info {
-    flex: 1;
-    min-width: 0;
+    padding: 14px 16px;
 }
 
 .plato-info h4 {
     color: white;
-    font-size: 14px;
-    margin: 0 0 2px 0;
-    font-weight: 600;
-}
-
-.plato-info h4 i {
-    color: #f59e0b;
-    margin-right: 6px;
+    font-size: 16px;
+    margin: 0 0 4px 0;
 }
 
 .plato-desc {
     color: rgba(255,255,255,0.4);
     font-size: 12px;
-    margin: 0 0 3px 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin: 0 0 10px 0;
+}
+
+.plato-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .plato-precio {
     color: #f59e0b;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
 }
 
-.btn-agregar {
-    background: rgba(245,158,11,0.15);
-    color: #f59e0b;
-    border: none;
-    padding: 4px 12px;
-    border-radius: 8px;
+.plato-click {
+    color: rgba(255,255,255,0.4);
     font-size: 12px;
-    cursor: pointer;
-    transition: 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
-.btn-agregar:hover {
-    background: rgba(245,158,11,0.3);
-    transform: scale(1.05);
+.plato-click i {
+    color: #f59e0b;
 }
 
-/* ===== COLUMNA PEDIDO ===== */
-.pedido-columna {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.drop-zone {
-    background: rgba(255,255,255,0.04);
-    border: 2px dashed rgba(255,255,255,0.12);
-    border-radius: 16px;
-    padding: 30px 20px;
-    text-align: center;
-    color: rgba(255,255,255,0.3);
-    transition: 0.3s;
-}
-
-.drop-zone.dragover {
-    border-color: #f59e0b;
-    background: rgba(245,158,11,0.05);
-}
-
-.drop-zone i {
-    font-size: 36px;
-    display: block;
-    margin-bottom: 8px;
-}
-
-.drop-zone p {
-    margin: 0;
-    font-size: 14px;
-}
-
-.drop-hint {
-    font-size: 11px;
-    color: rgba(255,255,255,0.2);
-}
-
+/* ===== CARRITO ===== */
 .carrito-seleccion {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(8px);
     border-radius: 16px;
-    padding: 16px 18px;
-    border: 1px solid rgba(255,255,255,0.06);
-    max-height: 280px;
-    overflow-y: auto;
-    border: 1px solid #cbd5e1;
-}
-
-.carrito-seleccion::-webkit-scrollbar {
-    width: 6px;
-}
-
-.carrito-seleccion::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-}
-
-.carrito-seleccion::-webkit-scrollbar-thumb {
-    background: rgba(245,158,11,0.3);
-    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
 .carrito-seleccion h4 {
     color: white;
-    margin: 0 0 10px 0;
-    font-size: 15px;
+    margin: 0 0 15px 0;
 }
 
 .carrito-seleccion h4 i {
@@ -474,43 +385,21 @@
 .carrito-vacio {
     color: rgba(255,255,255,0.3);
     text-align: center;
-    font-size: 14px;
-    padding: 15px 0;
+    padding: 20px 0;
 }
 
 .carrito-item {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-    margin-bottom: 6px;
-}
-
-.carrito-item-img {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.carrito-item-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.carrito-item-info {
-    flex: 1;
-    min-width: 0;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .carrito-item-info h5 {
     color: white;
-    font-size: 13px;
     margin: 0;
+    font-size: 14px;
 }
 
 .carrito-item-info span {
@@ -518,53 +407,17 @@
     font-size: 12px;
 }
 
-.carrito-item-cantidad {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* ===== BOTONES + Y - AMARILLOS ===== */
-.carrito-item-cantidad button {
-    background: #f59e0b;
-    border: none;
-    color: #0b0f1a;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 12px;
-    transition: 0.3s;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.carrito-item-cantidad button:hover {
-    background: #e76e05;
-    transform: scale(1.1);
-}
-
-.carrito-item-cantidad span {
-    color: white;
-    font-weight: 600;
-    min-width: 20px;
-    text-align: center;
-}
-
 .carrito-item-precio {
     color: #f59e0b;
     font-weight: 600;
-    font-size: 13px;
 }
 
 .carrito-total {
     display: flex;
     justify-content: space-between;
-    padding-top: 10px;
+    padding: 12px 0;
     border-top: 1px solid rgba(255,255,255,0.08);
-    margin-top: 6px;
+    margin-top: 10px;
 }
 
 .carrito-total span {
@@ -582,39 +435,258 @@
     color: white;
     border: none;
     padding: 14px;
-    border-radius: 14px;
+    border-radius: 12px;
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
     transition: 0.3s;
-    box-shadow: 0 10px 25px rgba(59,130,246,0.35);
+    margin-top: 10px;
 }
 
 .btn-pagar:hover {
     transform: translateY(-3px);
-    box-shadow: 0 15px 30px rgba(59,130,246,0.45);
+    box-shadow: 0 10px 25px rgba(59,130,246,0.35);
 }
 
-.btn-pagar:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
+/* ===== MODAL ===== */
+.modal-personalizar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #1e293b;
+    border-radius: 20px;
+    max-width: 550px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(245,158,11,0.05);
+    border-radius: 20px 20px 0 0;
+}
+
+.modal-header-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.modal-header-info h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 28px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.modal-close:hover {
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+.modal-body {
+    padding: 20px 22px;
+}
+
+/* ===== INGREDIENTES ===== */
+.ingredientes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.ingrediente-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ingrediente-item:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.ingrediente-item.seleccionado {
+    border-color: #f59e0b;
+    background: rgba(245,158,11,0.08);
+}
+
+.ingrediente-item.seleccionado .ingrediente-check i {
+    color: #f59e0b;
+}
+
+.ingrediente-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ingrediente-nombre {
+    color: white;
+    font-size: 13px;
+}
+
+.ingrediente-precio {
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+}
+
+.ingrediente-check i {
+    font-size: 20px;
+    color: rgba(255,255,255,0.2);
+    transition: 0.3s;
+}
+
+/* ===== INSTRUCCIONES ===== */
+.instrucciones-section {
+    margin-top: 18px;
+}
+
+.instrucciones-section h4 {
+    color: white;
+    margin: 0 0 8px 0;
+    font-size: 15px;
+}
+
+.instrucciones-section h4 i {
+    color: #f59e0b;
+}
+
+.instrucciones-section textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: white;
+    font-size: 13px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.instrucciones-section textarea:focus {
+    outline: none;
+    border-color: rgba(245,158,11,0.3);
+}
+
+/* ===== TOTAL PERSONALIZADO ===== */
+.total-personalizado {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0;
+    margin-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.total-personalizado span:first-child {
+    color: white;
+}
+
+.total-personalizado span:last-child {
+    color: #f59e0b;
+}
+
+/* ===== MODAL FOOTER ===== */
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 22px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.btn-cancelar {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.6);
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-cancelar:hover {
+    background: rgba(239,68,68,0.15);
+    color: #ef4444;
+}
+
+.btn-agregar-personalizado {
+    flex: 2;
+    padding: 12px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f59e0b, #e76e05);
+    color: #0b0f1a;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-agregar-personalizado:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(245,158,11,0.3);
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 900px) {
-    .personalizar-grid {
+@media (max-width: 768px) {
+    .ingredientes-grid {
         grid-template-columns: 1fr;
     }
-    .menu-columna {
-        max-height: 400px;
+    .platos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+    .modal-content {
+        max-width: 100%;
+        margin: 10px;
+        border-radius: 16px;
     }
 }
 
-@media (max-width: 600px) {
-    .plato-card {
-        flex-wrap: wrap;
-    }
+@media (max-width: 500px) {
     .categorias-personalizar {
         gap: 5px;
     }
@@ -622,19 +694,28 @@
         font-size: 10px;
         padding: 4px 10px;
     }
+    .modal-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .modal-close {
+        align-self: flex-end;
+    }
 }
 </style>
 
 <script>
 // ===== VARIABLES GLOBALES =====
 let carrito = [];
+let ingredientesSeleccionados = [];
+let platoActual = {};
 
 // ===== FILTRAR POR CATEGORÍA =====
 function filtrarCategoria(categoria) {
     const platos = document.querySelectorAll('.plato-card');
     const botones = document.querySelectorAll('.cat-btn');
     
-    // Actualizar botones activos
     botones.forEach(btn => {
         btn.classList.remove('active');
         if (btn.dataset.categoria === categoria) {
@@ -642,54 +723,122 @@ function filtrarCategoria(categoria) {
         }
     });
     
-    // Filtrar platos
     platos.forEach(plato => {
         const platoCategoria = plato.dataset.categoria || '';
         if (categoria === 'todos' || platoCategoria === categoria) {
-            plato.style.display = 'flex';
+            plato.style.display = 'block';
         } else {
             plato.style.display = 'none';
         }
     });
-    
-    // Limpiar buscador
-    document.getElementById('buscadorPlatos').value = '';
 }
 
-// ===== AGREGAR PLATO AL CARRITO =====
-function agregarAlCarrito(id, nombre, precio, imagen) {
-    const existente = carrito.find(item => item.id === id);
+// ===== ABRIR MODAL PERSONALIZAR =====
+function abrirModalPersonalizar(id, nombre, precio, imagen) {
+    platoActual = {
+        id: id,
+        nombre: nombre,
+        precio: parseFloat(precio),
+        imagen: imagen
+    };
+    ingredientesSeleccionados = [];
+    
+    document.getElementById('platoId').value = id;
+    document.getElementById('platoNombre').value = nombre;
+    document.getElementById('platoPrecioBase').value = precio;
+    document.getElementById('modalNombre').textContent = nombre;
+    document.getElementById('modalPrecioBase').textContent = `$${parseFloat(precio).toFixed(2)}`;
+    document.getElementById('modalImagen').src = imagen || '{% static "tema/food-funday-master/images/menu-item-thumbnail-01.jpg" %}';
+    
+    // Resetear ingredientes
+    document.querySelectorAll('.ingrediente-item').forEach(el => {
+        el.classList.remove('seleccionado');
+        el.querySelector('.ingrediente-check i').className = 'fa-regular fa-circle';
+    });
+    
+    document.getElementById('instruccionesEspeciales').value = '';
+    actualizarTotalPersonalizado();
+    
+    document.getElementById('modalPersonalizar').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+// ===== CERRAR MODAL =====
+function cerrarModal() {
+    document.getElementById('modalPersonalizar').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// ===== TOGGLE INGREDIENTE =====
+function toggleIngrediente(element) {
+    element.classList.toggle('seleccionado');
+    const icon = element.querySelector('.ingrediente-check i');
+    if (element.classList.contains('seleccionado')) {
+        icon.className = 'fa-regular fa-circle-check';
+    } else {
+        icon.className = 'fa-regular fa-circle';
+    }
+    actualizarTotalPersonalizado();
+}
+
+// ===== ACTUALIZAR TOTAL PERSONALIZADO =====
+function actualizarTotalPersonalizado() {
+    const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
+    let totalExtras = 0;
+    
+    document.querySelectorAll('.ingrediente-item.seleccionado').forEach(el => {
+        totalExtras += parseFloat(el.dataset.precio) || 0;
+    });
+    
+    const total = precioBase + totalExtras;
+    document.getElementById('totalPersonalizado').textContent = `$${total.toFixed(2)}`;
+}
+
+// ===== AGREGAR PERSONALIZADO AL CARRITO =====
+function agregarPersonalizado() {
+    const id = document.getElementById('platoId').value;
+    const nombre = document.getElementById('platoNombre').value;
+    const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
+    const instrucciones = document.getElementById('instruccionesEspeciales').value.trim();
+    
+    let totalExtras = 0;
+    let ingredientesList = [];
+    
+    document.querySelectorAll('.ingrediente-item.seleccionado').forEach(el => {
+        totalExtras += parseFloat(el.dataset.precio) || 0;
+        ingredientesList.push(el.dataset.nombre);
+    });
+    
+    const total = precioBase + totalExtras;
+    const nombrePersonalizado = ingredientesList.length > 0 
+        ? `${nombre} (${ingredientesList.join(', ')})`
+        : nombre;
+    
+    // Verificar si ya existe en el carrito
+    const existente = carrito.find(item => item.id === id && item.ingredientes === ingredientesList.join(','));
     if (existente) {
         existente.cantidad += 1;
     } else {
         carrito.push({
             id: id,
-            nombre: nombre,
-            precio: precio,
-            imagen: imagen || '',
-            cantidad: 1
+            nombre: nombrePersonalizado,
+            precio: total,
+            imagen: platoActual.imagen || '',
+            cantidad: 1,
+            ingredientes: ingredientesList.join(', '),
+            instrucciones: instrucciones,
+            es_personalizado: true
         });
     }
+    
+    cerrarModal();
     actualizarCarrito();
 }
 
-// ===== ELIMINAR PLATO DEL CARRITO =====
-function eliminarDelCarrito(id) {
-    carrito = carrito.filter(item => item.id !== id);
+// ===== ELIMINAR DEL CARRITO =====
+function eliminarDelCarrito(index) {
+    carrito.splice(index, 1);
     actualizarCarrito();
-}
-
-// ===== CAMBIAR CANTIDAD =====
-function cambiarCantidad(id, delta) {
-    const item = carrito.find(i => i.id === id);
-    if (item) {
-        item.cantidad += delta;
-        if (item.cantidad <= 0) {
-            eliminarDelCarrito(id);
-            return;
-        }
-        actualizarCarrito();
-    }
 }
 
 // ===== ACTUALIZAR CARRITO =====
@@ -708,27 +857,23 @@ function actualizarCarrito() {
     let html = '';
     let totalGeneral = 0;
 
-    carrito.forEach(item => {
+    carrito.forEach((item, index) => {
         const subtotal = item.precio * item.cantidad;
         totalGeneral += subtotal;
-        const imagenHtml = item.imagen ? 
-            `<img src="${item.imagen}" alt="${item.nombre}">` : 
-            `<img src="{% static 'tema/food-funday-master/images/menu-item-thumbnail-01.jpg' %}" alt="${item.nombre}">`;
         html += `
             <div class="carrito-item">
-                <div class="carrito-item-img">
-                    ${imagenHtml}
-                </div>
                 <div class="carrito-item-info">
                     <h5>${item.nombre}</h5>
                     <span>$${item.precio.toFixed(2)} c/u</span>
+                    ${item.instrucciones ? `<span style="color:#f59e0b;font-size:11px;">📝 ${item.instrucciones}</span>` : ''}
                 </div>
-                <div class="carrito-item-cantidad">
-                    <button onclick="cambiarCantidad(${item.id}, -1)"><i class="fa-solid fa-minus"></i></button>
-                    <span>${item.cantidad}</span>
-                    <button onclick="cambiarCantidad(${item.id}, 1)"><i class="fa-solid fa-plus"></i></button>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="color:#f59e0b;font-weight:600;">x${item.cantidad}</span>
+                    <span class="carrito-item-precio">$${subtotal.toFixed(2)}</span>
+                    <button onclick="eliminarDelCarrito(${index})" style="background:none;border:none;color:#ef4444;cursor:pointer;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </div>
-                <div class="carrito-item-precio">$${subtotal.toFixed(2)}</div>
             </div>
         `;
     });
@@ -738,72 +883,7 @@ function actualizarCarrito() {
     btnPagar.disabled = false;
 }
 
-// ===== DRAG & DROP =====
-document.addEventListener('DOMContentLoaded', function() {
-    const dropZone = document.getElementById('dropZone');
-    const platos = document.querySelectorAll('.plato-card');
-
-    platos.forEach(plato => {
-        plato.addEventListener('dragstart', function(e) {
-            e.dataTransfer.setData('text/plain', JSON.stringify({
-                id: parseInt(this.dataset.id),
-                nombre: this.dataset.nombre,
-                precio: parseFloat(this.dataset.precio),
-                imagen: this.dataset.imagen || ''
-            }));
-        });
-    });
-
-    dropZone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        this.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', function(e) {
-        this.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        this.classList.remove('dragover');
-        try {
-            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-            agregarAlCarrito(data.id, data.nombre, data.precio, data.imagen);
-        } catch (error) {
-            console.error('Error al soltar:', error);
-        }
-    });
-});
-
-// ===== BUSCADOR =====
-document.addEventListener('DOMContentLoaded', function() {
-    const buscador = document.getElementById('buscadorPlatos');
-    const platos = document.querySelectorAll('.plato-card');
-
-    buscador.addEventListener('input', function() {
-        const texto = this.value.toLowerCase().trim();
-        const categoriaActiva = document.querySelector('.cat-btn.active');
-        const categoriaFiltro = categoriaActiva ? categoriaActiva.dataset.categoria : 'todos';
-        
-        platos.forEach(plato => {
-            const nombre = plato.dataset.nombre.toLowerCase();
-            const platoCategoria = plato.dataset.categoria || '';
-            
-            // Verificar categoría
-            let coincideCategoria = categoriaFiltro === 'todos' || platoCategoria === categoriaFiltro;
-            // Verificar búsqueda
-            let coincideBusqueda = texto === '' || nombre.includes(texto);
-            
-            if (coincideCategoria && coincideBusqueda) {
-                plato.style.display = 'flex';
-            } else {
-                plato.style.display = 'none';
-            }
-        });
-    });
-});
-
-// ===== CONFIRMAR PEDIDO (AGREGAR AL CARRITO) =====
+// ===== CONFIRMAR PEDIDO =====
 function confirmarPedido() {
     if (carrito.length === 0) {
         Swal.fire({
@@ -815,12 +895,10 @@ function confirmarPedido() {
         return;
     }
 
-    // Deshabilitar botón
     const btn = document.getElementById('btnPagar');
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Agregando...';
 
-    // Enviar al carrito
     fetch("{% url 'agregar_carrito_personalizado' %}", {
         method: 'POST',
         headers: {
@@ -841,7 +919,7 @@ function confirmarPedido() {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: data.message || 'Hubo un error al agregar al carrito',
+                text: data.message || 'Hubo un error',
                 confirmButtonColor: '#ef4444'
             });
         }
@@ -857,6 +935,20 @@ function confirmarPedido() {
         });
     });
 }
+
+// ===== CERRAR MODAL CON ESC =====
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModal();
+    }
+});
+
+// ===== CERRAR MODAL CLICK FUERA =====
+document.getElementById('modalPersonalizar').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModal();
+    }
+});
 </script>
 
 {% endblock %}
