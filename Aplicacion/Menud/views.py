@@ -1711,56 +1711,6 @@ def confirmar_pedido(request):
     messages.success(request, f'Pedido #{pedido.id} confirmado por ${total:.2f}')
     return redirect('crear_pago', pedido_id=pedido.id)
 
-
-@cliente_required
-def agregar_carrito_personalizado(request):
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'message': 'Método no permitido'}, status=405)
-    
-    try:
-        data = json.loads(request.body)
-        productos = data.get('productos', [])
-        tipo_entrega = data.get('tipo_entrega', 'local')
-        direccion = data.get('direccion', '')
-        hora_entrega = data.get('hora_entrega', '')
-        
-        if not productos:
-            return JsonResponse({'success': False, 'message': 'No hay productos'}, status=400)
-        
-        # Obtener el carrito de la sesión
-        carrito = request.session.get('carrito', {})
-        
-        # Agregar cada producto al carrito de sesión
-        for item in productos:
-            producto_id = str(item['id'])
-            if producto_id in carrito:
-                carrito[producto_id]['cantidad'] += item['cantidad']
-            else:
-                carrito[producto_id] = {
-                    'id': item['id'],
-                    'nombre': item['nombre'],
-                    'descripcion': item.get('descripcion', ''),
-                    'precio': float(item['precio']),
-                    'cantidad': item['cantidad'],
-                    'imagen': item.get('imagen', '')
-                }
-        
-        # Guardar opciones de entrega en sesión
-        request.session['tipo_entrega'] = tipo_entrega
-        request.session['direccion'] = direccion
-        request.session['hora_entrega'] = hora_entrega
-        
-        # Guardar carrito en sesión
-        request.session['carrito'] = carrito
-        request.session.modified = True
-        
-        return JsonResponse({
-            'success': True,
-            'redirect_url': '/carrito/'
-        })
-        
-    except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
     
 @cliente_required
 def agregar_carrito_personalizado(request):

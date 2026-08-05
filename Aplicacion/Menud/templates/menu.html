@@ -90,7 +90,7 @@
                         <button class="icon-customize" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
                             <i class="fa-solid fa-pen-ruler"></i>
                         </button>
-                        <form method="POST" action="{% url 'agregar_carrito' producto.id %}">
+                        <form method="POST" action="/carrito/agregar/{{ producto.id }}/">
                             {% csrf_token %}
                             <button class="icon-cart">
                                 <i class="fa-solid fa-bag-shopping"></i> 
