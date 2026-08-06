@@ -1795,3 +1795,8 @@ def agregar_carrito_personalizado(request):
         
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+def api_ingredientes(request, producto_id):
+    producto = get_object_or_404(Producto, id=producto_id)
+    ingredientes = producto.ingredientes.filter(activo=True).values('id', 'nombre', 'precio')
+    return JsonResponse(list(ingredientes), safe=False)

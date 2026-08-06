@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.html import format_html
-from .models import Usuario, Categoria, Producto, Mesa, Pedido, Pago, DetallePedido, PerfilAdmin
+from .models import Usuario, Categoria, Producto, Mesa, Pedido, Pago, DetallePedido, PerfilAdmin, Ingrediente
 
 
 # ==================== USUARIO CON ROLES ====================
@@ -71,20 +71,36 @@ class CategoriaAdmin(admin.ModelAdmin):
     )
 
 
+# ==================== INGREDIENTES INLINE ====================
+class IngredienteInline(admin.TabularInline):
+    model = Ingrediente
+    extra = 1
+    fields = ('nombre', 'precio', 'activo')
+    classes = ('collapse',)
+
+
 # ==================== PRODUCTOS ====================
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'nombre', 'precio', 'categoria', 'ver_imagen')
+    list_display = ('id', 'nombre', 'precio', 'categoria', 'ver_imagen', 'total_ingredientes')
     list_filter = ('categoria',)
     search_fields = ('nombre', 'descripcion')
     list_editable = ('precio',)
     list_per_page = 20
+    inlines = [IngredienteInline]
     
     def ver_imagen(self, obj):
         if obj.imagen:
             return format_html('<img src="{}" width="50" height="50" style="border-radius: 8px; object-fit: cover;" />', obj.imagen.url)
         return format_html('<span style="color: gray;">Sin imagen</span>')
     ver_imagen.short_description = 'Imagen'
+    
+    def total_ingredientes(self, obj):
+        count = obj.ingredientes.count()
+        if count > 0:
+            return format_html('<span style="color: #28a745; font-weight: bold;">{} ingredientes</span>', count)
+        return format_html('<span style="color: #6c757d;">Sin ingredientes</span>')
+    total_ingredientes.short_description = 'Ingredientes'
     
     fieldsets = (
         ('Información Básica', {
@@ -93,6 +109,22 @@ class ProductoAdmin(admin.ModelAdmin):
         ('Imagen del Producto', {
             'fields': ('imagen',),
             'classes': ('collapse',)
+        }),
+    )
+
+
+# ==================== INGREDIENTES ====================
+@admin.register(Ingrediente)
+class IngredienteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'nombre', 'precio', 'producto', 'activo')
+    list_filter = ('activo', 'producto__categoria')
+    search_fields = ('nombre', 'producto__nombre')
+    list_editable = ('precio', 'activo')
+    list_per_page = 20
+    
+    fieldsets = (
+        ('Información del Ingrediente', {
+            'fields': ('nombre', 'precio', 'producto', 'activo')
         }),
     )
 
@@ -155,7 +187,6 @@ class DetallePedidoInline(admin.TabularInline):
 
 
 # ==================== PEDIDOS ====================
-#  SOLO UNA VEZ - ELIMINA LA SEGUNDA DEFINICIÓN
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
     list_display = ('id', 'mesa', 'estado_color', 'total_formateado', 'fecha_hora', 'tiempo_transcurrido_admin')

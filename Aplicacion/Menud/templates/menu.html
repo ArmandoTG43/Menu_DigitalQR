@@ -58,7 +58,7 @@
         {% for producto in productos %}
         <div class="card-app" data-nombre="{{ producto.nombre|lower }}" data-id="{{ producto.id }}" data-precio="{{ producto.precio }}" data-imagen="{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}">
 
-            <div class="img-box" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
+            <div class="img-box" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
                 {% if producto.imagen %}
                     <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
                 {% else %}
@@ -68,20 +68,22 @@
 
             <div class="content">
 
-                <h5 onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')" style="cursor:pointer;">
+                <h5 onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')" style="cursor:pointer;">
                     <i class="fa-solid fa-utensils"></i> {{ producto.nombre }}
                 </h5>
 
-                <p onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')" style="cursor:pointer;">
+                <p onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')" style="cursor:pointer;">
                     {{ producto.descripcion|truncatechars:60 }}
                 </p>
 
                 <div class="precio-acciones">
                     <div class="acciones">
                         {% if request.session.cliente %}
-                        <button class="icon-customize" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{{ producto.precio }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
-                            <i class="fa-solid fa-pen-ruler"></i>
-                        </button>
+                            {% if producto.ingredientes.all %}
+                            <button class="icon-customize" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
+                                <i class="fa-solid fa-pen-ruler"></i>
+                            </button>
+                            {% endif %}
                         <form method="POST" action="/carrito/agregar/{{ producto.id }}/">
                             {% csrf_token %}
                             <button class="icon-cart">
@@ -145,13 +147,13 @@
         <div class="modal-body">
             <input type="hidden" id="platoId">
             <input type="hidden" id="platoNombre">
-            <input type="hidden" id="platoPrecioBase">
 
             <div class="personalizar-layout">
                 <div class="ingredientes-lista">
                     <h4><i class="fa-solid fa-carrot"></i> Ingredientes</h4>
                     <p style="color:#9ca3af;font-size:12px;margin-bottom:10px;">Haz clic en "+" para agregar</p>
                     <div class="ingredientes-grid" id="ingredientesGrid">
+                        <p style="color:#9ca3af;text-align:center;padding:20px;">Cargando ingredientes...</p>
                     </div>
                 </div>
 
@@ -883,46 +885,6 @@ body {
 </style>
 
 <script>
-const ingredientesPorPlato = {
-    'hamburguesa': [
-        { nombre: 'Queso extra', precio: 1.50 },
-        { nombre: 'Papas extra', precio: 2.00 },
-        { nombre: 'Lechuga extra', precio: 0.50 },
-        { nombre: 'Tomate extra', precio: 0.50 },
-        { nombre: 'Cebolla extra', precio: 0.50 },
-        { nombre: 'Tocino extra', precio: 2.50 },
-        { nombre: 'Salsa extra', precio: 1.00 },
-        { nombre: 'Huevo extra', precio: 1.00 }
-    ],
-    'pizza': [
-        { nombre: 'Queso extra', precio: 1.50 },
-        { nombre: 'Pepperoni extra', precio: 2.00 },
-        { nombre: 'Champiñones', precio: 1.00 },
-        { nombre: 'Aceitunas', precio: 1.00 },
-        { nombre: 'Jamón extra', precio: 2.00 },
-        { nombre: 'Piña extra', precio: 1.50 },
-        { nombre: 'Chorizo extra', precio: 2.00 }
-    ],
-    'pasta': [
-        { nombre: 'Queso parmesano', precio: 1.50 },
-        { nombre: 'Pollo extra', precio: 2.50 },
-        { nombre: 'Champiñones', precio: 1.00 },
-        { nombre: 'Salsa extra', precio: 1.50 },
-        { nombre: 'Jamón extra', precio: 2.00 },
-        { nombre: 'Albahaca', precio: 0.50 }
-    ],
-    'default': [
-        { nombre: 'Queso extra', precio: 1.50 },
-        { nombre: 'Papas extra', precio: 2.00 },
-        { nombre: 'Lechuga extra', precio: 0.50 },
-        { nombre: 'Tomate extra', precio: 0.50 },
-        { nombre: 'Cebolla extra', precio: 0.50 },
-        { nombre: 'Salsa extra', precio: 1.00 },
-        { nombre: 'Tocino extra', precio: 2.50 },
-        { nombre: 'Huevo extra', precio: 1.00 }
-    ]
-};
-
 let platoActual = {};
 let ingredientesSeleccionados = [];
 
@@ -983,47 +945,45 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function abrirPersonalizacion(id, nombre, precio, imagen) {
+function abrirPersonalizacion(id, nombre, imagen) {
     platoActual = {
         id: id,
         nombre: nombre,
-        precio: parseFloat(precio),
         imagen: imagen
     };
     ingredientesSeleccionados = [];
     
     document.getElementById('platoId').value = id;
     document.getElementById('platoNombre').value = nombre;
-    document.getElementById('platoPrecioBase').value = precio;
     document.getElementById('modalNombre').textContent = nombre;
-    document.getElementById('modalPrecioBase').textContent = `$${parseFloat(precio).toFixed(2)}`;
+    document.getElementById('modalPrecioBase').textContent = '$0.00 (elige ingredientes)';
     document.getElementById('modalImagen').src = imagen || '{% static "tema/food-funday-master/images/menu-item-thumbnail-01.jpg" %}';
     
-    cargarIngredientes(nombre);
-    actualizarTotalPersonalizado();
-    actualizarListaSeleccionados();
+    // CARGAR INGREDIENTES DESDE LA BASE DE DATOS
+    fetch(`/api/ingredientes/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            const grid = document.getElementById('ingredientesGrid');
+            if (data.length === 0) {
+                grid.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px;">Este plato no tiene ingredientes disponibles</p>';
+                return;
+            }
+            cargarIngredientes(data);
+            actualizarTotalPersonalizado();
+            actualizarListaSeleccionados();
+        })
+        .catch(error => {
+            console.error('Error cargando ingredientes:', error);
+            document.getElementById('ingredientesGrid').innerHTML = 
+                '<p style="color:#ef4444;text-align:center;padding:20px;">Error al cargar ingredientes</p>';
+        });
     
     document.getElementById('modalPersonalizar').style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
 
-function cargarIngredientes(nombrePlato) {
+function cargarIngredientes(ingredientes) {
     const grid = document.getElementById('ingredientesGrid');
-    const nombreLower = nombrePlato.toLowerCase();
-    
-    let ingredientes = [];
-    
-    for (const [key, value] of Object.entries(ingredientesPorPlato)) {
-        if (nombreLower.includes(key)) {
-            ingredientes = value;
-            break;
-        }
-    }
-    
-    if (ingredientes.length === 0) {
-        ingredientes = ingredientesPorPlato['default'];
-    }
-    
     grid.innerHTML = '';
     ingredientes.forEach((ing, index) => {
         grid.innerHTML += `
@@ -1118,15 +1078,13 @@ function actualizarListaSeleccionados() {
 }
 
 function actualizarTotalPersonalizado() {
-    const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
     let totalExtras = 0;
     
     ingredientesSeleccionados.forEach(ing => {
         totalExtras += ing.precio * ing.cantidad;
     });
     
-    const total = precioBase + totalExtras;
-    document.getElementById('totalPersonalizado').textContent = `$${total.toFixed(2)}`;
+    document.getElementById('totalPersonalizado').textContent = `$${totalExtras.toFixed(2)}`;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1172,7 +1130,6 @@ function cerrarModal() {
 function agregarPersonalizado() {
     const id = document.getElementById('platoId').value;
     const nombre = document.getElementById('platoNombre').value;
-    const precioBase = parseFloat(document.getElementById('platoPrecioBase').value) || 0;
     
     if (!id) {
         Swal.fire({
@@ -1180,6 +1137,16 @@ function agregarPersonalizado() {
             title: 'Error',
             text: 'No se pudo identificar el plato',
             confirmButtonColor: '#ef4444'
+        });
+        return;
+    }
+    
+    if (ingredientesSeleccionados.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Plato vacío',
+            text: 'Selecciona al menos un ingrediente',
+            confirmButtonColor: '#f59e0b'
         });
         return;
     }
@@ -1192,10 +1159,7 @@ function agregarPersonalizado() {
         ingredientesList.push(ing.nombre + ' x' + ing.cantidad);
     });
     
-    const total = precioBase + totalExtras;
-    const nombrePersonalizado = ingredientesList.length > 0 
-        ? `${nombre} (${ingredientesList.join(', ')})`
-        : nombre;
+    const nombrePersonalizado = `${nombre} (${ingredientesList.join(', ')})`;
     
     const btn = document.querySelector('.btn-agregar-personalizado');
     btn.disabled = true;
@@ -1212,7 +1176,7 @@ function agregarPersonalizado() {
         },
         body: JSON.stringify({
             nombre: nombrePersonalizado,
-            precio: total,
+            precio: totalExtras,
             ingredientes: ingredientesList,
             personalizado: true
         })
@@ -1233,7 +1197,6 @@ function agregarPersonalizado() {
                 timer: 2000,
                 timerProgressBar: true
             });
-            // Redirigir al carrito después de 1.5 segundos
             setTimeout(() => {
                 window.location.href = "{% url 'ver_carrito' %}";
             }, 1500);
