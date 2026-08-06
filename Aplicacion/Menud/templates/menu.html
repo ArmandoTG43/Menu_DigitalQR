@@ -986,11 +986,12 @@ function cargarIngredientes(ingredientes) {
     const grid = document.getElementById('ingredientesGrid');
     grid.innerHTML = '';
     ingredientes.forEach((ing, index) => {
+        const precioNum = parseFloat(ing.precio) || 0;
         grid.innerHTML += `
-            <div class="ingrediente-item" draggable="true" data-index="${index}" data-nombre="${ing.nombre}" data-precio="${ing.precio}">
+            <div class="ingrediente-item" draggable="true" data-index="${index}" data-nombre="${ing.nombre}" data-precio="${precioNum}">
                 <div>
                     <span class="ingrediente-nombre">${ing.nombre}</span>
-                    <span class="ingrediente-precio">+$${ing.precio.toFixed(2)}</span>
+                    <span class="ingrediente-precio">+$${precioNum.toFixed(2)}</span>
                 </div>
                 <button class="btn-add-ingrediente" onclick="agregarIngrediente(${index})">
                     <i class="fa-solid fa-plus"></i>
@@ -1014,7 +1015,7 @@ function agregarIngrediente(index) {
     const item = items[index];
     if (item) {
         const nombre = item.dataset.nombre;
-        const precio = parseFloat(item.dataset.precio);
+        const precio = parseFloat(item.dataset.precio) || 0;
         const existente = ingredientesSeleccionados.find(i => i.nombre === nombre);
         if (existente) {
             existente.cantidad += 1;
@@ -1058,9 +1059,10 @@ function actualizarListaSeleccionados() {
     
     let html = '';
     ingredientesSeleccionados.forEach(ing => {
+        const precioNum = parseFloat(ing.precio) || 0;
         html += `
             <span class="selected-ingrediente">
-                ${ing.nombre} (+$${ing.precio.toFixed(2)})
+                ${ing.nombre} (+$${precioNum.toFixed(2)})
                 <button class="btn-menos" onclick="cambiarCantidadIngrediente('${ing.nombre}', -1)">
                     <i class="fa-solid fa-minus"></i>
                 </button>
@@ -1081,7 +1083,8 @@ function actualizarTotalPersonalizado() {
     let totalExtras = 0;
     
     ingredientesSeleccionados.forEach(ing => {
-        totalExtras += ing.precio * ing.cantidad;
+        const precioNum = parseFloat(ing.precio) || 0;
+        totalExtras += precioNum * (ing.cantidad || 1);
     });
     
     document.getElementById('totalPersonalizado').textContent = `$${totalExtras.toFixed(2)}`;
@@ -1155,7 +1158,8 @@ function agregarPersonalizado() {
     let ingredientesList = [];
     
     ingredientesSeleccionados.forEach(ing => {
-        totalExtras += ing.precio * ing.cantidad;
+        const precioNum = parseFloat(ing.precio) || 0;
+        totalExtras += precioNum * (ing.cantidad || 1);
         ingredientesList.push(ing.nombre + ' x' + ing.cantidad);
     });
     
