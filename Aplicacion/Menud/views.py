@@ -8,7 +8,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
-from .models import Categoria, PedidoPersonalizado, Producto, Mesa, Pedido, DetallePedido, Pago, Promocion
+from .models import Categoria, PedidoPersonalizado, Producto, Mesa, Pedido, DetallePedido, Pago, Promocion, Ingrediente
 from .forms import ProductoForm
 from django.http import JsonResponse
 from django.conf import settings
@@ -298,11 +298,32 @@ def entregar_pedido(request, pedido_id):
 
 @admin_required
 def agregar_producto(request):
-    form = ProductoForm(request.POST or None, request.FILES or None)
-    if form.is_valid():
-        form.save()
-        messages.success(request, 'Plato registrado correctamente')
-        return redirect('menu')
+    if request.method == 'POST':
+        form = ProductoForm(request.POST, request.FILES)
+        if form.is_valid():
+            producto = form.save()
+            
+            # ===== GUARDAR INGREDIENTES =====
+            nombres = request.POST.getlist('ingredientes_nombre[]')
+            precios = request.POST.getlist('ingredientes_precio[]')
+            
+            for nombre, precio in zip(nombres, precios):
+                if nombre.strip() and precio.strip():
+                    try:
+                        Ingrediente.objects.create(
+                            producto=producto,
+                            nombre=nombre.strip(),
+                            precio=float(precio),
+                            activo=True
+                        )
+                    except ValueError:
+                        pass
+            
+            messages.success(request, 'Plato registrado correctamente')
+            return redirect('menu')
+    else:
+        form = ProductoForm()
+    
     categorias = Categoria.objects.all()
     return render(request, 'producto_form.html', {
         'form': form,
@@ -312,11 +333,38 @@ def agregar_producto(request):
 @admin_required
 def editar_producto(request, id):
     producto = get_object_or_404(Producto, id=id)
-    form = ProductoForm(request.POST or None, request.FILES or None, instance=producto)
-    if form.is_valid():
-        form.save()
-        messages.success(request, 'Plato editado correctamente')
-        return redirect('menu')
+    
+    if request.method == 'POST':
+        form = ProductoForm(request.POST, request.FILES, instance=producto)
+        if form.is_valid():
+            producto = form.save()
+            
+            # ===== GUARDAR INGREDIENTES =====
+            # Eliminar ingredientes existentes
+            producto.ingredientes.all().delete()
+            
+            # Obtener los ingredientes del POST
+            nombres = request.POST.getlist('ingredientes_nombre[]')
+            precios = request.POST.getlist('ingredientes_precio[]')
+            
+            # Crear nuevos ingredientes
+            for nombre, precio in zip(nombres, precios):
+                if nombre.strip() and precio.strip():
+                    try:
+                        Ingrediente.objects.create(
+                            producto=producto,
+                            nombre=nombre.strip(),
+                            precio=float(precio),
+                            activo=True
+                        )
+                    except ValueError:
+                        pass
+            
+            messages.success(request, 'Plato editado correctamente')
+            return redirect('menu')
+    else:
+        form = ProductoForm(instance=producto)
+    
     return render(request, 'producto_form.html', {'form': form})
 
 @admin_required
