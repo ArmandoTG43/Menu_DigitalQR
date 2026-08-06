@@ -13,6 +13,14 @@
         </div>
         <form id="form-menu" method="POST" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
+            
+            <!-- ===== CAMPO OCULTO PARA INGREDIENTES EXISTENTES ===== -->
+            <input type="hidden" id="ingredientes-data" value='[
+                {% for ing in form.instance.ingredientes.all %}
+                    {"nombre": "{{ ing.nombre }}", "precio": "{{ ing.precio }}"}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]'>
+            
             <div class="form-grid">
                 <div class="form-group">
                     <label>Nombre</label>
@@ -69,20 +77,16 @@
                     </div>
                 </div>
 
-                <!-- ===== INGREDIENTES (NUEVO) ===== -->
+                <!-- ===== INGREDIENTES ===== -->
                 <div class="form-group full">
                     <label><i class="fa-solid fa-carrot"></i> Ingredientes</label>
                     <p style="color:#6b7280; font-size:13px; margin-bottom:10px;">
                         Agrega los ingredientes que el cliente puede elegir para personalizar su plato
                     </p>
                     <div id="ingredientes-container">
-                        <div class="ingrediente-row">
-                            <input type="text" name="ingredientes_nombre[]" placeholder="Nombre del ingrediente" class="ingrediente-nombre">
-                            <input type="number" name="ingredientes_precio[]" placeholder="Precio" step="0.01" class="ingrediente-precio">
-                            <button type="button" class="btn-remove-ingrediente" onclick="eliminarIngrediente(this)">✕</button>
-                        </div>
+                        <!-- Las filas se generan con JavaScript -->
                     </div>
-                    <button type="button" class="btn-add-ingrediente" onclick="agregarIngrediente()">
+                    <button type="button" class="btn-add-ingrediente" onclick="agregarFilaIngrediente()">
                         <i class="fa-solid fa-plus"></i> Agregar ingrediente
                     </button>
                     <small style="color:#6b7280; font-size:12px; display:block; margin-top:5px;">
@@ -413,13 +417,14 @@ select {
 // ============================================================
 // INGREDIENTES DINÁMICOS
 // ============================================================
-function agregarIngrediente() {
+
+function agregarFilaIngrediente(nombre = '', precio = '') {
     const container = document.getElementById('ingredientes-container');
     const row = document.createElement('div');
     row.className = 'ingrediente-row';
     row.innerHTML = `
-        <input type="text" name="ingredientes_nombre[]" placeholder="Nombre del ingrediente" class="ingrediente-nombre">
-        <input type="number" name="ingredientes_precio[]" placeholder="Precio" step="0.01" class="ingrediente-precio">
+        <input type="text" name="ingredientes_nombre[]" placeholder="Nombre del ingrediente" class="ingrediente-nombre" value="${nombre}">
+        <input type="number" name="ingredientes_precio[]" placeholder="Precio" step="0.01" class="ingrediente-precio" value="${precio}">
         <button type="button" class="btn-remove-ingrediente" onclick="eliminarIngrediente(this)">✕</button>
     `;
     container.appendChild(row);
@@ -434,10 +439,40 @@ function eliminarIngrediente(btn) {
     }
 }
 
+function cargarIngredientesExistentes() {
+    const container = document.getElementById('ingredientes-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    const ingredientesData = document.getElementById('ingredientes-data');
+    let ingredientes = [];
+    
+    if (ingredientesData && ingredientesData.value) {
+        try {
+            ingredientes = JSON.parse(ingredientesData.value);
+        } catch(e) {
+            ingredientes = [];
+        }
+    }
+    
+    if (ingredientes.length === 0) {
+        agregarFilaIngrediente('', '');
+        return;
+    }
+    
+    ingredientes.forEach(ing => {
+        agregarFilaIngrediente(ing.nombre, ing.precio);
+    });
+}
+
 // ============================================================
 // VALIDACIÓN COMPLETA CON JAVASCRIPT PURO (SIN JQUERY)
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
+
+    // ---------- CARGAR INGREDIENTES EXISTENTES ----------
+    cargarIngredientesExistentes();
 
     // ---------- DROPZONE PARA IMAGEN ----------
     const dropZone = document.getElementById("drop-zone");
@@ -584,7 +619,6 @@ document.addEventListener("DOMContentLoaded", function() {
             const precioIng = parseFloat(ingredientesPrecios[index].value);
             
             if (nombreIng === '' && isNaN(precioIng)) {
-                // ambos vacíos, ignorar
                 return;
             }
             
@@ -604,7 +638,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
 
         if (!hasValidIngrediente && !ingredienteError) {
-            // Si no hay ningún ingrediente válido
             showError(ingredientesNombres[0], "Agrega al menos un ingrediente con nombre y precio.");
             isValid = false;
             if (!firstErrorElement) firstErrorElement = ingredientesNombres[0];
@@ -632,7 +665,6 @@ document.addEventListener("DOMContentLoaded", function() {
         element.classList.add("error");
         let parent = element.parentNode;
 
-        // Para el campo de imagen, el mensaje va después del drop-zone
         if (element.id === "file-input") {
             const dropZoneEl = document.getElementById("drop-zone");
             let errorSpan = dropZoneEl.parentNode.querySelector(".error-message");
@@ -644,7 +676,6 @@ document.addEventListener("DOMContentLoaded", function() {
             errorSpan.textContent = message;
             dropZoneEl.classList.add("error");
         } else if (element.classList.contains('ingrediente-nombre') || element.classList.contains('ingrediente-precio')) {
-            // Para ingredientes, mostrar mensaje después del campo
             let errorSpan = parent.querySelector(".error-message");
             if (!errorSpan) {
                 errorSpan = document.createElement("span");
@@ -687,7 +718,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 const dropZoneEl = document.getElementById("drop-zone");
                 if (dropZoneEl) dropZoneEl.classList.remove("error");
             }
-            // Si es ingrediente, buscar el mensaje de error en el mismo row
             const parent = this.parentNode;
             const msg = parent.querySelector(".error-message");
             if (msg) msg.remove();
