@@ -408,43 +408,45 @@ def api_pedidos(request):
         return JsonResponse({'error': 'No autorizado'}, status=403)
     
     try:
-        # Obtener pedidos NO entregados
         pedidos = Pedido.objects.exclude(estado='entregado').order_by('-fecha_hora')
         
         data = []
         for p in pedidos:
             productos = []
             
-            # Obtener detalles del pedido
             detalles = DetallePedido.objects.filter(pedido=p)
             for d in detalles:
                 try:
-                    # Verificar que el producto existe
                     if d.producto:
                         precio_unit = float(d.producto.precio) if d.producto.precio else 0
+                        
+                        ingredientes_list = []
+                        if hasattr(d.producto, 'ingredientes'):
+                            for ing in d.producto.ingredientes.all():
+                                ingredientes_list.append(ing.nombre)
+                        
                         productos.append({
                             "nombre": d.producto.nombre or "Producto sin nombre",
                             "descripcion": d.producto.descripcion or "",
                             "cantidad": d.cantidad or 1,
                             "precio": precio_unit,
-                            "subtotal": round(precio_unit * (d.cantidad or 1), 2)
+                            "subtotal": round(precio_unit * (d.cantidad or 1), 2),
+                            "ingredientes": ingredientes_list
                         })
                 except Exception as e:
                     print(f"Error en detalle {d.id}: {e}")
-                    # Saltar este detalle si da error
                     continue
             
-            # Si no tiene productos, agregar uno por defecto
             if not productos:
                 productos.append({
                     "nombre": "Producto no disponible",
                     "descripcion": "",
                     "cantidad": 1,
                     "precio": 0,
-                    "subtotal": 0
+                    "subtotal": 0,
+                    "ingredientes": []
                 })
             
-            # Datos del pedido personalizado
             pers_data = None
             try:
                 if hasattr(p, 'personalizado') and p.personalizado:
@@ -459,7 +461,6 @@ def api_pedidos(request):
             except Exception:
                 pers_data = None
 
-            # Obtener hora de entrega formateada
             hora_entrega = ""
             if p.hora_entrega:
                 try:
@@ -485,30 +486,33 @@ def api_pedidos(request):
         return JsonResponse(data, safe=False)
         
     except Exception as e:
-        print(f" Error en api_pedidos: {e}")
+        print(f"Error en api_pedidos: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e), 'detalle': traceback.format_exc()}, status=500)
 
 def api_pedido_detalle(request, pedido_id):
-    """
-    API pública para que el cliente vea su pedido en tiempo real sin fallos.
-    """
     try:
         pedido = get_object_or_404(Pedido, id=pedido_id)
         productos = []
         
-        #  CAMBIADO: usar DetallePedido.objects.filter en lugar de detallepedido_set
         for d in DetallePedido.objects.filter(pedido=pedido):
             try:
                 if d.producto:
                     precio_unit = float(d.producto.precio) if d.producto.precio else 0
+                    
+                    ingredientes_list = []
+                    if hasattr(d.producto, 'ingredientes'):
+                        for ing in d.producto.ingredientes.all():
+                            ingredientes_list.append(ing.nombre)
+                    
                     productos.append({
                         "nombre": d.producto.nombre or "Sin nombre",
                         "descripcion": d.producto.descripcion or "",
                         "cantidad": d.cantidad or 1,
                         "precio": precio_unit,
-                        "subtotal": round(precio_unit * (d.cantidad or 1), 2)
+                        "subtotal": round(precio_unit * (d.cantidad or 1), 2),
+                        "ingredientes": ingredientes_list
                     })
             except Exception:
                 continue
@@ -519,7 +523,8 @@ def api_pedido_detalle(request, pedido_id):
                 "descripcion": "",
                 "cantidad": 1,
                 "precio": 0,
-                "subtotal": 0
+                "subtotal": 0,
+                "ingredientes": []
             })
         
         pers_data = None
@@ -560,7 +565,7 @@ def api_pedido_detalle(request, pedido_id):
         return JsonResponse(data, safe=False)
         
     except Exception as e:
-        print(f" Error en api_pedido_detalle: {e}")
+        print(f"Error en api_pedido_detalle: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=400)
