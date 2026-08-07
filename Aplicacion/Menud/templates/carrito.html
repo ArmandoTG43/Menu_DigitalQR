@@ -109,69 +109,6 @@
             <!--  FORMULARIO COMPLETO -->
             <form method="POST" action="{% url 'confirmar_pedido' %}" id="formPedido" onsubmit="return validarFormulario()">
                 {% csrf_token %}
-
-                <!-- ========== 1. PLATO PERSONALIZADO (PRIMERO) ========== -->
-                <div class="personalizado-section">
-                    <h4><i class="fa-solid fa-pen-ruler"></i> ¿Quieres un plato personalizado?</h4>
-                    
-                    <div class="personalizado-toggle">
-                        <input type="checkbox" name="es_personalizado" id="es_personalizado" value="1">
-                        <label for="es_personalizado">Sí, quiero armar mi propio plato</label>
-                    </div>
-                    
-                    <div id="formulario-personalizado" style="display: none; margin-top: 15px;">
-                        
-                        <div class="form-group">
-                            <label for="base_personalizado"> Base / Proteína</label>
-                            <select name="base_personalizado" id="base_personalizado" class="form-control">
-                                <option value="">Selecciona una base</option>
-                                <option value="Pollo">Pollo a la plancha - $6.00</option>
-                                <option value="Carne">Carne de res - $7.00</option>
-                                <option value="Cerdo">Cerdo - $6.50</option>
-                                <option value="Pescado">Pescado - $8.00</option>
-                                <option value="Vegetariano">Vegetariano (sin carne) - $5.00</option>
-                                <option value="Mixto">Mixto (pollo y carne) - $8.50</option>
-                            </select>
-                            <small id="baseError" class="error-msg" style="display:none; color:#ef4444; font-size:12px;">
-                                <i class="fa-regular fa-circle-exclamation"></i> Selecciona una base
-                            </small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="acompanamientos"> Acompañamientos (+$2.00 c/u)</label>
-                            <select name="acompanamientos" id="acompanamientos" class="form-control" multiple>
-                                <option value="Papas fritas">Papas fritas</option>
-                                <option value="Arroz">Arroz</option>
-                                <option value="Ensalada">Ensalada fresca</option>
-                                <option value="Vegetales salteados">Vegetales salteados</option>
-                                <option value="Puré de papas">Puré de papas</option>
-                                <option value="Frijoles">Frijoles</option>
-                                <option value="Yuca frita">Yuca frita</option>
-                            </select>
-                            <small>Mantén presionado Ctrl para seleccionar múltiples opciones</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="salsas_personalizado"> Salsas (+$1.00 c/u)</label>
-                            <select name="salsas_personalizado" id="salsas_personalizado" class="form-control" multiple>
-                                <option value="Salsa de tomate">Salsa de tomate</option>
-                                <option value="Salsa picante">Salsa picante</option>
-                                <option value="Mayonesa">Mayonesa</option>
-                                <option value="Mostaza">Mostaza</option>
-                                <option value="Salsa de queso">Salsa de queso</option>
-                                <option value="Ajo y perejil">Ajo y perejil</option>
-                            </select>
-                            <small>Mantén presionado Ctrl para seleccionar múltiples opciones</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="instrucciones_personalizado"> Instrucciones especiales</label>
-                            <textarea name="instrucciones_personalizado" id="instrucciones_personalizado" class="form-control" 
-                                      rows="3" placeholder="Ej: Sin sal, bien cocido, sin cebolla, extra picante..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- ========== 2. DOMICILIO (DESPUÉS) ========== -->
                 <div class="domicilio-section">
                     <h4><i class="fa-solid fa-truck"></i> Opciones de Entrega</h4>
