@@ -58,7 +58,8 @@
         {% for producto in productos %}
         <div class="card-app" data-nombre="{{ producto.nombre|lower }}" data-id="{{ producto.id }}" data-precio="{{ producto.precio }}" data-imagen="{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}">
 
-            <div class="img-box" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
+            <div class="img-box" 
+                 {% if request.session.cliente %}onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')"{% endif %}>
                 {% if producto.imagen %}
                     <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
                 {% else %}
@@ -68,11 +69,11 @@
 
             <div class="content">
 
-                <h5 onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')" style="cursor:pointer;">
+                <h5 {% if request.session.cliente %}onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')"{% endif %} style="cursor:{% if request.session.cliente %}pointer{% else %}default{% endif %};">
                     <i class="fa-solid fa-utensils"></i> {{ producto.nombre }}
                 </h5>
 
-                <p onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')" style="cursor:pointer;">
+                <p {% if request.session.cliente %}onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')"{% endif %} style="cursor:{% if request.session.cliente %}pointer{% else %}default{% endif %};">
                     {{ producto.descripcion|truncatechars:60 }}
                 </p>
 
@@ -406,7 +407,6 @@ body {
     font-size: 16px;
     font-weight: 700;
     color: white;
-    cursor: pointer;
 }
 
 .content h5 i {
@@ -418,7 +418,6 @@ body {
 .content p {
     font-size: 12px;
     color: #9ca3af;
-    cursor: pointer;
 }
 
 .precio-acciones {
