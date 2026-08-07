@@ -171,14 +171,13 @@ class DetallePedido(models.Model):
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='detalles')
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.IntegerField(default=1)
-    precio_unitario = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)  # ← CAMPO FALTANTE
+    precio_unitario = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
+    ingredientes_texto = models.TextField(blank=True, null=True)  # NUEVO CAMPO
 
     def subtotal(self):
-        """Calcula el subtotal del detalle"""
         return self.cantidad * self.precio_unitario
 
     def save(self, *args, **kwargs):
-        """Guarda automáticamente el precio_unitario del producto"""
         if not self.precio_unitario and self.producto:
             self.precio_unitario = self.producto.precio
         super().save(*args, **kwargs)
