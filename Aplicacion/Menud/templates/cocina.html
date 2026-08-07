@@ -506,26 +506,35 @@ async function cargarPedidos() {
                         const esPersonalizado = d.nombre && d.nombre.includes('Personalizado');
                         const tieneIngredientes = d.ingredientes && d.ingredientes.length > 0;
                         
+                        // Extraer nombre original (quitar "Personalizado" y paréntesis)
+                        let nombreMostrar = d.nombre;
+                        if (esPersonalizado) {
+                            nombreMostrar = d.nombre.replace('Personalizado', '').trim();
+                            nombreMostrar = nombreMostrar.replace(/^[()]/, '').trim();
+                            if (!nombreMostrar) nombreMostrar = d.nombre;
+                        }
+                        
                         productosHtml += `
-                            <div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px dashed rgba(255,255,255,0.1);">
-                                <div style="display:flex;justify-content:space-between;align-items:center;">
-                                    <span>
-                                        <i class="fa-solid fa-utensils"></i> <strong>${d.nombre}</strong>
-                                        ${esPersonalizado ? '<span style="color:#a855f7;font-size:11px;background:rgba(168,85,247,0.2);padding:2px 6px;border-radius:6px;margin-left:4px;">🧑‍🍳 Personalizado</span>' : ''}
+                            <div style="margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;border-left:3px solid ${esPersonalizado ? '#a855f7' : '#f59e0b'};">
+                                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                                    <span style="font-size:14px;">
+                                        <i class="fa-solid fa-utensils" style="color:#e76e05;"></i> 
+                                        <strong style="color:#fff;">${nombreMostrar}</strong>
+                                        ${esPersonalizado ? '<span style="color:#a855f7;font-size:10px;background:rgba(168,85,247,0.2);padding:2px 8px;border-radius:10px;margin-left:6px;"> Personalizado</span>' : ''}
                                     </span>
-                                    <strong style="color:#f59e0b;">x${d.cantidad} ($${d.subtotal ? d.subtotal.toFixed(2) : (d.precio * d.cantidad).toFixed(2)})</strong>
+                                    <strong style="color:#f59e0b;font-size:14px;">x${d.cantidad} ($${d.subtotal ? d.subtotal.toFixed(2) : (d.precio * d.cantidad).toFixed(2)})</strong>
                                 </div>
-                                ${d.descripcion ? `<div style="font-size:12px;color:#cbd5e1;margin-left:22px;margin-top:2px;"><em>${d.descripcion}</em></div>` : ''}
                                 ${tieneIngredientes ? `
-                                    <div style="font-size:12px;color:#a855f7;margin-left:22px;margin-top:4px;background:rgba(168,85,247,0.08);padding:4px 10px;border-radius:6px;">
-                                        <i class="fa-solid fa-carrot"></i> <strong>Ingredientes:</strong> ${d.ingredientes.join(', ')}
+                                    <div style="margin-top:4px;font-size:12px;color:#c4b5fd;background:rgba(168,85,247,0.06);padding:4px 10px;border-radius:6px;display:flex;flex-wrap:wrap;gap:4px;">
+                                        <span style="color:#a855f7;"><i class="fa-solid fa-carrot"></i> Ingredientes:</span>
+                                        ${d.ingredientes.map(ing => `<span style="background:rgba(168,85,247,0.12);padding:1px 8px;border-radius:12px;border:1px solid rgba(168,85,247,0.15);">${ing}</span>`).join(' ')}
                                     </div>
                                 ` : ''}
                             </div>
                         `;
                     });
                 } else {
-                    productosHtml = `<p><i class="fa-solid fa-exclamation-triangle"></i> Sin productos</p>`;
+                    productosHtml = `<p style="color:#9ca3af;font-size:13px;"><i class="fa-solid fa-exclamation-triangle"></i> Sin productos</p>`;
                 }
 
                 let estadoTexto = "";
@@ -546,7 +555,7 @@ async function cargarPedidos() {
                 } else {
                     domicilioHtml = `
                         <div class="domicilio-info" style="border-left-color:#22c55e;background:rgba(34,197,94,0.1);">
-                            <div><i class="fa-solid fa-chair" style="color:#22c55e;"></i> <strong style="color:#22c55e;">🪑 Consumir en Local (Mesa ${p.mesa})</strong></div>
+                            <div><i class="fa-solid fa-chair" style="color:#22c55e;"></i> <strong style="color:#22c55e;">Consumir en Local (Mesa ${p.mesa})</strong></div>
                         </div>
                     `;
                 }
@@ -554,15 +563,19 @@ async function cargarPedidos() {
                 let personalizadoHtml = "";
                 if (p.personalizado) {
                     const pers = p.personalizado;
-                    personalizadoHtml = `
-                        <div class="personalizado-info">
-                            <div><i class="fa-solid fa-pen-ruler"></i> <strong> Detalle del Plato Personalizado:</strong></div>
-                            ${pers.base ? `<div>• <strong>Base:</strong> ${pers.base}</div>` : ''}
-                            ${pers.acompanamientos ? `<div>• <strong>Acompañamientos:</strong> ${pers.acompanamientos}</div>` : ''}
-                            ${pers.salsas ? `<div>• <strong>Salsas:</strong> ${pers.salsas}</div>` : ''}
-                            ${pers.instrucciones ? `<div>• <strong>Instrucciones:</strong> ${pers.instrucciones}</div>` : ''}
-                        </div>
-                    `;
+                    let detalleHtml = "";
+                    if (pers.base) detalleHtml += `<div>• <strong>Base:</strong> ${pers.base}</div>`;
+                    if (pers.acompanamientos) detalleHtml += `<div>• <strong>Acompañamientos:</strong> ${pers.acompanamientos}</div>`;
+                    if (pers.salsas) detalleHtml += `<div>• <strong>Salsas:</strong> ${pers.salsas}</div>`;
+                    if (pers.instrucciones) detalleHtml += `<div>• <strong>Instrucciones:</strong> ${pers.instrucciones}</div>`;
+                    if (detalleHtml) {
+                        personalizadoHtml = `
+                            <div class="personalizado-info">
+                                <div><i class="fa-solid fa-pen-ruler"></i> <strong> Detalle del Plato Personalizado:</strong></div>
+                                ${detalleHtml}
+                            </div>
+                        `;
+                    }
                 } else if (p.es_personalizado && p.instrucciones_adicionales) {
                     personalizadoHtml = `
                         <div class="personalizado-info">
@@ -584,7 +597,7 @@ async function cargarPedidos() {
                 grid.innerHTML += `
                     <div class="card">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                            <div class="pedido-id" style="margin:0;">
+                            <div class="pedido-id" style="margin:0;font-size:16px;">
                                 <i class="fa-solid fa-receipt"></i> Pedido #${p.id}
                             </div>
                             <span class="badge-entrega ${p.es_domicilio ? 'badge-domicilio' : 'badge-local'}">
@@ -600,7 +613,7 @@ async function cargarPedidos() {
                             ${productosHtml}
                         </div>
                         <div style="margin-top:10px;font-size:12px;color:#9ca3af;">
-                            <i class="fa-solid fa-clock"></i> Hora pedido: ${p.fecha_hora}
+                            <i class="fa-solid fa-clock"></i> ${p.fecha_hora}
                         </div>
                         <div class="total-pedido">
                             <i class="fa-solid fa-dollar-sign"></i> Total: $${p.total ? p.total.toFixed(2) : '0.00'}

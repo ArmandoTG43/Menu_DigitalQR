@@ -1259,50 +1259,61 @@ def chat_asistente(request):
             mensaje_lower = mensaje.lower()
             respuesta = None
 
-            # ========== 1. PREGUNTAS SOBRE EL SISTEMA EN GENERAL ==========
-            if any(p in mensaje_lower for p in ['qué es', 'que es', 'sistema', 'plataforma', 'aplicación', 'app']):
-                respuesta = " Freedom Lounge es un sistema web de menú virtual con códigos QR. Permite ver el menú, hacer pedidos, seguir su estado y pagar desde tu celular. ¡Todo sin esperar al mesero! 📱"
+            # ========== 1. SALUDOS ==========
+            if any(p in mensaje_lower for p in ['hola', 'buenos días', 'buenas tardes', 'buenas noches', 'hey', 'saludos']):
+                respuesta = "¡Hola! 👋 Bienvenido a Freedom Lounge. ¿En qué puedo ayudarte hoy?"
 
-            elif any(p in mensaje_lower for p in ['cómo funciona', 'como funciona']):
+            elif any(p in mensaje_lower for p in ['quién eres', 'que eres', 'asistente', 'bot']):
+                respuesta = " Soy el asistente virtual de Freedom Lounge. Estoy aquí para ayudarte con el menú, pedidos, pagos y el sistema. ¡Pregúntame lo que quieras!"
+
+            # ========== 2. SISTEMA Y FUNCIONAMIENTO ==========
+            elif any(p in mensaje_lower for p in ['qué es', 'que es', 'sistema', 'plataforma', 'aplicación', 'app']):
+                respuesta = " Freedom Lounge es un sistema web de menú virtual con códigos QR. Permite ver el menú, hacer pedidos, seguir su estado y pagar desde tu celular. 📱"
+
+            elif any(p in mensaje_lower for p in ['cómo funciona', 'como funciona', 'funcionamiento']):
                 respuesta = " Escaneas el código QR de tu mesa, ves el menú, seleccionas tus platos, confirmas el pedido, haces seguimiento en tiempo real y pagas desde tu celular. ¡Fácil y rápido!"
 
-            # ========== 2. PREGUNTAS SOBRE EL MENÚ ==========
+            # ========== 3. MENÚ Y PLATOS ==========
             elif any(p in mensaje_lower for p in ['menú', 'carta', 'platos', 'comida', 'opciones']):
                 if 'vegetariano' in mensaje_lower or 'vegano' in mensaje_lower:
                     respuesta = " Sí, tenemos opciones vegetarianas y veganas. Pregunta por nuestro menú especial del día."
                 elif 'precio' in mensaje_lower or 'cuesta' in mensaje_lower or 'valor' in mensaje_lower:
-                    respuesta = " Puedes ver todos los precios en el menú digital. Cada plato tiene su precio detallado. ¿Te ayudo con algún plato en particular?"
-                elif 'recomienda' in mensaje_lower or 'sugiere' in mensaje_lower:
-                    respuesta = " Te recomiendo probar nuestra Tapa Noruega  y los Nachos Freedom , son los más pedidos."
+                    respuesta = " Puedes ver todos los precios en el menú digital. Cada plato tiene su precio detallado."
+                elif 'recomienda' in mensaje_lower or 'sugiere' in mensaje_lower or 'recomendación' in mensaje_lower:
+                    respuesta = " Te recomiendo probar nuestra **Tapa Noruega** y los **Nachos Freedom**, son los más pedidos."
                 elif 'infantil' in mensaje_lower or 'niño' in mensaje_lower or 'kids' in mensaje_lower:
-                    respuesta = " El Menú Infantil cuesta $8.50 e incluye nuggets de pollo, papas fritas y un jugo "
+                    respuesta = " El Menú Infantil cuesta $9.99 e incluye pop corn de pollo, papas francesas, gaseosa y helado."
                 elif 'promociones' in mensaje_lower or 'descuento' in mensaje_lower or 'oferta' in mensaje_lower:
-                    respuesta = " Hoy tenemos 2x1 en bebidas  y 15% de descuento en platos principales."
-                elif 'más vendido' in mensaje_lower or 'top' in mensaje_lower:
-                    respuesta = " Nuestro plato más vendido es la Tapa Noruega , seguido de los Nachos Freedom "
+                    respuesta = " Hoy tenemos 2x1 en bebidas y 15% de descuento en platos principales."
+                elif 'más vendido' in mensaje_lower or 'top' in mensaje_lower or 'popular' in mensaje_lower:
+                    respuesta = " Nuestros platos más vendidos son: **Tapa Noruega**, **Nachos Freedom**, **Ribeye** y **Pasta Carbonara**."
+                elif 'ingredientes' in mensaje_lower or 'contiene' in mensaje_lower:
+                    respuesta = " Puedes ver todos los ingredientes de cada plato en el menú digital. Cada plato tiene su lista de ingredientes detallada."
                 else:
                     respuesta = " Puedes ver todo el menú digital con fotos, descripción y precios en la sección 'Menú'. ¿Quieres saber de algún plato en específico?"
 
-            # ========== 3. PREGUNTAS SOBRE CÓDIGOS QR ==========
+            # ========== 4. CÓDIGOS QR ==========
             elif any(p in mensaje_lower for p in ['qr', 'código', 'escanear', 'escaneas']):
-                respuesta = "📷 Cada mesa tiene un código QR único. Solo escanéalo con la cámara de tu celular y accederás al menú digital automáticamente. ¡Sin apps adicionales!"
+                respuesta = " Cada mesa tiene un código QR único. Solo escanéalo con la cámara de tu celular y accederás al menú digital automáticamente."
 
-            # ========== 4. PREGUNTAS SOBRE PEDIDOS ==========
+            # ========== 5. PEDIDOS ==========
             elif any(p in mensaje_lower for p in ['pedido', 'orden', 'comanda']):
-                if 'estado' in mensaje_lower or 'seguimiento' in mensaje_lower or 'tiempo' in mensaje_lower:
-                    respuesta = " Puedes ver el estado de tu pedido en tiempo real: Recibido → En preparación → Listo → Entregado. ¡Siempre sabrás en qué etapa está!"
+                if 'estado' in mensaje_lower or 'seguimiento' in mensaje_lower:
+                    respuesta = " Puedes ver el estado de tu pedido en tiempo real: Recibido → En preparación → Listo → Entregado."
                 elif 'cancelar' in mensaje_lower or 'anular' in mensaje_lower:
-                    respuesta = " Si quieres cancelar tu pedido, por favor consulta directamente con nuestro personal de atención. Ellos te ayudarán."
+                    respuesta = " Si quieres cancelar tu pedido, consulta directamente con nuestro personal de atención."
                 elif 'historial' in mensaje_lower:
                     respuesta = " Puedes ver el historial de tus pedidos en la sección 'Mi Pedido' o consultando con el administrador."
+                elif 'personalizado' in mensaje_lower or 'custom' in mensaje_lower:
+                    respuesta = " ¡Sí! Puedes crear tu propio plato eligiendo base, acompañamientos y salsas. El precio se calcula según lo que selecciones."
                 else:
                     respuesta = " Para hacer un pedido: 1. Escanea el QR de tu mesa 2. Selecciona tus platos 3. Confirma el pedido. ¡Llega directo a cocina!"
 
-            # ========== 5. PREGUNTAS SOBRE MESAS ==========
+            # ========== 6. MESAS ==========
             elif any(p in mensaje_lower for p in ['mesa', 'mesas']):
-                respuesta = "🪑 Cada mesa tiene su propio código QR. El administrador puede crear, modificar o eliminar mesas desde el panel de administración."
+                respuesta = " Cada mesa tiene su propio código QR. El administrador puede crear, modificar o eliminar mesas desde el panel de administración."
 
-            # ========== 6. PREGUNTAS SOBRE PAGOS ==========
+            # ========== 7. PAGOS ==========
             elif any(p in mensaje_lower for p in ['pago', 'pagar', 'factura', 'comprobante', 'recibo']):
                 if 'método' in mensaje_lower or 'como pagar' in mensaje_lower:
                     respuesta = " Puedes pagar con tarjeta de crédito/débito, transferencia bancaria o en efectivo en el local. ¡Tú eliges!"
@@ -1311,41 +1322,42 @@ def chat_asistente(request):
                 else:
                     respuesta = " El pago se realiza desde tu celular después de confirmar el pedido. Puedes pagar con tarjeta o transferencia."
 
-            # ========== 7. PREGUNTAS SOBRE REPORTES ==========
+            # ========== 8. DELIVERY ==========
+            elif any(p in mensaje_lower for p in ['delivery', 'domicilio', 'envío', 'reparto', 'llevar']):
+                respuesta = " Hacemos delivery dentro de Latacunga. El costo de envío depende de la distancia. Selecciona la opción 'Domicilio' al hacer tu pedido."
+
+            # ========== 9. BEBIDAS ==========
+            elif any(p in mensaje_lower for p in ['bebidas', 'refrescos', 'cerveza', 'vino', 'licor', 'coctel']):
+                respuesta = " Tenemos una amplia variedad de bebidas: gaseosas, jugos naturales, cervezas, vinos, cocteles y cafetería. Revisa la sección de bebidas en el menú digital."
+
+            # ========== 10. POSTRES ==========
+            elif any(p in mensaje_lower for p in ['postre', 'torta', 'helado', 'dulce', 'cheesecake', 'tiramisú']):
+                respuesta = " Nuestros postres más populares son el **Cheesecake New York**, el **Tiramisú** y el **Waffle Freedom**."
+
+            # ========== 11. REPORTES ==========
             elif any(p in mensaje_lower for p in ['reporte', 'ventas', 'estadísticas', 'gráfico']):
                 respuesta = " El administrador puede ver reportes de ventas, productos más vendidos y exportarlos a Excel o PDF en la sección 'Reportes'."
 
-            # ========== 8. PREGUNTAS SOBRE COCINA ==========
+            # ========== 12. COCINA ==========
             elif any(p in mensaje_lower for p in ['cocina', 'cocinero', 'preparación']):
                 respuesta = " En la cocina se ven los pedidos en tiempo real. El cocinero puede cambiar el estado: pendiente → en preparación → listo → entregado."
 
-            # ========== 9. PREGUNTAS SOBRE USUARIOS ==========
+            # ========== 13. USUARIOS ==========
             elif any(p in mensaje_lower for p in ['usuario', 'login', 'contraseña', 'cuenta']):
                 if 'recuperar' in mensaje_lower or 'olvidé' in mensaje_lower:
                     respuesta = " Si olvidaste tu contraseña, usa la opción 'Recuperar contraseña' en el login. Te enviaremos instrucciones a tu correo."
                 else:
                     respuesta = " Solo el administrador puede crear y gestionar usuarios. Los roles disponibles son: Administrador, Cocinero y Cliente (via QR)."
 
-            # ========== 10. PREGUNTAS SOBRE HORARIOS ==========
+            # ========== 14. HORARIOS ==========
             elif any(p in mensaje_lower for p in ['horario', 'horas', 'abierto', 'cierran']):
                 respuesta = " Atendemos de lunes a domingo de 12:00 a 22:00 horas. ¡Te esperamos!"
 
-            # ========== 11. PREGUNTAS SOBRE CONTACTO ==========
+            # ========== 15. CONTACTO ==========
             elif any(p in mensaje_lower for p in ['contacto', 'dirección', 'ubicación', 'teléfono', 'llamar']):
                 respuesta = " Estamos en Latacunga, Ecuador. Puedes contactarnos a través de la sección 'Contactos' en el menú principal."
 
-            # ========== 12. PREGUNTAS SOBRE EL ASISTENTE ==========
-            elif any(p in mensaje_lower for p in ['quién eres', 'que eres', 'asistente', 'bot']):
-                respuesta = " Soy el asistente virtual de Freedom Lounge. Estoy aquí para ayudarte con el menú, pedidos, pagos y cualquier duda sobre el sistema. ¡Pregúntame lo que quieras!"
-
-            # ========== 13. SALUDOS ==========
-            elif any(p in mensaje_lower for p in ['hola', 'buenos días', 'buenas tardes', 'buenas noches', 'hey']):
-                respuesta = "¡Hola! 👋 ¿Cómo estás? ¿En qué puedo ayudarte hoy?"
-
-            # ========== 14. SI NO ENCUENTRA COINCIDENCIA ==========
-            if respuesta is None:
-                respuesta = " No estoy seguro de entender tu pregunta. ¿Puedes ser más específico? Estoy aquí para ayudarte con el menú, pedidos, mesas, pagos y más."
-
+            # ========== 16. INTENTAR CON IA ==========
             if respuesta is None:
                 try:
                     headers = {
@@ -1358,8 +1370,10 @@ def chat_asistente(request):
                         'messages': [
                             {'role': 'system', 'content': (
                                 'Eres un asistente virtual del restaurante Freedom Lounge Latacunga. '
-                                'Responde preguntas sobre el sistema: menú digital, códigos QR, pedidos, '
-                                'seguimiento, pagos, mesas, reportes, cocina y usuarios. Sé amable y breve.'
+                                'Responde preguntas sobre: menú digital, códigos QR, pedidos, seguimiento, '
+                                'pagos, mesas, reportes, cocina, usuarios, horarios (12:00-22:00), '
+                                'delivery, promociones, ingredientes, postres y bebidas. '
+                                'Sé amable, breve y útil. Si no sabes algo, sugiere contactar al personal.'
                             )},
                             {'role': 'user', 'content': mensaje}
                         ],
@@ -1380,19 +1394,18 @@ def chat_asistente(request):
                         return JsonResponse({'respuesta': contenido})
 
                 except Exception as e:
-                    # Si falla, usamos la respuesta del fallback
                     pass
 
             if respuesta:
                 return JsonResponse({'respuesta': respuesta})
             else:
                 return JsonResponse({
-                    'respuesta': ' Lo siento, no encontré información sobre eso. Por favor, consulta directamente con nuestro personal, ellos te atenderán con gusto.'
+                    'respuesta': 'Lo siento, no encontré información sobre eso. Por favor, consulta directamente con nuestro personal.'
                 })
 
         except Exception as e:
             return JsonResponse({
-                'respuesta': ' Ocurrió un error inesperado. Por favor, intenta de nuevo más tarde.'
+                'respuesta': 'Ocurrió un error inesperado. Por favor, intenta de nuevo más tarde.'
             })
 
     return JsonResponse({'error': 'Método no permitido'}, status=405)
