@@ -421,7 +421,12 @@ def api_pedidos(request):
                         precio_unit = float(d.producto.precio) if d.producto.precio else 0
                         
                         ingredientes_list = []
-                        if hasattr(d.producto, 'ingredientes'):
+                        
+                        # PRIMERO: verificar si el detalle tiene ingredientes_texto
+                        if d.ingredientes_texto:
+                            ingredientes_list = [i.strip() for i in d.ingredientes_texto.split(',')]
+                        # SEGUNDO: si no, buscar en los ingredientes del producto
+                        elif hasattr(d.producto, 'ingredientes'):
                             for ing in d.producto.ingredientes.all():
                                 ingredientes_list.append(ing.nombre)
                         
@@ -502,7 +507,12 @@ def api_pedido_detalle(request, pedido_id):
                     precio_unit = float(d.producto.precio) if d.producto.precio else 0
                     
                     ingredientes_list = []
-                    if hasattr(d.producto, 'ingredientes'):
+                    
+                    # PRIMERO: verificar si el detalle tiene ingredientes_texto
+                    if d.ingredientes_texto:
+                        ingredientes_list = [i.strip() for i in d.ingredientes_texto.split(',')]
+                    # SEGUNDO: si no, buscar en los ingredientes del producto
+                    elif hasattr(d.producto, 'ingredientes'):
                         for ing in d.producto.ingredientes.all():
                             ingredientes_list.append(ing.nombre)
                     
