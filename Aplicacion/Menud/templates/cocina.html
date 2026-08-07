@@ -560,6 +560,31 @@ async function cargarPedidos() {
                     `;
                 }
 
+                let personalizadoHtml = "";
+                if (p.personalizado) {
+                    const pers = p.personalizado;
+                    let detalleHtml = "";
+                    if (pers.base) detalleHtml += `<div>• <strong>Base:</strong> ${pers.base}</div>`;
+                    if (pers.acompanamientos) detalleHtml += `<div>• <strong>Acompañamientos:</strong> ${pers.acompanamientos}</div>`;
+                    if (pers.salsas) detalleHtml += `<div>• <strong>Salsas:</strong> ${pers.salsas}</div>`;
+                    if (pers.instrucciones) detalleHtml += `<div>• <strong>Instrucciones:</strong> ${pers.instrucciones}</div>`;
+                    if (detalleHtml) {
+                        personalizadoHtml = `
+                            <div class="personalizado-info">
+                                <div><i class="fa-solid fa-pen-ruler"></i> <strong> Detalle del Plato Personalizado:</strong></div>
+                                ${detalleHtml}
+                            </div>
+                        `;
+                    }
+                } else if (p.es_personalizado && p.instrucciones_adicionales) {
+                    personalizadoHtml = `
+                        <div class="personalizado-info">
+                            <div><i class="fa-solid fa-pen-ruler"></i> <strong> Detalle del Plato Personalizado:</strong></div>
+                            <div>${p.instrucciones_adicionales}</div>
+                        </div>
+                    `;
+                }
+
                 let boton = "";
                 if (!esAdmin) {
                     if (p.estado === "listo") {
