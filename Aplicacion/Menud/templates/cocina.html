@@ -518,9 +518,6 @@ async function cargarPedidos() {
                 if (p.productos && p.productos.length > 0) {
                     p.productos.forEach(d => {
                         const esPersonalizado = d.nombre && d.nombre.includes('Personalizado');
-                        // Verificar si el producto tiene ingredientes (desde la API)
-                        const tieneIngredientes = d.ingredientes && d.ingredientes.length > 0;
-                        
                         productosHtml += `
                             <div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px dashed rgba(255,255,255,0.1);">
                                 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -531,11 +528,6 @@ async function cargarPedidos() {
                                     <strong style="color:#f59e0b;">x${d.cantidad} ($${d.subtotal ? d.subtotal.toFixed(2) : (d.precio * d.cantidad).toFixed(2)})</strong>
                                 </div>
                                 ${d.descripcion ? `<div style="font-size:12px;color:#cbd5e1;margin-left:22px;margin-top:2px;"><em>${d.descripcion}</em></div>` : ''}
-                                ${tieneIngredientes ? `
-                                    <div style="font-size:12px;color:#a855f7;margin-left:22px;margin-top:4px;background:rgba(168,85,247,0.08);padding:4px 10px;border-radius:6px;">
-                                        <i class="fa-solid fa-carrot"></i> <strong>Ingredientes:</strong> ${d.ingredientes.join(', ')}
-                                    </div>
-                                ` : ''}
                             </div>
                         `;
                     });
