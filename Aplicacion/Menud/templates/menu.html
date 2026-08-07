@@ -78,6 +78,7 @@
 
                 <div class="precio-acciones">
                     <div class="acciones">
+                        <!-- SOLO CLIENTE: Personalizar y Agregar -->
                         {% if request.session.cliente %}
                             {% if producto.ingredientes.all %}
                             <button class="icon-customize" onclick="abrirPersonalizacion('{{ producto.id }}', '{{ producto.nombre }}', '{% if producto.imagen %}{{ producto.imagen.url }}{% endif %}')">
@@ -92,6 +93,7 @@
                         </form>
                         {% endif %}
 
+                        <!-- SOLO ADMIN: Editar y Eliminar -->
                         {% if not request.session.cliente and user.is_authenticated and user.rol == 'admin' %}
                         <a href="{% url 'editar_producto' producto.id %}" class="icon-edit">
                             <i class="fa-solid fa-pencil"></i>

@@ -138,24 +138,6 @@
         {% endfor %}
     {% endif %}
     
-    <!-- Resumen del pedido -->
-    <div class="resumen-pedido">
-        <h3 style="margin-top: 0; color: #2c3e50;"> Resumen del pedido</h3>
-        {% if detalles %}
-            {% for detalle in detalles %}
-                <div class="item-pedido">
-                    <span class="item-nombre"> {{ detalle.producto.nombre }} × {{ detalle.cantidad }}</span>
-                    <span class="item-precio">${{ detalle.subtotal|floatformat:2 }}</span>
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class="alert alert-error">
-                ⚠️ No hay productos en este pedido. 
-                <a href="{% url 'ver_carrito' %}" style="color: #0d47a1;">Agregar productos</a>
-            </div>
-        {% endif %}
-    </div>
-    
     <div class="total">
         Total: ${{ pedido.total|floatformat:2 }}
     </div>
