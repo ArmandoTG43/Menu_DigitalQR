@@ -107,36 +107,14 @@
             color: #999;
             margin-top: 15px;
         }
-        .alert {
-            padding: 12px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-        .alert-error {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ef9a9a;
-        }
-        .alert-info {
-            background: #e3f2fd;
-            color: #0d47a1;
-            border: 1px solid #90caf9;
-        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h2> Realizar Pago</h2>
+    <h2>💰 Realizar Pago</h2>
     <div class="detalle">Pedido #{{ pedido.id }} - Mesa {{ pedido.mesa.numero }}</div>
     
-    <!-- Mostrar mensajes -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-info{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
+    <!-- ✅ ELIMINADO: NO SE MUESTRAN MENSAJES DE ERROR -->
     
     <div class="total">
         Total: ${{ pedido.total|floatformat:2 }}
@@ -148,17 +126,17 @@
 
         <label for="metodo">Selecciona método de pago:</label>
         <select name="metodo" id="metodo" required>
-            <option value="tarjeta"> Tarjeta de Crédito/Débito</option>
-            <option value="efectivo"> Efectivo (en el local)</option>
-            <option value="transferencia"> Transferencia Bancaria</option>
+            <option value="tarjeta">💳 Tarjeta de Crédito/Débito</option>
+            <option value="efectivo">💵 Efectivo (en el local)</option>
+            <option value="transferencia">🏦 Transferencia Bancaria</option>
         </select>
 
         <button type="submit" {% if not detalles %}disabled{% endif %}>
-            {% if detalles %} Pagar ahora{% else %} Sin productos para pagar{% endif %}
+            {% if detalles %}✅ Pagar ahora{% else %}❌ Sin productos para pagar{% endif %}
         </button>
     </form>
 
-    <div class="lock"> Pago seguro con bancos</div>
+    <div class="lock">🔒 Pago seguro con bancos</div>
 </div>
 </body>
 </html>
