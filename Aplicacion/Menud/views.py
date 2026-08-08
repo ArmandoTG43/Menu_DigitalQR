@@ -963,14 +963,14 @@ def confirmar_pago(request):
             
             # Verificar si el pedido tiene productos
             if not pedido.tiene_productos():
-                messages.error(request, 'No se puede pagar un pedido sin productos.')
+                #  Redirigir sin mensaje de error
                 return redirect('ver_carrito')
             
             # Calcular total actualizado antes de pagar
             total = pedido.calcular_total()
             
             if total == 0:
-                messages.error(request, 'El total del pedido es $0.00. No se puede procesar el pago.')
+                #  Redirigir sin mensaje de error
                 return redirect('ver_carrito')
             
             # Crear o actualizar el pago
@@ -985,22 +985,19 @@ def confirmar_pago(request):
             )
             
             # Actualizar estado del pedido para que llegue a cocina
-            pedido.estado = 'pagado'  # o 'recibido' si prefieres
+            pedido.estado = 'pagado'
             pedido.save()
             
             # Limpiar carrito
             request.session['carrito'] = {}
             request.session.modified = True
             
+            #  Solo mensaje de éxito
             messages.success(request, f'Pago de ${total:.2f} verificado exitosamente.')
             return redirect('comprobante_pago', pago_id=pago.id)
             
         except Exception as e:
-            print(f"Error en confirmar_pago: {e}")
-            import traceback
-            traceback.print_exc()
-            
-            messages.error(request, f'Error al procesar el pago: {str(e)}')
+            #  No mostrar error, solo redirigir
             return redirect('ver_carrito')
     
     return redirect('ver_carrito')

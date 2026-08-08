@@ -734,6 +734,29 @@ document.getElementById('modalComprobante').addEventListener('click', function(e
     }
 });
 
+// =============================================
+// ✅ FUNCIÓN PARA FORMATEAR FECHA CORRECTAMENTE (ECUADOR UTC-5)
+// =============================================
+function formatearFecha(fechaUTC) {
+    if (!fechaUTC) return 'N/A';
+    const fecha = new Date(fechaUTC);
+    
+    // Ajustar a Ecuador (UTC-5) - 5 horas menos
+    const offsetEcuador = -5 * 60; // -5 horas en minutos
+    const fechaLocal = new Date(fecha.getTime() + (fecha.getTimezoneOffset() + offsetEcuador) * 60000);
+    
+    const dia = String(fechaLocal.getDate()).padStart(2, '0');
+    const mes = String(fechaLocal.getMonth() + 1).padStart(2, '0');
+    const anio = fechaLocal.getFullYear();
+    const horas = String(fechaLocal.getHours()).padStart(2, '0');
+    const minutos = String(fechaLocal.getMinutes()).padStart(2, '0');
+    
+    return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+}
+
+// =============================================
+// ✅ CARGAR DATOS DEL COMPROBANTE CON FECHA CORREGIDA
+// =============================================
 async function cargarDatosComprobante() {
     try {
         const res = await fetch(`/api/pedido/${pedidoId}/`);
@@ -764,6 +787,9 @@ async function cargarDatosComprobante() {
         
         const estadoColor = pedido.estado === 'entregado' ? '#22c55e' : '#f59e0b';
         
+        // ✅ Usar la función de formato de fecha
+        const fechaFormateada = formatearFecha(pedido.fecha_hora);
+        
         body.innerHTML = `
             <div class="info-line">
                 <span class="label">Pedido</span>
@@ -771,7 +797,7 @@ async function cargarDatosComprobante() {
             </div>
             <div class="info-line">
                 <span class="label">Fecha</span>
-                <span class="value">${pedido.fecha_hora ? new Date(pedido.fecha_hora).toLocaleString() : 'N/A'}</span>
+                <span class="value">${fechaFormateada}</span>
             </div>
             <div class="info-line">
                 <span class="label">Mesa</span>
