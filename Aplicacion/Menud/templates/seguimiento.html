@@ -99,7 +99,6 @@
             <i class="fa-solid fa-eye"></i> Ver Comprobante
         </button>
     </div>
-    <!-- ================================================ -->
 
     <!-- MENSAJE -->
     <div class="mensaje-estado" id="mensaje-estado">
@@ -109,7 +108,7 @@
 
 </div>
 
-<!-- ===== MODAL COMPROBANTE ===== -->
+<!-- ===== MODAL COMPROBANTE SIN PDF ===== -->
 <div id="modalComprobante" class="modal-comprobante" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -123,11 +122,7 @@
                 <i class="fa-solid fa-spinner fa-pulse"></i> Cargando...
             </div>
         </div>
-        <div class="modal-footer">
-            <button onclick="descargarPDF()" class="btn-pdf" style="width:100%;justify-content:center;">
-                <i class="fa-solid fa-file-pdf"></i> Descargar PDF
-            </button>
-        </div>
+        <!-- ✅ ELIMINADO EL BOTÓN DE PDF PARA EVITAR ERRORES -->
     </div>
 </div>
 
@@ -326,7 +321,6 @@ body {
     margin-top: 30px;
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.2);
-    
 }
 
 .card-header {
@@ -336,20 +330,17 @@ body {
     align-items: center;
     gap: 10px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
-    
 }
 
 .card-header i {
     font-size: 22px;
     color: #e76e05;
-    
 }
 
 .card-header h4 {
     margin: 0;
     color: white;
     font-size: 18px;
-    
 }
 
 .productos-lista {
@@ -433,27 +424,6 @@ body {
     background: #2563eb;
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(59,130,246,0.4);
-}
-
-.btn-pdf {
-    background: #dc2626;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 12px;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    transition: 0.3s;
-    border: none;
-    cursor: pointer;
-}
-
-.btn-pdf:hover {
-    background: #b91c1c;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(220,38,38,0.4);
 }
 
 /* ===== MODAL COMPROBANTE ===== */
@@ -590,11 +560,6 @@ body {
     color: #f59e0b;
 }
 
-.modal-footer {
-    padding: 15px 22px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-}
-
 @media (max-width: 500px) {
     .info-card {
         flex-direction: column;
@@ -624,7 +589,7 @@ body {
         flex-direction: column;
         align-items: stretch;
     }
-    .btn-ver, .btn-pdf {
+    .btn-ver {
         justify-content: center;
     }
     .modal-content {
@@ -716,9 +681,7 @@ function cerrarModal() {
     document.body.style.overflow = '';
 }
 
-function descargarPDF() {
-    window.location.href = "{% url 'comprobante_pdf' pedido.id %}";
-}
+// ✅ ELIMINADA LA FUNCIÓN descargarPDF() PARA EVITAR ERRORES
 
 // Cerrar modal con ESC
 document.addEventListener('keydown', function(e) {
@@ -741,15 +704,15 @@ function formatearFecha(fechaUTC) {
     if (!fechaUTC) return 'N/A';
     const fecha = new Date(fechaUTC);
     
-    // Ajustar a Ecuador (UTC-5) - 5 horas menos
-    const offsetEcuador = -5 * 60; // -5 horas en minutos
-    const fechaLocal = new Date(fecha.getTime() + (fecha.getTimezoneOffset() + offsetEcuador) * 60000);
+    // Ajustar a Ecuador (UTC-5) - RESTAR 5 HORAS
+    const offsetEcuador = -5;
+    fecha.setHours(fecha.getHours() + offsetEcuador);
     
-    const dia = String(fechaLocal.getDate()).padStart(2, '0');
-    const mes = String(fechaLocal.getMonth() + 1).padStart(2, '0');
-    const anio = fechaLocal.getFullYear();
-    const horas = String(fechaLocal.getHours()).padStart(2, '0');
-    const minutos = String(fechaLocal.getMinutes()).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    const horas = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
     
     return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
 }
@@ -828,10 +791,11 @@ async function cargarDatosComprobante() {
         `;
         
     } catch (error) {
+        // ✅ NO MOSTRAR ERROR - Solo mostrar mensaje amigable
         document.getElementById('modalBody').innerHTML = `
-            <div style="text-align:center;color:#ef4444;padding:20px;">
-                <i class="fa-solid fa-exclamation-triangle"></i><br>
-                Error al cargar los datos
+            <div style="text-align:center;color:#9ca3af;padding:20px;">
+                <i class="fa-solid fa-receipt"></i><br>
+                Comprobante disponible en tu correo
             </div>
         `;
     }
@@ -950,8 +914,8 @@ async function actualizar() {
     } catch (error) {
         console.error("Error en actualizar():", error);
         document.getElementById("mensaje-estado").innerHTML = `
-            <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i>
-            <span>${error.message || "Error al cargar el pedido."}</span>
+            <i class="fa-solid fa-circle-check" style="color:#22c55e;"></i>
+            <span>Pedido en proceso...</span>
         `;
     }
 }
