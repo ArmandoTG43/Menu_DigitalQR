@@ -236,13 +236,17 @@ def lista_mesas(request):
     if request.method == 'POST':
         numero = request.POST.get('numero')
         if numero:
-            if not Mesa.objects.filter(numero=numero).exists():
+            if Mesa.objects.filter(numero=numero).exists():
+                messages.error(request, f' Ya existe una mesa con el número {numero}.')
+            else:
                 Mesa.objects.create(numero=numero)
-        messages.success(request, 'Mesa creada correctamente')
+                messages.success(request, f' Mesa {numero} creada exitosamente.')
+        else:
+            messages.error(request, ' Ingresa un número de mesa válido.')
         return redirect('lista_mesas')
+    
     mesas = Mesa.objects.all()
     return render(request, 'mesas.html', {'mesas': mesas})
-
 @admin_required
 def eliminar_mesa(request, id):
     mesa = get_object_or_404(Mesa, id=id)
@@ -783,8 +787,6 @@ def generar_comprobante(request, pedido_id):
     
     try:
         pedido = get_object_or_404(Pedido, id=pedido_id)
-        
-        # Obtener los detalles del pedido
         detalles = DetallePedido.objects.filter(pedido=pedido)
         
         response = HttpResponse(content_type='application/pdf')
@@ -802,15 +804,11 @@ def generar_comprobante(request, pedido_id):
         )
         
         contenido = []
-        
-        # TÍTULO
         contenido.append(Paragraph("FREEDOM LOUNGE LATACUNGA", titulo_style))
         contenido.append(Paragraph("COMPROBANTE DE PAGO", titulo_style))
         contenido.append(Spacer(1, 20))
-        
-        # DATOS DEL PEDIDO
         contenido.append(Paragraph(f"<b>Pedido #:</b> {pedido.id}", styles['Normal']))
-        contenido.append(Paragraph(f"<b>Fecha:</b> {pedido.fecha_hora.strftime('%d/%m/%Y %H:%M')}", styles['Normal']))  # ← CAMBIADO
+        contenido.append(Paragraph(f"<b>Fecha:</b> {pedido.fecha_hora.strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
         contenido.append(Paragraph(f"<b>Mesa:</b> {pedido.mesa.numero if pedido.mesa else 'Domicilio'}", styles['Normal']))
         contenido.append(Paragraph(f"<b>Estado:</b> {pedido.get_estado_display()}", styles['Normal']))
         contenido.append(Paragraph(f"<b>Tipo de entrega:</b> {'Domicilio' if pedido.es_domicilio else 'Local'}", styles['Normal']))
@@ -819,14 +817,10 @@ def generar_comprobante(request, pedido_id):
         if pedido.hora_entrega:
             contenido.append(Paragraph(f"<b>Hora de entrega:</b> {pedido.hora_entrega}", styles['Normal']))
         contenido.append(Spacer(1, 15))
-        
-        # TABLA DE PRODUCTOS
         contenido.append(Paragraph("<b>Productos:</b>", styles['Normal']))
         contenido.append(Spacer(1, 5))
         
-        data = []
-        data.append(["Cant.", "Producto", "Precio", "Subtotal"])
-        
+        data = [["Cant.", "Producto", "Precio", "Subtotal"]]
         for detalle in detalles:
             data.append([
                 str(detalle.cantidad),
@@ -857,8 +851,6 @@ def generar_comprobante(request, pedido_id):
             contenido.append(Paragraph("No hay productos en este pedido", styles['Normal']))
         
         contenido.append(Spacer(1, 15))
-        
-        # TOTAL
         total_style = ParagraphStyle(
             'TotalStyle',
             parent=styles['Normal'],
@@ -868,8 +860,6 @@ def generar_comprobante(request, pedido_id):
         )
         contenido.append(Paragraph(f"<b>TOTAL:</b> ${pedido.total:.2f}", total_style))
         contenido.append(Spacer(1, 20))
-        
-        # PIE DE PÁGINA
         contenido.append(Paragraph("¡Gracias por su preferencia!", styles['Normal']))
         contenido.append(Paragraph("Freedom Lounge Latacunga", styles['Normal']))
         contenido.append(Paragraph(f"Generado: {timezone.now().strftime('%d/%m/%Y %H:%M')}", styles['Normal']))
@@ -878,10 +868,9 @@ def generar_comprobante(request, pedido_id):
         return response
         
     except Pedido.DoesNotExist:
-        messages.error(request, "Pedido no encontrado")
         return redirect('menu')
-    except Exception as e:
-        messages.error(request, f"Error al generar comprobante: {str(e)}")
+    except Exception:
+
         return redirect('menu')
 
 @cliente_required
