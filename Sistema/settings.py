@@ -31,13 +31,11 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'  # Por defecto False en producció
 
 # --- Hosts permitidos: desde variable de entorno o lista por defecto ---
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else ['*']
-# Para producción, debes poner tu dominio de Render: 'tusistema.onrender.com'
 
-# Para ngrok (solo desarrollo) - en producción no se usan
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.ngrok-free.app',
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if os.getenv('CSRF_TRUSTED_ORIGINS') else [
+    'https://*.ngrok-free.dev',
     'https://*.ngrok.io',
-] if DEBUG else []  # Solo si DEBUG=True
+]
 
 # Para que funcione con proxy (como ngrok)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
