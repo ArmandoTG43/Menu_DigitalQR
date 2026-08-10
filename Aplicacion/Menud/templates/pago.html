@@ -126,17 +126,17 @@
 
         <label for="metodo">Selecciona método de pago:</label>
         <select name="metodo" id="metodo" required>
-            <option value="tarjeta">💳 Tarjeta de Crédito/Débito</option>
-            <option value="efectivo">💵 Efectivo (en el local)</option>
-            <option value="transferencia">🏦 Transferencia Bancaria</option>
+            <option value="tarjeta">Tarjeta de Crédito/Débito</option>
+            <option value="efectivo"> Efectivo (en el local)</option>
+            <option value="transferencia"> Transferencia Bancaria</option>
         </select>
 
         <button type="submit" {% if not detalles %}disabled{% endif %}>
-            {% if detalles %}✅ Pagar ahora{% else %}❌ Sin productos para pagar{% endif %}
+            {% if detalles %} Pagar ahora{% else %} Sin productos para pagar{% endif %}
         </button>
     </form>
 
-    <div class="lock">🔒 Pago seguro con bancos</div>
+    <div class="lock"> Pago seguro con bancos</div>
 </div>
 </body>
 </html>
