@@ -10,6 +10,17 @@
 
 <div class="container">
 
+    <!-- ===== MENSAJES ===== -->
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <!-- FORMULARIO -->
     <div class="form-mesa">
         <form method="POST">
@@ -65,6 +76,7 @@
 
 </div>
 <br>
+
 <style>
 #banner {
     position: fixed;
@@ -79,17 +91,33 @@
     filter: brightness(0.60);
 }
 
-/* contenido encima */
 .container {
     position: relative;
     z-index: 2;
 }
-</style>
-<style>
 
 body {
     background: linear-gradient(135deg, #0f172a, #111827);
     min-height:100vh;
+}
+
+/* ===== MENSAJES ===== */
+.messages {
+    margin-bottom: 20px;
+}
+.alert {
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+.alert-success {
+    background: #28a745;
+    color: white;
+}
+.alert-error {
+    background: #dc3545;
+    color: white;
 }
 
 /* HEADER */
@@ -121,11 +149,9 @@ body {
     border: 1px solid #cbd5e1;
 }
 
-
 .form-mesa form {
     display: flex;
     gap: 10px;
-    
 }
 
 .form-mesa input {
@@ -162,7 +188,6 @@ body {
 
 .card-mesa:hover {
     transform: translateY(-5px);
-    
 }
 
 .card-mesa h4 {
@@ -205,7 +230,6 @@ body {
     font-weight: 600;
 }
 
-/* DELETE */
 .icon-btn{
     color:#ef4444;
     font-size:20px;
@@ -225,7 +249,6 @@ body {
         flex-direction: column;
     }
 }
-
 </style>
 
 {% endblock %}
