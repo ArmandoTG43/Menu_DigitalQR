@@ -1004,8 +1004,11 @@ def confirmar_pago(request):
 
 @cliente_required
 def comprobante_pago(request, pago_id):
-    pago = get_object_or_404(Pago, id=pago_id)
-    return render(request, 'comprobante.html', {'pago': pago})
+    try:
+        pago = Pago.objects.get(id=pago_id)
+        return render(request, 'comprobante.html', {'pago': pago})
+    except Pago.DoesNotExist:
+        return redirect('ver_carrito')  
 
 @cliente_required
 def seguimiento_pedido(request, pedido_id):
