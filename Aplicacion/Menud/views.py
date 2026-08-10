@@ -961,19 +961,13 @@ def confirmar_pago(request):
             metodo = request.POST.get('metodo', 'tarjeta')
             pedido = get_object_or_404(Pedido, id=pedido_id)
             
-            # Verificar si el pedido tiene productos
             if not pedido.tiene_productos():
-                #  Redirigir sin mensaje de error
                 return redirect('ver_carrito')
             
-            # Calcular total actualizado antes de pagar
             total = pedido.calcular_total()
-            
             if total == 0:
-                #  Redirigir sin mensaje de error
                 return redirect('ver_carrito')
             
-            # Crear o actualizar el pago
             pago, created = Pago.objects.update_or_create(
                 pedido=pedido,
                 defaults={
@@ -984,32 +978,34 @@ def confirmar_pago(request):
                 }
             )
             
-            # Actualizar estado del pedido para que llegue a cocina
             pedido.estado = 'pagado'
             pedido.save()
             
-            # Limpiar carrito
             request.session['carrito'] = {}
             request.session.modified = True
             
-            #  Solo mensaje de éxito
-            messages.success(request, f'Pago de ${total:.2f} verificado exitosamente.')
+            storage = messages.get_messages(request)
+            storage.used = True
+            
             return redirect('comprobante_pago', pago_id=pago.id)
             
-        except Exception as e:
-            #  No mostrar error, solo redirigir
+        except Exception:
             return redirect('ver_carrito')
     
     return redirect('ver_carrito')
 
+
 @cliente_required
 def comprobante_pago(request, pago_id):
+    storage = messages.get_messages(request)
+    storage.used = True
+
     try:
         pago = Pago.objects.get(id=pago_id)
-        return render(request, 'comprobante.html', {'pago': pago})
     except Pago.DoesNotExist:
-        return redirect('ver_carrito')  
-
+        return redirect('ver_carrito')
+    
+    return render(request, 'comprobante.html', {'pago': pago})
 @cliente_required
 def seguimiento_pedido(request, pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
@@ -1022,24 +1018,20 @@ def registro(request):
         email = request.POST['email']
         password1 = request.POST['password1']
         password2 = request.POST['password2']
-        rol = request.POST.get('rol')  # Obtener el rol seleccionado
+        rol = request.POST.get('rol')  
         
-        # Validar que las contraseñas coincidan
         if password1 != password2:
             messages.error(request, "Las contraseñas no coinciden")
             return redirect('registro')
         
-        # Validar que el usuario no exista
         if Usuario.objects.filter(username=username).exists():
             messages.error(request, "El usuario ya existe")
             return redirect('registro')
         
-        # Validar que el email no exista
         if Usuario.objects.filter(email=email).exists():
             messages.error(request, "El correo ya está registrado")
             return redirect('registro')
         
-        # Validar que el rol sea válido (solo admin o cocinero)
         if rol not in ['admin', 'cocinero']:
             messages.error(request, "Rol no válido")
             return redirect('registro')

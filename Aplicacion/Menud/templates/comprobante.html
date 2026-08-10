@@ -37,6 +37,7 @@
         }
         .btn:hover { background: #00a844; }
 
+        /* 🔥 OCULTA CUALQUIER MENSAJE FLASH */
         .alert, .messages, .mensaje-flash, .confirmacion {
             display: none !important;
         }
@@ -44,27 +45,23 @@
 </head>
 <body>
 
-
+<!-- 🔥 ELIMINA CUALQUIER MENSAJE RESIDUAL CON JAVASCRIPT -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const elementos = document.querySelectorAll('*');
-        elementos.forEach(el => {
-            if (el.textContent && el.textContent.includes('No Pedido matches')) {
-                el.style.display = 'none';
-                if (el.parentElement) {
-                    el.parentElement.style.display = 'none';
-                }
-            }
+        document.querySelectorAll('.alert, .messages, .mensaje-flash, .confirmacion').forEach(el => {
+            el.remove();
         });
-
-        document.querySelectorAll('.alert, .messages, .mensaje-flash').forEach(el => {
-            el.style.display = 'none';
+        // También elimina cualquier elemento que contenga "No Pedido matches"
+        document.querySelectorAll('*').forEach(el => {
+            if (el.textContent && el.textContent.includes('No Pedido matches')) {
+                el.remove();
+            }
         });
     });
 </script>
 
 <div class="card">
-    <div class="icono"></div>
+    <div class="icono">✅</div>
     <h2>¡Pago Aprobado!</h2>
     <p>Tu pedido ha sido registrado exitosamente.</p>
 
