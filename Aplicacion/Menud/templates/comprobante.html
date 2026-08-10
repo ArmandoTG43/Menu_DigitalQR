@@ -36,11 +36,35 @@
             text-decoration: none;
         }
         .btn:hover { background: #00a844; }
+
+        .alert, .messages, .mensaje-flash, .confirmacion {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const elementos = document.querySelectorAll('*');
+        elementos.forEach(el => {
+            if (el.textContent && el.textContent.includes('No Pedido matches')) {
+                el.style.display = 'none';
+                if (el.parentElement) {
+                    el.parentElement.style.display = 'none';
+                }
+            }
+        });
+
+        document.querySelectorAll('.alert, .messages, .mensaje-flash').forEach(el => {
+            el.style.display = 'none';
+        });
+    });
+</script>
+
 <div class="card">
-    <div class="icono">✅</div>
+    <div class="icono"></div>
     <h2>¡Pago Aprobado!</h2>
     <p>Tu pedido ha sido registrado exitosamente.</p>
 
@@ -59,5 +83,6 @@
         <a href="{% url 'menu_cliente' pago.pedido.mesa.id %}" style="color: #6c757d; margin-top: 10px; text-decoration: underline;">Volver al Menú Principal</a>
     </div>
 </div>
+
 </body>
 </html>

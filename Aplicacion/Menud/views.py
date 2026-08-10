@@ -959,18 +959,18 @@ def confirmar_pago(request):
         try:
             pedido_id = request.POST.get('pedido_id')
             metodo = request.POST.get('metodo', 'tarjeta')
-            
-            # Obtener el pedido o redirigir si no existe
             pedido = get_object_or_404(Pedido, id=pedido_id)
             
             # Verificar si el pedido tiene productos
             if not pedido.tiene_productos():
+                #  Redirigir sin mensaje de error
                 return redirect('ver_carrito')
             
-            # Calcular total actualizado
+            # Calcular total actualizado antes de pagar
             total = pedido.calcular_total()
             
             if total == 0:
+                #  Redirigir sin mensaje de error
                 return redirect('ver_carrito')
             
             # Crear o actualizar el pago
@@ -984,33 +984,23 @@ def confirmar_pago(request):
                 }
             )
             
-            # Actualizar estado del pedido
+            # Actualizar estado del pedido para que llegue a cocina
             pedido.estado = 'pagado'
             pedido.save()
             
-            # Limpiar carrito de sesión
+            # Limpiar carrito
             request.session['carrito'] = {}
             request.session.modified = True
             
-            # ======================================================
-            # 🔥 LIMPIEZA DE MENSAJES ANTIGUOS (ELIMINA EL ERROR)
-            # ======================================================
-            storage = messages.get_messages(request)
-            storage.used = True  # Esto borra TODOS los mensajes pendientes
-            
-            # Ahora agregamos SOLO los mensajes de éxito
+            #  Solo mensaje de éxito
             messages.success(request, f'Pago de ${total:.2f} verificado exitosamente.')
-            messages.success(request, f'Pedido #{pedido.id} confirmado por ${total:.2f}')
-            
             return redirect('comprobante_pago', pago_id=pago.id)
             
         except Exception as e:
-            # Cualquier error, redirigir sin mensaje
+            #  No mostrar error, solo redirigir
             return redirect('ver_carrito')
     
-    # Si no es POST, redirigir
     return redirect('ver_carrito')
-
 
 @cliente_required
 def comprobante_pago(request, pago_id):
@@ -1018,8 +1008,7 @@ def comprobante_pago(request, pago_id):
         pago = Pago.objects.get(id=pago_id)
         return render(request, 'comprobante.html', {'pago': pago})
     except Pago.DoesNotExist:
-        # No mostrar error, solo redirigir
-        return redirect('ver_carrito') 
+        return redirect('ver_carrito')  
 
 @cliente_required
 def seguimiento_pedido(request, pedido_id):
