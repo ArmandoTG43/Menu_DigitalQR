@@ -15,11 +15,15 @@
             {% csrf_token %}
             
             <!-- ===== CAMPO OCULTO PARA INGREDIENTES EXISTENTES ===== -->
-            <input type="hidden" id="ingredientes-data" value='[
-                {% for ing in form.instance.ingredientes.all %}
-                    {"nombre": "{{ ing.nombre }}", "precio": "{{ ing.precio }}"}{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ]'>
+            {% if form.instance.pk %}
+                <input type="hidden" id="ingredientes-data" value='[
+                    {% for ing in form.instance.ingredientes.all %}
+                        {"nombre": "{{ ing.nombre }}", "precio": "{{ ing.precio }}"}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]'>
+            {% else %}
+                <input type="hidden" id="ingredientes-data" value='[]'>
+            {% endif %}
             
             <div class="form-grid">
                 <div class="form-group">
