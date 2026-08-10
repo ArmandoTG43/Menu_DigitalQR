@@ -236,17 +236,14 @@ def lista_mesas(request):
     if request.method == 'POST':
         numero = request.POST.get('numero')
         if numero:
-            if Mesa.objects.filter(numero=numero).exists():
-                messages.error(request, f' Ya existe una mesa con el número {numero}.')
-            else:
+            # Solo crea la mesa si no existe, sin mostrar nada
+            if not Mesa.objects.filter(numero=numero).exists():
                 Mesa.objects.create(numero=numero)
-                messages.success(request, f' Mesa {numero} creada exitosamente.')
-        else:
-            messages.error(request, ' Ingresa un número de mesa válido.')
         return redirect('lista_mesas')
     
     mesas = Mesa.objects.all()
     return render(request, 'mesas.html', {'mesas': mesas})
+
 @admin_required
 def eliminar_mesa(request, id):
     mesa = get_object_or_404(Mesa, id=id)

@@ -426,9 +426,14 @@ document.addEventListener('DOMContentLoaded', function() {
     display: block;
     color: #f59e0b;
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     font-size: 14px;
     letter-spacing: 0.5px;
+    line-height: 1.5;
+    min-height: 22px;
+    height: auto;
+    overflow: visible;
+    padding: 2px 0;
 }
 
 .form-row {
@@ -439,12 +444,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .form-control {
     width: 100%;
+    height: 54px;
     padding: 12px 16px;
     border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.15);
     background: rgba(255,255,255,0.08);
     color: white;
     font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
     transition: all 0.3s ease;
 }
 
