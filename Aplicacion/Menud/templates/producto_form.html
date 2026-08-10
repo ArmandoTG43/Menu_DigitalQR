@@ -14,12 +14,15 @@
         <form id="form-menu" method="POST" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             
-            <!-- ===== CAMPO OCULTO PARA INGREDIENTES EXISTENTES ===== -->
-            <input type="hidden" id="ingredientes-data" value='[
-                {% for ing in form.instance.ingredientes.all %}
-                    {"nombre": "{{ ing.nombre }}", "precio": "{{ ing.precio }}"}{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ]'>
+            {% if form.instance.pk %}
+                <input type="hidden" id="ingredientes-data" value='[
+                    {% for ing in form.instance.ingredientes.all %}
+                        {"nombre": "{{ ing.nombre }}", "precio": "{{ ing.precio }}"}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]'>
+            {% else %}
+                <input type="hidden" id="ingredientes-data" value='[]'>
+            {% endif %}
             
             <div class="form-grid">
                 <div class="form-group">
@@ -77,15 +80,12 @@
                     </div>
                 </div>
 
-                <!-- ===== INGREDIENTES ===== -->
                 <div class="form-group full">
                     <label><i class="fa-solid fa-carrot"></i> Ingredientes</label>
                     <p style="color:#6b7280; font-size:13px; margin-bottom:10px;">
                         Agrega los ingredientes que el cliente puede elegir para personalizar su plato
                     </p>
-                    <div id="ingredientes-container">
-                        <!-- Las filas se generan con JavaScript -->
-                    </div>
+                    <div id="ingredientes-container"></div>
                     <button type="button" class="btn-add-ingrediente" onclick="agregarFilaIngrediente()">
                         <i class="fa-solid fa-plus"></i> Agregar ingrediente
                     </button>
@@ -93,7 +93,6 @@
                         Los ingredientes existentes se cargarán automáticamente al editar
                     </small>
                 </div>
-                <!-- ===== FIN INGREDIENTES ===== -->
 
             </div>
 
@@ -291,7 +290,6 @@ select {
     background-size: 18px;
 }
 
-/* ===== INGREDIENTES ===== */
 .ingrediente-row {
     display: flex;
     gap: 10px;
@@ -414,10 +412,6 @@ select {
 </style>
 
 <script>
-// ============================================================
-// INGREDIENTES DINÁMICOS
-// ============================================================
-
 function agregarFilaIngrediente(nombre = '', precio = '') {
     const container = document.getElementById('ingredientes-container');
     const row = document.createElement('div');
@@ -466,15 +460,10 @@ function cargarIngredientesExistentes() {
     });
 }
 
-// ============================================================
-// VALIDACIÓN COMPLETA CON JAVASCRIPT PURO (SIN JQUERY)
-// ============================================================
 document.addEventListener("DOMContentLoaded", function() {
 
-    // ---------- CARGAR INGREDIENTES EXISTENTES ----------
     cargarIngredientesExistentes();
 
-    // ---------- DROPZONE PARA IMAGEN ----------
     const dropZone = document.getElementById("drop-zone");
     const dropText = document.getElementById("drop-text");
     const dropSubtext = document.getElementById("drop-subtext");
@@ -527,7 +516,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // ---------- VALIDACIÓN DEL FORMULARIO ----------
     const form = document.getElementById("form-menu");
     if (!form) return;
 
@@ -544,7 +532,6 @@ document.addEventListener("DOMContentLoaded", function() {
         let isValid = true;
         let firstErrorElement = null;
 
-        // 1. Validar NOMBRE
         const nombre = document.getElementById("id_nombre");
         const nombreVal = nombre.value.trim();
         if (nombreVal.length === 0) {
@@ -561,7 +548,6 @@ document.addEventListener("DOMContentLoaded", function() {
             if (!firstErrorElement) firstErrorElement = nombre;
         }
 
-        // 2. Validar PRECIO
         const precio = document.getElementById("id_precio");
         const precioVal = parseFloat(precio.value);
         if (isNaN(precioVal) || precioVal <= 0) {
@@ -570,7 +556,6 @@ document.addEventListener("DOMContentLoaded", function() {
             if (!firstErrorElement) firstErrorElement = precio;
         }
 
-        // 3. Validar CATEGORÍA
         const categoria = document.getElementById("id_categoria");
         if (categoria.value === "") {
             showError(categoria, "Debes seleccionar una categoría.");
@@ -578,7 +563,6 @@ document.addEventListener("DOMContentLoaded", function() {
             if (!firstErrorElement) firstErrorElement = categoria;
         }
 
-        // 4. Validar DESCRIPCIÓN
         const descripcion = document.getElementById("id_descripcion");
         const descVal = descripcion.value.trim();
         if (descVal.length === 0) {
@@ -591,7 +575,6 @@ document.addEventListener("DOMContentLoaded", function() {
             if (!firstErrorElement) firstErrorElement = descripcion;
         }
 
-        // 5. Validar IMAGEN
         const imagen = document.getElementById("file-input");
         if (imagen.files && imagen.files.length > 0) {
             const file = imagen.files[0];
@@ -608,7 +591,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
 
-        // 6. Validar INGREDIENTES (al menos uno con nombre y precio)
         const ingredientesNombres = document.querySelectorAll('.ingrediente-nombre');
         const ingredientesPrecios = document.querySelectorAll('.ingrediente-precio');
         let hasValidIngrediente = false;
@@ -660,7 +642,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // ---------- FUNCIONES AUXILIARES ----------
     function showError(element, message) {
         element.classList.add("error");
         let parent = element.parentNode;
