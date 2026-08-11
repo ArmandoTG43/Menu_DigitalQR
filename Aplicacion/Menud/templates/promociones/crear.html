@@ -8,10 +8,11 @@
 <div class="container" style="padding-top: 40px;">
     
     <div class="form-header">
-        <h2><i class="fa-solid fa-pen-to-square"></i> Crear Promoción</h2>
-        <p>Actualiza la información de la promoción</p>
+        <h2><i class="fa-solid fa-pen-to-square"></i> {% if promocion %}Editar{% else %}Crear{% endif %} Promoción</h2>
+        <p>{% if promocion %}Actualiza la información de la promoción{% else %}Completa los datos para crear una nueva promoción{% endif %}</p>
     </div>
 
+    <!-- Mensajes de error del sistema -->
     {% if messages %}
         <div style="margin-bottom: 20px;">
             {% for message in messages %}
@@ -22,19 +23,27 @@
         </div>
     {% endif %}
 
+    <!-- Alerta para errores de JavaScript -->
     <div id="js-error-alert" style="display: none; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; font-weight: bold; background: rgba(239,68,68,0.2); border: 1px solid #ef4444; color: #fca5a5;">
         <i class="fa-solid fa-triangle-exclamation"></i> <span id="js-error-msg"></span>
     </div>
 
     <div class="form-card">
-        <form method="POST" enctype="multipart/form-data" id="form-promocion" onsubmit="return validarFormulario()">
+        <form method="POST" enctype="multipart/form-data" id="form-promocion" onsubmit="return validarFormulario(event)">
             {% csrf_token %}
+            
+            <!-- 🔥 CAMPO OCULTO CON EL ID DE LA PROMOCIÓN (para edición) -->
+            {% if promocion %}
+                <input type="hidden" id="promocion_id" value="{{ promocion.id }}">
+            {% else %}
+                <input type="hidden" id="promocion_id" value="">
+            {% endif %}
             
             <div class="form-group">
                 <label for="nombre"><i class="fa-solid fa-heading"></i> Nombre de la Promoción *</label>
                 <input type="text" name="nombre" id="nombre" class="form-control" value="{{ promocion.nombre }}" required>
                 <small id="nombreError" style="color: #fca5a5; display: none; margin-top: 4px;">
-                    <i class="fa-solid fa-circle-exclamation"></i> El nombre debe tener al menos 3 caracteres
+                    <i class="fa-solid fa-circle-exclamation"></i> <span id="nombreErrorMsg">El nombre debe tener al menos 3 caracteres</span>
                 </small>
             </div>
             
@@ -106,7 +115,7 @@
                 </small>
             </div>
             
-            <!-- ==========  CHECKBOX ACTIVO - CORREGIDO ========== -->
+            <!-- Checkbox Activo -->
             <div class="form-group" style="margin-top: 15px;">
                 <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 15px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
                     <input type="checkbox" name="activo" id="activo" {% if promocion.activo %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #22c55e; cursor: pointer;">
@@ -119,7 +128,6 @@
                     <i class="fa-solid fa-info-circle"></i> Desmarca esta opción para ocultar la promoción a los clientes
                 </small>
             </div>
-            <!-- ====================================================== -->
             
             <div class="form-actions">
                 <button type="submit" class="btn-save">
@@ -143,15 +151,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const nombre = document.getElementById('nombre');
     const descripcion = document.getElementById('descripcion');
     const imagen = document.getElementById('imagen');
+    const promocionId = document.getElementById('promocion_id').value;
+
+    // ============================================================
+    // 🔥 VALIDACIÓN DE NOMBRE DUPLICADO (ASÍNCRONA)
+    // ============================================================
+    async function verificarNombreDuplicado(nombreVal) {
+        if (nombreVal.trim().length < 3) return false; // no validar si es muy corto
+        
+        // Construir URL con parámetros
+        let url = '/promociones/verificar_nombre/';
+        const params = new URLSearchParams({
+            nombre: nombreVal.trim()
+        });
+        if (promocionId) {
+            params.append('excluir_id', promocionId);
+        }
+        url += '?' + params.toString();
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.existe; // true si ya existe
+        } catch (error) {
+            console.error('Error al verificar nombre:', error);
+            return false; // En caso de error, dejar pasar (pero mostrará error de red)
+        }
+    }
 
     // ========== VALIDACIÓN EN TIEMPO REAL ==========
-
-    // 1. Validar nombre (mínimo 3 caracteres)
     nombre.addEventListener('input', function() {
         const error = document.getElementById('nombreError');
-        if (this.value.trim().length < 3 && this.value.trim() !== '') {
+        const errorMsg = document.getElementById('nombreErrorMsg');
+        const val = this.value.trim();
+        
+        if (val.length < 3 && val !== '') {
             error.style.display = 'block';
+            errorMsg.textContent = 'El nombre debe tener al menos 3 caracteres';
             this.style.borderColor = '#ef4444';
+            return;
+        } else if (val.length >= 3) {
+            // Comprobar duplicado de forma asíncrona (con debounce)
+            clearTimeout(this._debounceTimer);
+            this._debounceTimer = setTimeout(async () => {
+                const existe = await verificarNombreDuplicado(val);
+                if (existe) {
+                    error.style.display = 'block';
+                    errorMsg.textContent = 'Ya existe una promoción con ese nombre.';
+                    this.style.borderColor = '#ef4444';
+                } else {
+                    error.style.display = 'none';
+                    this.style.borderColor = '';
+                }
+            }, 500);
         } else {
             error.style.display = 'none';
             this.style.borderColor = '';
@@ -249,12 +301,11 @@ document.addEventListener('DOMContentLoaded', function() {
     imagen.addEventListener('change', function() {
         const error = document.getElementById('imagenError');
         if (this.files.length > 0) {
-            const fileSize = this.files[0].size / 1024 / 1024; // Convertir a MB
+            const fileSize = this.files[0].size / 1024 / 1024;
             if (fileSize > 5) {
                 error.style.display = 'block';
                 this.style.borderColor = '#ef4444';
-                this.value = ''; // Limpiar el input
-                // Mostrar mensaje de error
+                this.value = '';
                 const jsAlert = document.getElementById('js-error-alert');
                 const jsMsg = document.getElementById('js-error-msg');
                 jsMsg.textContent = 'La imagen no debe exceder los 5MB';
@@ -262,7 +313,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 error.style.display = 'none';
                 this.style.borderColor = '';
-                // Ocultar alerta si estaba visible
                 document.getElementById('js-error-alert').style.display = 'none';
             }
         }
@@ -279,7 +329,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('valor_help').textContent = "Monto en dólares ($)";
             valorDescuento.placeholder = "Ej: 15.00";
         }
-        // Re-validar el valor cuando cambia el tipo
         validarValorDescuento();
     });
 
@@ -287,12 +336,10 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         validarValorDescuento();
         validarFechas();
-        // Validar nombre si existe
         if (nombre.value.trim().length > 0 && nombre.value.trim().length < 3) {
             document.getElementById('nombreError').style.display = 'block';
             nombre.style.borderColor = '#ef4444';
         }
-        // Validar descripción si existe
         if (descripcion.value.trim().length > 0 && descripcion.value.trim().length < 10) {
             document.getElementById('descError').style.display = 'block';
             descripcion.style.borderColor = '#ef4444';
@@ -300,18 +347,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 
     // ========== VALIDACIÓN AL ENVIAR ==========
-    window.validarFormulario = function() {
+    window.validarFormulario = async function(event) {
+        // Prevenir el envío inmediato
+        if (event) event.preventDefault();
+        
         // Ocultar alerta general
         document.getElementById('js-error-alert').style.display = 'none';
         let esValido = true;
         let mensajes = [];
 
-        // Validar nombre
-        if (nombre.value.trim().length < 3) {
+        // Validar nombre (incluyendo duplicado)
+        const nombreVal = nombre.value.trim();
+        if (nombreVal.length < 3) {
             mensajes.push('El nombre debe tener al menos 3 caracteres');
             document.getElementById('nombreError').style.display = 'block';
+            document.getElementById('nombreErrorMsg').textContent = 'El nombre debe tener al menos 3 caracteres';
             nombre.style.borderColor = '#ef4444';
             esValido = false;
+        } else {
+            // Verificar duplicado (síncrono esperando la respuesta)
+            const existe = await verificarNombreDuplicado(nombreVal);
+            if (existe) {
+                mensajes.push('Ya existe una promoción con ese nombre.');
+                document.getElementById('nombreError').style.display = 'block';
+                document.getElementById('nombreErrorMsg').textContent = 'Ya existe una promoción con ese nombre.';
+                nombre.style.borderColor = '#ef4444';
+                esValido = false;
+            }
         }
 
         // Validar descripción (si tiene contenido)
@@ -351,15 +413,15 @@ document.addEventListener('DOMContentLoaded', function() {
             jsMsg.textContent = mensajes.join('. ');
             jsAlert.style.display = 'block';
             
-            // Enfocar el primer campo con error
             const primerError = document.querySelector('.form-control[style*="border-color: rgb(239, 68, 68)"]');
             if (primerError) {
                 primerError.focus();
             }
-            
             return false;
         }
 
+        // Si todo es válido, enviar el formulario
+        form.submit();
         return true;
     };
 });

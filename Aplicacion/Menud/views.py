@@ -1,5 +1,6 @@
 from datetime import datetime
 from time import timezone
+from django.core.mail import send_mail
 from django.utils import timezone
 import stripe
 from django.db import connection, transaction
@@ -1955,3 +1956,40 @@ def api_ingredientes(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id)
     ingredientes = producto.ingredientes.filter(activo=True).values('id', 'nombre', 'precio')
     return JsonResponse(list(ingredientes), safe=False)
+
+
+def prueba_correo(request):
+    try:
+        resultado = send_mail(
+            'Prueba de correo - Menú Digital',
+            'Este es un correo de prueba enviado desde Render.',
+            settings.DEFAULT_FROM_EMAIL,
+            ['luistoaquiza108@gmail.com'],
+            fail_silently=False,
+        )
+
+        return HttpResponse(
+            f"Correo enviado correctamente. Resultado: {resultado}"
+        )
+
+    except Exception as e:
+        return HttpResponse(
+            f"ERROR AL ENVIAR CORREO:<br><br>{e}"
+        )
+
+def verificar_nombre_promocion(request):
+    """
+    Endpoint AJAX para verificar si un nombre de promoción ya existe.
+    Parámetros GET: ?nombre=...&excluir_id=...
+    """
+    nombre = request.GET.get('nombre', '').strip()
+    excluir_id = request.GET.get('excluir_id')
+    
+    if not nombre:
+        return JsonResponse({'existe': False})
+    
+    qs = Promocion.objects.filter(nombre__iexact=nombre)
+    if excluir_id:
+        qs = qs.exclude(id=excluir_id)
+    
+    return JsonResponse({'existe': qs.exists()})

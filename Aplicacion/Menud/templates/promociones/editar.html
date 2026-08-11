@@ -27,14 +27,17 @@
     </div>
 
     <div class="form-card">
-        <form method="POST" enctype="multipart/form-data" id="form-promocion" onsubmit="return validarFormulario()">
+        <form method="POST" enctype="multipart/form-data" id="form-promocion" onsubmit="return validarFormulario(event)">
             {% csrf_token %}
+            
+            <!-- 🔥 CAMPO OCULTO CON EL ID DE LA PROMOCIÓN PARA EXCLUIRLA -->
+            <input type="hidden" id="promocion_id" value="{{ promocion.id }}">
             
             <div class="form-group">
                 <label for="nombre"><i class="fa-solid fa-heading"></i> Nombre de la Promoción *</label>
                 <input type="text" name="nombre" id="nombre" class="form-control" value="{{ promocion.nombre }}" required>
                 <small id="nombreError" style="color: #fca5a5; display: none; margin-top: 4px;">
-                    <i class="fa-solid fa-circle-exclamation"></i> El nombre debe tener al menos 3 caracteres
+                    <i class="fa-solid fa-circle-exclamation"></i> <span id="nombreErrorMsg">El nombre debe tener al menos 3 caracteres</span>
                 </small>
             </div>
             
@@ -106,9 +109,18 @@
                 </small>
             </div>
             
-            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" name="activo" id="activo" {% if promocion.activo %}checked{% endif %}>
-                <label for="activo" style="margin: 0; color: white; cursor: pointer;"> Estado Activo</label>
+            <!-- Checkbox Activo -->
+            <div class="form-group" style="margin-top: 15px;">
+                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 10px 15px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+                    <input type="checkbox" name="activo" id="activo" {% if promocion.activo %}checked{% endif %} style="width: 18px; height: 18px; accent-color: #22c55e; cursor: pointer;">
+                    <span style="color: white; font-weight: 500; font-size: 15px;">
+                        <i class="fa-solid fa-toggle-on" style="color: #22c55e; margin-right: 8px;"></i> 
+                        Promoción Activa
+                    </span>
+                </label>
+                <small style="color: rgba(255,255,255,0.4); margin-top: 4px;">
+                    <i class="fa-solid fa-info-circle"></i> Desmarca esta opción para ocultar la promoción a los clientes
+                </small>
             </div>
             
             <div class="form-actions">
@@ -133,15 +145,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const nombre = document.getElementById('nombre');
     const descripcion = document.getElementById('descripcion');
     const imagen = document.getElementById('imagen');
+    const promocionId = document.getElementById('promocion_id').value;
+
+    // ============================================================
+    // 🔥 VALIDACIÓN DE NOMBRE DUPLICADO (ASÍNCRONA)
+    // ============================================================
+    async function verificarNombreDuplicado(nombreVal) {
+        if (nombreVal.trim().length < 3) return false; // no validar si es muy corto
+        
+        // Construir URL con parámetros
+        let url = '/promociones/verificar_nombre/';
+        const params = new URLSearchParams({
+            nombre: nombreVal.trim()
+        });
+        if (promocionId) {
+            params.append('excluir_id', promocionId);
+        }
+        url += '?' + params.toString();
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.existe; // true si ya existe
+        } catch (error) {
+            console.error('Error al verificar nombre:', error);
+            return false; // En caso de error, dejar pasar (pero mostrará error de red)
+        }
+    }
 
     // ========== VALIDACIÓN EN TIEMPO REAL ==========
-
-    // 1. Validar nombre (mínimo 3 caracteres)
     nombre.addEventListener('input', function() {
         const error = document.getElementById('nombreError');
-        if (this.value.trim().length < 3 && this.value.trim() !== '') {
+        const errorMsg = document.getElementById('nombreErrorMsg');
+        const val = this.value.trim();
+        
+        if (val.length < 3 && val !== '') {
             error.style.display = 'block';
+            errorMsg.textContent = 'El nombre debe tener al menos 3 caracteres';
             this.style.borderColor = '#ef4444';
+            return;
+        } else if (val.length >= 3) {
+            // Comprobar duplicado de forma asíncrona (con debounce)
+            clearTimeout(this._debounceTimer);
+            this._debounceTimer = setTimeout(async () => {
+                const existe = await verificarNombreDuplicado(val);
+                if (existe) {
+                    error.style.display = 'block';
+                    errorMsg.textContent = 'Ya existe una promoción con ese nombre.';
+                    this.style.borderColor = '#ef4444';
+                } else {
+                    error.style.display = 'none';
+                    this.style.borderColor = '';
+                }
+            }, 500);
         } else {
             error.style.display = 'none';
             this.style.borderColor = '';
@@ -290,18 +346,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 
     // ========== VALIDACIÓN AL ENVIAR ==========
-    window.validarFormulario = function() {
+    window.validarFormulario = async function(event) {
+        // Prevenir el envío inmediato
+        if (event) event.preventDefault();
+        
         // Ocultar alerta general
         document.getElementById('js-error-alert').style.display = 'none';
         let esValido = true;
         let mensajes = [];
 
-        // Validar nombre
-        if (nombre.value.trim().length < 3) {
+        // Validar nombre (incluyendo duplicado)
+        const nombreVal = nombre.value.trim();
+        if (nombreVal.length < 3) {
             mensajes.push('El nombre debe tener al menos 3 caracteres');
             document.getElementById('nombreError').style.display = 'block';
+            document.getElementById('nombreErrorMsg').textContent = 'El nombre debe tener al menos 3 caracteres';
             nombre.style.borderColor = '#ef4444';
             esValido = false;
+        } else {
+            // Verificar duplicado (síncrono esperando la respuesta)
+            const existe = await verificarNombreDuplicado(nombreVal);
+            if (existe) {
+                mensajes.push('Ya existe una promoción con ese nombre.');
+                document.getElementById('nombreError').style.display = 'block';
+                document.getElementById('nombreErrorMsg').textContent = 'Ya existe una promoción con ese nombre.';
+                nombre.style.borderColor = '#ef4444';
+                esValido = false;
+            }
         }
 
         // Validar descripción (si tiene contenido)
@@ -350,13 +421,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
 
+        // Si todo es válido, enviar el formulario
+        form.submit();
         return true;
     };
 });
 </script>
 
 <style>
-/* ========== MISMOS ESTILOS QUE CREAR ========== */
+/* ========== ESTILOS ========== */
 #banner {
     position: fixed;
     top: 0;
@@ -377,7 +450,6 @@ document.addEventListener('DOMContentLoaded', function() {
     margin: 0 auto;
     padding: 20px;
 }
-
 
 .form-header {
     text-align: center;
