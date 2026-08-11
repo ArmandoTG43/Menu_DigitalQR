@@ -314,30 +314,41 @@ def nombre_producto_existe(nombre, id_excluir=None):
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import user_passes_test
 from .forms import ProductoForm
 from .models import Producto, Categoria, Ingrediente
 
 
-@admin_required
+# ============================================
+# DECORADOR ADMIN
+# ============================================
+def admin_required(view_func):
+    return user_passes_test(
+        lambda u: u.is_authenticated and u.rol == 'admin',
+        login_url='login'
+    )(view_func)
+
+
+# ============================================
+# FUNCIÓN VALIDAR NOMBRE DUPLICADO
+# ============================================
 def nombre_producto_existe(nombre, id_excluir=None):
-    """
-    Retorna True si ya existe un producto con ese nombre (insensible a mayúsculas).
-    id_excluir: ID del producto que se está editando (para ignorarlo).
-    """
     qs = Producto.objects.filter(nombre__iexact=nombre)
     if id_excluir:
         qs = qs.exclude(id=id_excluir)
     return qs.exists()
 
 
+# ============================================
+# VISTA AGREGAR PRODUCTO (con validaciones de precio)
+# ============================================
 @admin_required
 def agregar_producto(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre', '').strip()
         precio_str = request.POST.get('precio', '')
         
-        # ===== 1. VALIDACIÓN DE NOMBRE DUPLICADO =====
+        # ===== 1. VALIDACIÓN NOMBRE DUPLICADO =====
         if nombre_producto_existe(nombre):
             messages.error(request, f'Ya existe un plato con el nombre "{nombre}".')
             form = ProductoForm(request.POST, request.FILES)
@@ -347,7 +358,7 @@ def agregar_producto(request):
                 'categorias': categorias
             })
         
-        # ===== 2. VALIDACIÓN DE PRECIO DEL PLATO (máx $30) =====
+        # ===== 2. VALIDACIÓN PRECIO DEL PLATO (máx $30) =====
         try:
             precio = float(precio_str)
             if precio <= 0:
@@ -375,7 +386,7 @@ def agregar_producto(request):
                 'categorias': categorias
             })
         
-        # ===== 3. VALIDACIÓN DE PRECIO DE INGREDIENTES (máx $5) =====
+        # ===== 3. VALIDACIÓN PRECIO DE INGREDIENTES (máx $5) =====
         nombres_ing = request.POST.getlist('ingredientes_nombre[]')
         precios_ing = request.POST.getlist('ingredientes_precio[]')
         
@@ -408,7 +419,7 @@ def agregar_producto(request):
                         'categorias': categorias
                     })
         
-        # ===== SI TODAS LAS VALIDACIONES SON CORRECTAS =====
+        # ===== SI TODO ES VÁLIDO, GUARDAR =====
         form = ProductoForm(request.POST, request.FILES)
         if form.is_valid():
             producto = form.save()
@@ -441,6 +452,10 @@ def agregar_producto(request):
         'categorias': categorias
     })
 
+
+# ============================================
+# VISTA EDITAR PRODUCTO (con validaciones de precio)
+# ============================================
 @admin_required
 def editar_producto(request, id):
     producto = get_object_or_404(Producto, id=id)
@@ -449,13 +464,13 @@ def editar_producto(request, id):
         nombre = request.POST.get('nombre', '').strip()
         precio_str = request.POST.get('precio', '')
         
-        # ===== 1. VALIDACIÓN DE NOMBRE DUPLICADO (excluyendo este producto) =====
+        # ===== 1. VALIDACIÓN NOMBRE DUPLICADO (excluyendo este producto) =====
         if nombre_producto_existe(nombre, id_excluir=producto.id):
             messages.error(request, f'Ya existe otro plato con el nombre "{nombre}".')
             form = ProductoForm(request.POST, request.FILES, instance=producto)
             return render(request, 'producto_form.html', {'form': form})
         
-        # ===== 2. VALIDACIÓN DE PRECIO DEL PLATO (máx $30) =====
+        # ===== 2. VALIDACIÓN PRECIO DEL PLATO (máx $30) =====
         try:
             precio = float(precio_str)
             if precio <= 0:
@@ -471,7 +486,7 @@ def editar_producto(request, id):
             form = ProductoForm(request.POST, request.FILES, instance=producto)
             return render(request, 'producto_form.html', {'form': form})
         
-        # ===== 3. VALIDACIÓN DE PRECIO DE INGREDIENTES (máx $5) =====
+        # ===== 3. VALIDACIÓN PRECIO DE INGREDIENTES (máx $5) =====
         nombres_ing = request.POST.getlist('ingredientes_nombre[]')
         precios_ing = request.POST.getlist('ingredientes_precio[]')
         
@@ -492,7 +507,7 @@ def editar_producto(request, id):
                     form = ProductoForm(request.POST, request.FILES, instance=producto)
                     return render(request, 'producto_form.html', {'form': form})
         
-        # ===== SI TODAS LAS VALIDACIONES SON CORRECTAS =====
+        # ===== SI TODO ES VÁLIDO, GUARDAR =====
         form = ProductoForm(request.POST, request.FILES, instance=producto)
         if form.is_valid():
             producto = form.save()
