@@ -1958,25 +1958,6 @@ def api_ingredientes(request, producto_id):
     return JsonResponse(list(ingredientes), safe=False)
 
 
-def prueba_correo(request):
-    try:
-        resultado = send_mail(
-            'Prueba de correo - Menú Digital',
-            'Este es un correo de prueba enviado desde Render.',
-            settings.DEFAULT_FROM_EMAIL,
-            ['luistoaquiza108@gmail.com'],
-            fail_silently=False,
-        )
-
-        return HttpResponse(
-            f"Correo enviado correctamente. Resultado: {resultado}"
-        )
-
-    except Exception as e:
-        return HttpResponse(
-            f"ERROR AL ENVIAR CORREO:<br><br>{e}"
-        )
-
 def verificar_nombre_promocion(request):
     """
     Endpoint AJAX para verificar si un nombre de promoción ya existe.

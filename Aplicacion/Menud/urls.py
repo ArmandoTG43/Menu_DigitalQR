@@ -118,7 +118,6 @@ urlpatterns = [
 
     path('agregar-carrito-personalizado/', views.agregar_carrito_personalizado, name='agregar_carrito_personalizado'),
     path('api/ingredientes/<int:producto_id>/', views.api_ingredientes, name='api_ingredientes'),
-    path('prueba-correo/', views.prueba_correo, name='prueba_correo'),
     path('promociones/verificar_nombre/', views.verificar_nombre_promocion, name='verificar_nombre_promocion'),
 ]
 
