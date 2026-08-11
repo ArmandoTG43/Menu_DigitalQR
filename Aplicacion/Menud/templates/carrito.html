@@ -143,11 +143,15 @@
                         
                         <div class="form-group">
                             <label for="hora_entrega"> Hora de entrega</label>
-                            <input type="time" name="hora_entrega" id="hora_entrega" class="form-control">
+                            <input type="time" name="hora_entrega" id="hora_entrega" class="form-control" step="300">
                             <small id="horaError" class="error-msg" style="display:none; color:#ef4444; font-size:12px;">
-                                <i class="fa-regular fa-circle-exclamation"></i> Selecciona una hora válida (8:00 - 22:00)
+                                <i class="fa-regular fa-circle-exclamation"></i> <span id="horaErrorMsg"></span>
                             </small>
-                            <small>Si no seleccionas hora, lo enviaremos lo más pronto posible</small>
+                            <small style="color: #9ca3af; font-size: 11px;">
+                                <i class="fa-solid fa-info-circle"></i> 
+                                Horario permitido: <strong>4:00 PM - 10:00 PM</strong>. 
+                                No se permite hora anterior a la actual.
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -794,6 +798,69 @@ document.addEventListener('DOMContentLoaded', function() {
         local.checked = true;
         document.querySelector('.opcion-entrega:has(#entrega_local)')?.classList.add('seleccionada');
     }
+
+    // ============================================================
+    // 🔥 VALIDACIÓN DE HORA (tiempo real)
+    // ============================================================
+    const horaInput = document.getElementById('hora_entrega');
+    if (horaInput) {
+        // Establecer el atributo min dinámicamente para evitar horas pasadas (solo en navegadores compatibles)
+        function setMinHora() {
+            const ahora = new Date();
+            const horas = String(ahora.getHours()).padStart(2, '0');
+            const minutos = String(ahora.getMinutes()).padStart(2, '0');
+            horaInput.min = horas + ':' + minutos;
+        }
+        // Si es hoy y es después de las 16:00, ponemos el min en la hora actual
+        setMinHora();
+
+        horaInput.addEventListener('input', function() {
+            const horaVal = this.value;
+            const errorMsg = document.getElementById('horaErrorMsg');
+            const errorDiv = document.getElementById('horaError');
+
+            if (horaVal === '') {
+                errorDiv.style.display = 'none';
+                this.style.borderColor = '';
+                return;
+            }
+
+            const partes = horaVal.split(':');
+            const horaNum = parseInt(partes[0]);
+            const minutoNum = parseInt(partes[1]);
+
+            // Validar rango: 16:00 - 22:00
+            if (horaNum < 16 || horaNum > 22 || (horaNum === 22 && minutoNum > 0)) {
+                errorDiv.style.display = 'flex';
+                errorMsg.textContent = 'La hora debe estar entre 4:00 PM y 10:00 PM.';
+                this.style.borderColor = '#ef4444';
+                return;
+            }
+
+            // Validar hora actual (solo si es hoy y es después de las 16:00)
+            const ahora = new Date();
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            // Asumimos que la fecha de entrega es hoy (si no, el backend debería validar)
+            // Si la fecha de entrega es hoy, no se puede poner hora anterior a la actual
+            // (Esto se validará mejor en el servidor, pero aquí hacemos una validación básica)
+            const horaActual = ahora.getHours();
+            const minActual = ahora.getMinutes();
+            // Si la hora seleccionada es menor que la actual, mostrar error
+            if (horaNum < horaActual || (horaNum === horaActual && minutoNum < minActual)) {
+                // Solo si la fecha de entrega es hoy (asumimos que es hoy)
+                // Para simplificar, asumimos que todos los pedidos son para hoy
+                errorDiv.style.display = 'flex';
+                errorMsg.textContent = 'No se puede seleccionar una hora anterior a la actual.';
+                this.style.borderColor = '#ef4444';
+                return;
+            }
+
+            // Si todo está bien, ocultar error
+            errorDiv.style.display = 'none';
+            this.style.borderColor = '';
+        });
+    }
 });
 
 // ========== VALIDACIÓN DEL FORMULARIO ==========
@@ -825,16 +892,42 @@ function validarFormulario() {
             esValido = false;
         }
 
-        // Validar hora
+        // ===== VALIDACIÓN DE HORA (más robusta) =====
         const hora = document.getElementById('hora_entrega');
-        if (hora && hora.value !== '') {
-            const horaVal = hora.value;
-            const horaNum = parseInt(horaVal.split(':')[0]);
-            const minutoNum = parseInt(horaVal.split(':')[1]);
-            
-            // Validar que la hora esté entre 8:00 y 22:00
-            if (horaNum < 8 || horaNum > 22 || (horaNum === 22 && minutoNum > 0)) {
-                document.getElementById('horaError').style.display = 'flex';
+        const horaVal = hora.value;
+        const errorDiv = document.getElementById('horaError');
+        const errorMsg = document.getElementById('horaErrorMsg');
+
+        if (horaVal === '') {
+            // Si el usuario no selecciona hora, lo dejamos pasar (se enviará lo más pronto posible)
+            // Pero si queremos obligar, descomentar la siguiente línea:
+            // errorDiv.style.display = 'flex';
+            // errorMsg.textContent = 'Selecciona una hora de entrega.';
+            // hora.style.borderColor = '#ef4444';
+            // esValido = false;
+        } else {
+            const partes = horaVal.split(':');
+            const horaNum = parseInt(partes[0]);
+            const minutoNum = parseInt(partes[1]);
+
+            // Validar rango: 16:00 - 22:00
+            if (horaNum < 16 || horaNum > 22 || (horaNum === 22 && minutoNum > 0)) {
+                errorDiv.style.display = 'flex';
+                errorMsg.textContent = 'La hora debe estar entre 4:00 PM y 10:00 PM.';
+                hora.style.borderColor = '#ef4444';
+                esValido = false;
+            }
+
+            // Validar hora actual (solo si es hoy)
+            const ahora = new Date();
+            const horaActual = ahora.getHours();
+            const minActual = ahora.getMinutes();
+            // Asumimos que el pedido es para hoy (esto debería validarse con fecha)
+            if (horaNum < horaActual || (horaNum === horaActual && minutoNum < minActual)) {
+                // Si la fecha de entrega es hoy, no se puede poner hora anterior
+                // Para simplificar, asumimos hoy. Si se permite otro día, el backend debe validar.
+                errorDiv.style.display = 'flex';
+                errorMsg.textContent = 'No se puede seleccionar una hora anterior a la actual.';
                 hora.style.borderColor = '#ef4444';
                 esValido = false;
             }
@@ -854,61 +947,6 @@ function validarFormulario() {
 
     return true;
 }
-
-// Validación en tiempo real de la hora
-document.addEventListener('DOMContentLoaded', function() {
-    const horaInput = document.getElementById('hora_entrega');
-    if (horaInput) {
-        horaInput.addEventListener('input', function() {
-            const horaVal = this.value;
-            const horaError = document.getElementById('horaError');
-            if (horaVal !== '') {
-                const horaNum = parseInt(horaVal.split(':')[0]);
-                const minutoNum = parseInt(horaVal.split(':')[1]);
-                if (horaNum < 8 || horaNum > 22 || (horaNum === 22 && minutoNum > 0)) {
-                    horaError.style.display = 'flex';
-                    this.style.borderColor = '#ef4444';
-                } else {
-                    horaError.style.display = 'none';
-                    this.style.borderColor = '';
-                }
-            } else {
-                horaError.style.display = 'none';
-                this.style.borderColor = '';
-            }
-        });
-    }
-
-    // Validar dirección en tiempo real
-    const direccionInput = document.getElementById('direccion');
-    if (direccionInput) {
-        direccionInput.addEventListener('input', function() {
-            const dirError = document.getElementById('direccionError');
-            if (this.value.trim() !== '') {
-                dirError.style.display = 'none';
-                this.style.borderColor = '';
-            } else {
-                dirError.style.display = 'flex';
-                this.style.borderColor = '#ef4444';
-            }
-        });
-    }
-
-    // Validar base en tiempo real
-    const baseInput = document.getElementById('base_personalizado');
-    if (baseInput) {
-        baseInput.addEventListener('change', function() {
-            const baseError = document.getElementById('baseError');
-            if (this.value !== '') {
-                baseError.style.display = 'none';
-                this.style.borderColor = '';
-            } else {
-                baseError.style.display = 'flex';
-                this.style.borderColor = '#ef4444';
-            }
-        });
-    }
-});
 </script>
 
 {% endblock %}
