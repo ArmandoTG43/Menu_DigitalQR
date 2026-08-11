@@ -58,6 +58,11 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER
+
+EMAIL_TIMEOUT = 60
+
 # --- Application definition ---
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -169,8 +174,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 BASE_URL = os.getenv('BASE_URL', 'https://ammonium-sliceable-sizzle.ngrok-free.dev')
 
 
-# Configuración de correo con timeout
-EMAIL_TIMEOUT = 60
 try:
     ssl._create_default_https_context = ssl._create_unverified_context
 except AttributeError:

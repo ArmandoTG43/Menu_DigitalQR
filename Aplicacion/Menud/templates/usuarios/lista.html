@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <!-- ===== MENSAJES ===== -->
+    <!-- ===== MENSAJES (opcional) ===== -->
     {% if messages %}
         <div class="messages-container">
             {% for message in messages %}
@@ -48,7 +48,7 @@
                 <i class="fa-solid fa-users" style="color: #22c55e;"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number" id="totalUsuarios">{{ usuarios|length }}</span>
+                <span class="stat-number" id="totalUsuarios">{{ total_usuarios }}</span>
                 <span class="stat-label">Total Usuarios</span>
             </div>
         </div>
@@ -57,9 +57,7 @@
                 <i class="fa-solid fa-user-tie" style="color: #f59e0b;"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number" id="totalAdministradores">
-                    {% for u in usuarios %}{% if u.rol == 'admin' %}{{ forloop.counter }}{% endif %}{% endfor %}
-                </span>
+                <span class="stat-number" id="totalAdministradores">{{ total_administradores }}</span>
                 <span class="stat-label">Administradores</span>
             </div>
         </div>
@@ -68,9 +66,7 @@
                 <i class="fa-solid fa-kitchen-set" style="color: #3b82f6;"></i>
             </div>
             <div class="stat-info">
-                <span class="stat-number" id="totalCocineros">
-                    {% for u in usuarios %}{% if u.rol == 'cocinero' %}{{ forloop.counter }}{% endif %}{% endfor %}
-                </span>
+                <span class="stat-number" id="totalCocineros">{{ total_cocineros }}</span>
                 <span class="stat-label">Cocineros</span>
             </div>
         </div>
@@ -139,8 +135,8 @@
     </div>
 </div>
 
+<!-- ===== ESTILOS ===== -->
 <style>
-/* ===== BANNER ===== */
 #banner {
     position: fixed;
     top: 0;
@@ -162,7 +158,6 @@
     padding: 20px;
 }
 
-/* ===== HEADER ===== */
 .admin-header {
     display: flex;
     justify-content: space-between;
@@ -211,7 +206,6 @@
     box-shadow: 0 8px 30px rgba(231,110,5,0.5);
 }
 
-/* ===== BUSCADOR ===== */
 .buscador-container {
     margin-bottom: 25px;
 }
@@ -247,7 +241,6 @@
     font-size: 15px;
     outline: none;
     font-weight: 400;
-    
 }
 
 .buscador-input::placeholder {
@@ -269,7 +262,6 @@
     color: white;
 }
 
-/* ===== MENSAJES ===== */
 .messages-container {
     margin-bottom: 25px;
 }
@@ -278,7 +270,7 @@
     padding: 14px 20px;
     border-radius: 12px;
     background: rgba(34,197,94,0.12);
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(34,197,94,0.2);
     color: #86efac;
     font-weight: 500;
     display: flex;
@@ -291,7 +283,6 @@
     color: #22c55e;
 }
 
-/* ===== ESTADÍSTICAS ===== */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -307,13 +298,12 @@
     display: flex;
     align-items: center;
     gap: 15px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(255,255,255,0.06);
     transition: 0.3s;
 }
 
 .stat-card:hover {
     background: rgba(255,255,255,0.12);
-    border: 1px solid #cbd5e1;
 }
 
 .stat-icon {
@@ -343,12 +333,11 @@
     font-size: 13px;
 }
 
-/* ===== TABLA ===== */
 .table-container {
     background: rgba(255,255,255,0.06);
     backdrop-filter: blur(12px);
     border-radius: 20px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(255,255,255,0.06);
     overflow-x: auto;
     padding: 5px;
 }
@@ -386,7 +375,6 @@
     border-bottom: none;
 }
 
-/* ===== USER INFO ===== */
 .user-info {
     display: flex;
     align-items: center;
@@ -405,7 +393,6 @@
     font-size: 16px;
 }
 
-/* ===== BADGES ===== */
 .badge-admin {
     background: rgba(245,158,11,0.15);
     color: #f59e0b;
@@ -445,7 +432,6 @@
     border: 1px solid rgba(34,197,94,0.08);
 }
 
-/* ===== ACCIONES ===== */
 .acciones {
     display: flex;
     gap: 8px;
@@ -489,7 +475,6 @@
     transform: scale(1.05);
 }
 
-/* ===== EMPTY ROW ===== */
 .empty-row {
     text-align: center !important;
     padding: 40px 20px !important;
@@ -508,7 +493,6 @@
     margin: 0;
 }
 
-/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .admin-header {
         flex-direction: column;
@@ -564,7 +548,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let cocineros = 0;
 
         filas.forEach(function(fila) {
-            // Saltar fila vacía
             if (fila.classList.contains('empty-row')) {
                 return;
             }
@@ -592,17 +575,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Actualizar estadísticas
         totalUsuarios.textContent = visibles;
         totalAdministradores.textContent = admins;
         totalCocineros.textContent = cocineros;
 
-        // Mostrar/ocultar botón limpiar
         btnLimpiar.style.display = texto !== '' ? 'block' : 'none';
 
-        // Mostrar mensaje si no hay resultados
         let emptyMsg = document.getElementById('emptySearchMessage');
-        const filasVisibles = tabla.querySelectorAll('tr:not([style*="display: none"])');
         
         if (visibles === 0 && filas.length > 0) {
             if (!emptyMsg) {
@@ -631,6 +610,9 @@ document.addEventListener('DOMContentLoaded', function() {
         filtrarUsuarios();
         buscador.focus();
     });
+
+    // 🔥 Ejecuta el filtro al cargar la página para actualizar contadores
+    filtrarUsuarios();
 });
 </script>
 
