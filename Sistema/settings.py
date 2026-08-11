@@ -170,8 +170,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'Sistema/media')  # <--- NUEVO: para archivo
 # --- Default primary key field type ---
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# --- URL base para el sitio (usado en plantillas) ---
-BASE_URL = os.getenv('BASE_URL', 'https://ammonium-sliceable-sizzle.ngrok-free.dev')
+BASE_URL = os.getenv(
+    'BASE_URL',
+    'https://menu-digitalqr.onrender.com'
+)
 
 
 try:

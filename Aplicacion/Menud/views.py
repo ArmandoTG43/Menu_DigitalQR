@@ -300,23 +300,47 @@ def entregar_pedido(request, pedido_id):
         del request.session['pedido_id']
     return redirect('cocina')
 
+
+def nombre_producto_existe(nombre, id_excluir=None):
+    """
+    Retorna True si ya existe un producto con ese nombre (insensible a mayúsculas).
+    id_excluir: ID del producto que se está editando (para ignorarlo).
+    """
+    qs = Producto.objects.filter(nombre__iexact=nombre)
+    if id_excluir:
+        qs = qs.exclude(id=id_excluir)
+    return qs.exists()
+
+
 @admin_required
 def agregar_producto(request):
     if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        
+        # ===== VALIDACIÓN DE NOMBRE DUPLICADO =====
+        if nombre_producto_existe(nombre):
+            messages.error(request, f'Ya existe un plato con el nombre "{nombre}".')
+            # Volver a renderizar el formulario con los datos ingresados
+            form = ProductoForm(request.POST, request.FILES)
+            categorias = Categoria.objects.all()
+            return render(request, 'producto_form.html', {
+                'form': form,
+                'categorias': categorias
+            })
+        
         form = ProductoForm(request.POST, request.FILES)
         if form.is_valid():
             producto = form.save()
             
-            # ===== GUARDAR INGREDIENTES =====
+            # Guardar ingredientes
             nombres = request.POST.getlist('ingredientes_nombre[]')
             precios = request.POST.getlist('ingredientes_precio[]')
-            
-            for nombre, precio in zip(nombres, precios):
-                if nombre.strip() and precio.strip():
+            for nombre_ing, precio in zip(nombres, precios):
+                if nombre_ing.strip() and precio.strip():
                     try:
                         Ingrediente.objects.create(
                             producto=producto,
-                            nombre=nombre.strip(),
+                            nombre=nombre_ing.strip(),
                             precio=float(precio),
                             activo=True
                         )
@@ -325,6 +349,9 @@ def agregar_producto(request):
             
             messages.success(request, 'Plato registrado correctamente')
             return redirect('menu')
+        else:
+            # Si el formulario no es válido, mostrar errores
+            messages.error(request, 'Corrige los errores del formulario.')
     else:
         form = ProductoForm()
     
@@ -334,30 +361,35 @@ def agregar_producto(request):
         'categorias': categorias
     })
 
+
 @admin_required
 def editar_producto(request, id):
     producto = get_object_or_404(Producto, id=id)
     
     if request.method == 'POST':
+        nombre = request.POST.get('nombre', '').strip()
+        
+        # ===== VALIDACIÓN DE NOMBRE DUPLICADO (excluyendo este producto) =====
+        if nombre_producto_existe(nombre, id_excluir=producto.id):
+            messages.error(request, f'Ya existe otro plato con el nombre "{nombre}".')
+            # Volver a renderizar con el formulario
+            form = ProductoForm(request.POST, request.FILES, instance=producto)
+            return render(request, 'producto_form.html', {'form': form})
+        
         form = ProductoForm(request.POST, request.FILES, instance=producto)
         if form.is_valid():
             producto = form.save()
             
-            # ===== GUARDAR INGREDIENTES =====
-            # Eliminar ingredientes existentes
+            # ===== ACTUALIZAR INGREDIENTES =====
             producto.ingredientes.all().delete()
-            
-            # Obtener los ingredientes del POST
             nombres = request.POST.getlist('ingredientes_nombre[]')
             precios = request.POST.getlist('ingredientes_precio[]')
-            
-            # Crear nuevos ingredientes
-            for nombre, precio in zip(nombres, precios):
-                if nombre.strip() and precio.strip():
+            for nombre_ing, precio in zip(nombres, precios):
+                if nombre_ing.strip() and precio.strip():
                     try:
                         Ingrediente.objects.create(
                             producto=producto,
-                            nombre=nombre.strip(),
+                            nombre=nombre_ing.strip(),
                             precio=float(precio),
                             activo=True
                         )
@@ -366,6 +398,8 @@ def editar_producto(request, id):
             
             messages.success(request, 'Plato editado correctamente')
             return redirect('menu')
+        else:
+            messages.error(request, 'Corrige los errores del formulario.')
     else:
         form = ProductoForm(instance=producto)
     
