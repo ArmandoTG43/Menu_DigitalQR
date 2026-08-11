@@ -312,15 +312,34 @@ def nombre_producto_existe(nombre, id_excluir=None):
     return qs.exists()
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
+from .forms import ProductoForm
+from .models import Producto, Categoria, Ingrediente
+
+
+@admin_required
+def nombre_producto_existe(nombre, id_excluir=None):
+    """
+    Retorna True si ya existe un producto con ese nombre (insensible a mayúsculas).
+    id_excluir: ID del producto que se está editando (para ignorarlo).
+    """
+    qs = Producto.objects.filter(nombre__iexact=nombre)
+    if id_excluir:
+        qs = qs.exclude(id=id_excluir)
+    return qs.exists()
+
+
 @admin_required
 def agregar_producto(request):
     if request.method == 'POST':
         nombre = request.POST.get('nombre', '').strip()
+        precio_str = request.POST.get('precio', '')
         
-        # ===== VALIDACIÓN DE NOMBRE DUPLICADO =====
+        # ===== 1. VALIDACIÓN DE NOMBRE DUPLICADO =====
         if nombre_producto_existe(nombre):
             messages.error(request, f'Ya existe un plato con el nombre "{nombre}".')
-            # Volver a renderizar el formulario con los datos ingresados
             form = ProductoForm(request.POST, request.FILES)
             categorias = Categoria.objects.all()
             return render(request, 'producto_form.html', {
@@ -328,20 +347,80 @@ def agregar_producto(request):
                 'categorias': categorias
             })
         
+        # ===== 2. VALIDACIÓN DE PRECIO DEL PLATO (máx $30) =====
+        try:
+            precio = float(precio_str)
+            if precio <= 0:
+                messages.error(request, 'El precio debe ser mayor a 0.')
+                form = ProductoForm(request.POST, request.FILES)
+                categorias = Categoria.objects.all()
+                return render(request, 'producto_form.html', {
+                    'form': form,
+                    'categorias': categorias
+                })
+            if precio > 30:
+                messages.error(request, 'El precio del plato no puede superar los $30.00.')
+                form = ProductoForm(request.POST, request.FILES)
+                categorias = Categoria.objects.all()
+                return render(request, 'producto_form.html', {
+                    'form': form,
+                    'categorias': categorias
+                })
+        except ValueError:
+            messages.error(request, 'Ingresa un precio válido.')
+            form = ProductoForm(request.POST, request.FILES)
+            categorias = Categoria.objects.all()
+            return render(request, 'producto_form.html', {
+                'form': form,
+                'categorias': categorias
+            })
+        
+        # ===== 3. VALIDACIÓN DE PRECIO DE INGREDIENTES (máx $5) =====
+        nombres_ing = request.POST.getlist('ingredientes_nombre[]')
+        precios_ing = request.POST.getlist('ingredientes_precio[]')
+        
+        for nombre_ing, precio_ing in zip(nombres_ing, precios_ing):
+            if nombre_ing.strip() and precio_ing.strip():
+                try:
+                    p = float(precio_ing)
+                    if p <= 0:
+                        messages.error(request, f'El precio del ingrediente "{nombre_ing}" debe ser mayor a 0.')
+                        form = ProductoForm(request.POST, request.FILES)
+                        categorias = Categoria.objects.all()
+                        return render(request, 'producto_form.html', {
+                            'form': form,
+                            'categorias': categorias
+                        })
+                    if p > 5:
+                        messages.error(request, f'El precio del ingrediente "{nombre_ing}" no puede superar los $5.00.')
+                        form = ProductoForm(request.POST, request.FILES)
+                        categorias = Categoria.objects.all()
+                        return render(request, 'producto_form.html', {
+                            'form': form,
+                            'categorias': categorias
+                        })
+                except ValueError:
+                    messages.error(request, f'Ingresa un precio válido para "{nombre_ing}".')
+                    form = ProductoForm(request.POST, request.FILES)
+                    categorias = Categoria.objects.all()
+                    return render(request, 'producto_form.html', {
+                        'form': form,
+                        'categorias': categorias
+                    })
+        
+        # ===== SI TODAS LAS VALIDACIONES SON CORRECTAS =====
         form = ProductoForm(request.POST, request.FILES)
         if form.is_valid():
             producto = form.save()
             
             # Guardar ingredientes
-            nombres = request.POST.getlist('ingredientes_nombre[]')
-            precios = request.POST.getlist('ingredientes_precio[]')
-            for nombre_ing, precio in zip(nombres, precios):
-                if nombre_ing.strip() and precio.strip():
+            for nombre_ing, precio_ing in zip(nombres_ing, precios_ing):
+                if nombre_ing.strip() and precio_ing.strip():
                     try:
                         Ingrediente.objects.create(
                             producto=producto,
                             nombre=nombre_ing.strip(),
-                            precio=float(precio),
+                            precio=float(precio_ing),
                             activo=True
                         )
                     except ValueError:
@@ -350,8 +429,9 @@ def agregar_producto(request):
             messages.success(request, 'Plato registrado correctamente')
             return redirect('menu')
         else:
-            # Si el formulario no es válido, mostrar errores
-            messages.error(request, 'Corrige los errores del formulario.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = ProductoForm()
     
@@ -361,36 +441,71 @@ def agregar_producto(request):
         'categorias': categorias
     })
 
-
 @admin_required
 def editar_producto(request, id):
     producto = get_object_or_404(Producto, id=id)
     
     if request.method == 'POST':
         nombre = request.POST.get('nombre', '').strip()
+        precio_str = request.POST.get('precio', '')
         
-        # ===== VALIDACIÓN DE NOMBRE DUPLICADO (excluyendo este producto) =====
+        # ===== 1. VALIDACIÓN DE NOMBRE DUPLICADO (excluyendo este producto) =====
         if nombre_producto_existe(nombre, id_excluir=producto.id):
             messages.error(request, f'Ya existe otro plato con el nombre "{nombre}".')
-            # Volver a renderizar con el formulario
             form = ProductoForm(request.POST, request.FILES, instance=producto)
             return render(request, 'producto_form.html', {'form': form})
         
+        # ===== 2. VALIDACIÓN DE PRECIO DEL PLATO (máx $30) =====
+        try:
+            precio = float(precio_str)
+            if precio <= 0:
+                messages.error(request, 'El precio debe ser mayor a 0.')
+                form = ProductoForm(request.POST, request.FILES, instance=producto)
+                return render(request, 'producto_form.html', {'form': form})
+            if precio > 30:
+                messages.error(request, 'El precio del plato no puede superar los $30.00.')
+                form = ProductoForm(request.POST, request.FILES, instance=producto)
+                return render(request, 'producto_form.html', {'form': form})
+        except ValueError:
+            messages.error(request, 'Ingresa un precio válido.')
+            form = ProductoForm(request.POST, request.FILES, instance=producto)
+            return render(request, 'producto_form.html', {'form': form})
+        
+        # ===== 3. VALIDACIÓN DE PRECIO DE INGREDIENTES (máx $5) =====
+        nombres_ing = request.POST.getlist('ingredientes_nombre[]')
+        precios_ing = request.POST.getlist('ingredientes_precio[]')
+        
+        for nombre_ing, precio_ing in zip(nombres_ing, precios_ing):
+            if nombre_ing.strip() and precio_ing.strip():
+                try:
+                    p = float(precio_ing)
+                    if p <= 0:
+                        messages.error(request, f'El precio del ingrediente "{nombre_ing}" debe ser mayor a 0.')
+                        form = ProductoForm(request.POST, request.FILES, instance=producto)
+                        return render(request, 'producto_form.html', {'form': form})
+                    if p > 5:
+                        messages.error(request, f'El precio del ingrediente "{nombre_ing}" no puede superar los $5.00.')
+                        form = ProductoForm(request.POST, request.FILES, instance=producto)
+                        return render(request, 'producto_form.html', {'form': form})
+                except ValueError:
+                    messages.error(request, f'Ingresa un precio válido para "{nombre_ing}".')
+                    form = ProductoForm(request.POST, request.FILES, instance=producto)
+                    return render(request, 'producto_form.html', {'form': form})
+        
+        # ===== SI TODAS LAS VALIDACIONES SON CORRECTAS =====
         form = ProductoForm(request.POST, request.FILES, instance=producto)
         if form.is_valid():
             producto = form.save()
             
-            # ===== ACTUALIZAR INGREDIENTES =====
+            # Actualizar ingredientes
             producto.ingredientes.all().delete()
-            nombres = request.POST.getlist('ingredientes_nombre[]')
-            precios = request.POST.getlist('ingredientes_precio[]')
-            for nombre_ing, precio in zip(nombres, precios):
-                if nombre_ing.strip() and precio.strip():
+            for nombre_ing, precio_ing in zip(nombres_ing, precios_ing):
+                if nombre_ing.strip() and precio_ing.strip():
                     try:
                         Ingrediente.objects.create(
                             producto=producto,
                             nombre=nombre_ing.strip(),
-                            precio=float(precio),
+                            precio=float(precio_ing),
                             activo=True
                         )
                     except ValueError:
@@ -399,7 +514,9 @@ def editar_producto(request, id):
             messages.success(request, 'Plato editado correctamente')
             return redirect('menu')
         else:
-            messages.error(request, 'Corrige los errores del formulario.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = ProductoForm(instance=producto)
     

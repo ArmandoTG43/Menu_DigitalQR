@@ -11,6 +11,19 @@
             <p>Completa la información del menú</p>
         </div>
 
+        <!-- ============================================ -->
+        <!-- MENSAJES FLASH                              -->
+        <!-- ============================================ -->
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <form id="form-menu" method="POST" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
             
@@ -35,13 +48,16 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Precio ($)</label>
+                    <label>Precio ($) <span style="color:#ef4444;font-size:12px;">(máx $30)</span></label>
                     <input type="number" 
                            name="precio" 
                            id="id_precio" 
                            step="0.01" 
+                           min="0.01"
+                           max="30"
                            placeholder="15.99"
                            value="{{ form.precio.value|default:'' }}">
+                    <small style="color:#6b7280;font-size:11px;">El precio no puede superar los $30.00</small>
                 </div>
 
                 <div class="form-group full">
@@ -90,7 +106,7 @@
                         <i class="fa-solid fa-plus"></i> Agregar ingrediente
                     </button>
                     <small style="color:#6b7280; font-size:12px; display:block; margin-top:5px;">
-                        Los ingredientes existentes se cargarán automáticamente al editar
+                        Cada ingrediente tiene un precio máximo de $5.00
                     </small>
                 </div>
             </div>
@@ -459,7 +475,7 @@ function agregarFilaIngrediente(nombre = '', precio = '') {
     row.className = 'ingrediente-row';
     row.innerHTML = `
         <input type="text" name="ingredientes_nombre[]" placeholder="Nombre del ingrediente" class="ingrediente-nombre" value="${nombre}">
-        <input type="number" name="ingredientes_precio[]" placeholder="Precio" step="0.01" class="ingrediente-precio" value="${precio}">
+        <input type="number" name="ingredientes_precio[]" placeholder="Precio (máx $5)" step="0.01" min="0.01" max="5" class="ingrediente-precio" value="${precio}">
         <button type="button" class="btn-remove-ingrediente" onclick="eliminarIngrediente(this)">✕</button>
     `;
     container.appendChild(row);
@@ -573,6 +589,7 @@ document.addEventListener("DOMContentLoaded", function() {
         let isValid = true;
         let firstErrorElement = null;
 
+        // ===== VALIDACIÓN NOMBRE =====
         const nombre = document.getElementById("id_nombre");
         const nombreVal = nombre.value.trim();
         if (nombreVal.length === 0) {
@@ -589,14 +606,20 @@ document.addEventListener("DOMContentLoaded", function() {
             if (!firstErrorElement) firstErrorElement = nombre;
         }
 
+        // ===== VALIDACIÓN PRECIO DEL PLATO (máx $30) =====
         const precio = document.getElementById("id_precio");
         const precioVal = parseFloat(precio.value);
         if (isNaN(precioVal) || precioVal <= 0) {
             showError(precio, "El precio debe ser un número mayor a 0.");
             isValid = false;
             if (!firstErrorElement) firstErrorElement = precio;
+        } else if (precioVal > 30) {
+            showError(precio, "El precio no puede superar los $30.00.");
+            isValid = false;
+            if (!firstErrorElement) firstErrorElement = precio;
         }
 
+        // ===== VALIDACIÓN CATEGORÍA =====
         const categoria = document.getElementById("id_categoria");
         if (categoria.value === "") {
             showError(categoria, "Debes seleccionar una categoría.");
@@ -604,6 +627,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if (!firstErrorElement) firstErrorElement = categoria;
         }
 
+        // ===== VALIDACIÓN DESCRIPCIÓN =====
         const descripcion = document.getElementById("id_descripcion");
         const descVal = descripcion.value.trim();
         if (descVal.length === 0) {
@@ -616,6 +640,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if (!firstErrorElement) firstErrorElement = descripcion;
         }
 
+        // ===== VALIDACIÓN IMAGEN =====
         const imagen = document.getElementById("file-input");
         if (imagen.files && imagen.files.length > 0) {
             const file = imagen.files[0];
@@ -632,6 +657,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
 
+        // ===== VALIDACIÓN INGREDIENTES (precio máximo $5) =====
         const ingredientesNombres = document.querySelectorAll('.ingrediente-nombre');
         const ingredientesPrecios = document.querySelectorAll('.ingrediente-precio');
         let hasValidIngrediente = false;
@@ -652,6 +678,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (!firstErrorElement) firstErrorElement = input;
             } else if (isNaN(precioIng) || precioIng <= 0) {
                 showError(ingredientesPrecios[index], "El precio debe ser mayor a 0.");
+                ingredienteError = true;
+                isValid = false;
+                if (!firstErrorElement) firstErrorElement = ingredientesPrecios[index];
+            } else if (precioIng > 5) {
+                // 🔥 VALIDACIÓN: precio máximo $5
+                showError(ingredientesPrecios[index], "El precio del ingrediente no puede superar los $5.00.");
                 ingredienteError = true;
                 isValid = false;
                 if (!firstErrorElement) firstErrorElement = ingredientesPrecios[index];
