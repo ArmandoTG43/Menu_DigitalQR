@@ -1143,7 +1143,7 @@ def confirmar_pago(request):
             storage = messages.get_messages(request)
             storage.used = True
             
-            return redirect('comprobante_pago', pago_id=pago.id)
+            return redirect('seguimiento_pedido', pedido_id=pedido.id)
             
         except Exception:
             return redirect('ver_carrito')
