@@ -35,7 +35,6 @@
 </audio>
 
 <style>
-/* (estilos sin cambios, los mismos que tenías) */
 body {
     margin: 0;
     background: #0f172a;
@@ -437,12 +436,10 @@ function mostrarNotificacion(pedido) {
     }, 5000);
 }
 
-// --- NUEVA FUNCIÓN: convertir fecha UTC a hora local de Ecuador ---
+// Función para formatear fecha a zona horaria de Ecuador
 function formatearFechaLocal(fechaUtc) {
     if (!fechaUtc) return '';
-    // Agregar 'Z' para indicar que es UTC y crear objeto Date
     const fecha = new Date(fechaUtc + 'Z');
-    // Formatear a zona horaria de Ecuador (America/Guayaquil)
     return fecha.toLocaleString('es-EC', {
         timeZone: 'America/Guayaquil',
         year: 'numeric',
@@ -453,81 +450,66 @@ function formatearFechaLocal(fechaUtc) {
         second: '2-digit'
     });
 }
-// --- FIN NUEVA FUNCIÓN ---
 
-// Función para extraer el nombre original de un producto personalizado
+// Función para obtener el nombre original del plato (sin "Personalizado")
 function obtenerNombreOriginal(nombre) {
-    if (!nombre) return '';
-    // Si contiene "Personalizado" o "PERSONALIZADO"
-    if (nombre.toLowerCase().includes('personalizado')) {
-        // Intentar extraer el nombre entre paréntesis (ej: "Personalizado (Hamburguesa)")
+    if (!nombre) return 'Plato';
+    const nombreLower = nombre.trim().toLowerCase();
+    if (nombreLower === 'personalizado') {
+        return 'Plato Personalizado';
+    }
+    if (nombreLower.includes('personalizado')) {
         const match = nombre.match(/\(([^)]+)\)/);
         if (match) {
             return match[1].trim();
         }
-        // Si no hay paréntesis, quitar la palabra "Personalizado" y espacios
         let limpio = nombre.replace(/personalizado/gi, '').trim();
-        // Quitar paréntesis sobrantes
         limpio = limpio.replace(/^[()]/, '').replace(/[()]$/, '');
-        return limpio || nombre;
+        return limpio || 'Plato Personalizado';
     }
     return nombre;
 }
 
+// Cargar pedidos activos
 async function cargarPedidos() {
     try {
         const res = await fetch("/api/pedidos/");
-        
         if (!res.ok) {
             console.error("Error en la API:", res.status);
             return;
         }
-        
         const data = await res.json();
         console.log("Datos recibidos:", data);
-        
         const grid = document.getElementById("grid");
         if (!grid) {
             console.error("No se encontró el grid");
             return;
         }
-        
         const esPrimeraCarga = (idsPedidosPrevios.size === 0);
         const idsActuales = new Set(data.map(p => p.id));
-        
         if (!esPrimeraCarga) {
             const nuevosPedidos = data.filter(p => 
                 !idsPedidosPrevios.has(p.id) && p.estado !== "entregado"
             );
-            
             if (nuevosPedidos.length > 0) {
                 console.log("Nuevos pedidos detectados:", nuevosPedidos.length);
                 reproducirCampanita();
                 nuevosPedidos.forEach(pedido => {
                     mostrarNotificacion(pedido);
                 });
-                
                 if (navigator.vibrate) {
                     navigator.vibrate([200, 100, 200]);
                 }
             }
         }
-        
         idsPedidosPrevios = idsActuales;
-        
         let pedidosActivos = [];
-        let pedidosEntregados = [];
-
         data.forEach(p => {
-            if (p.estado === "entregado") {
-                pedidosEntregados.push(p);
-            } else {
+            if (p.estado !== "entregado") {
                 pedidosActivos.push(p);
             }
         });
-        
         const esAdmin = "{{ user.rol }}" === "admin";
-
         if (pedidosActivos.length === 0) {
             grid.innerHTML = `
                 <div class="sin-pedidos">
@@ -541,11 +523,9 @@ async function cargarPedidos() {
                 let productosHtml = "";
                 if (p.productos && p.productos.length > 0) {
                     p.productos.forEach(d => {
-                        // Obtener nombre original usando la función mejorada
                         const nombreOriginal = obtenerNombreOriginal(d.nombre);
                         const esPersonalizado = d.nombre && d.nombre.toLowerCase().includes('personalizado');
                         const tieneIngredientes = d.ingredientes && d.ingredientes.length > 0;
-                        
                         productosHtml += `
                             <div style="margin-bottom:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:8px;border-left:3px solid ${esPersonalizado ? '#a855f7' : '#f59e0b'};">
                                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
@@ -568,12 +548,10 @@ async function cargarPedidos() {
                 } else {
                     productosHtml = `<p style="color:#9ca3af;font-size:13px;"><i class="fa-solid fa-exclamation-triangle"></i> Sin productos</p>`;
                 }
-
                 let estadoTexto = "";
                 if (p.estado === "pendiente") estadoTexto = " Pendiente";
                 else if (p.estado === "en_preparacion") estadoTexto = " En Preparación";
                 else if (p.estado === "listo") estadoTexto = " Listo";
-
                 let domicilioHtml = "";
                 if (p.es_domicilio) {
                     domicilioHtml = `
@@ -592,20 +570,13 @@ async function cargarPedidos() {
                     `;
                 }
 
-                // ========== NUEVO: MÉTODO DE PAGO ==========
-                let metodoPagoHtml = '';
-                if (p.metodo_pago) {
-                    const esTransferencia = p.metodo_pago.toLowerCase() === 'transferencia';
-                    const icono = esTransferencia ? 'fa-university' : 'fa-money-bill-wave';
-                    const color = esTransferencia ? '#3b82f6' : '#22c55e';
-                    const label = esTransferencia ? 'Transferencia' : 'Efectivo';
-                    metodoPagoHtml = `
-                        <div style="display:flex;align-items:center;gap:8px;margin:10px 0;padding:6px 12px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid ${color};">
-                            <i class="fa-solid ${icono}" style="color:${color};"></i>
-                            <span style="font-weight:bold;color:${color};">${label}</span>
-                        </div>
-                    `;
-                }
+                // ========== MÉTODO DE PAGO: SIEMPRE EFECTIVO ==========
+                const metodoPagoHtml = `
+                    <div style="display:flex;align-items:center;gap:8px;margin:10px 0;padding:6px 12px;background:rgba(34,197,94,0.15);border-radius:8px;border-left:3px solid #22c55e;">
+                        <i class="fa-solid fa-money-bill-wave" style="color:#22c55e;"></i>
+                        <span style="font-weight:bold;color:#22c55e;">Efectivo</span>
+                    </div>
+                `;
 
                 let boton = "";
                 if (!esAdmin) {
@@ -615,10 +586,7 @@ async function cargarPedidos() {
                         boton = `<a href="/cocina/estado/${p.id}/" class="btn btn-cambiar"><i class="fa-solid fa-arrow-right"></i> Cambiar Estado</a>`;
                     }
                 }
-
-                // --- FECHA LOCAL convertida ---
                 const fechaLocal = formatearFechaLocal(p.fecha_hora);
-
                 grid.innerHTML += `
                     <div class="card">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -648,9 +616,7 @@ async function cargarPedidos() {
                 `;
             });
         }
-
         pedidosPrevios = data;
-        
     } catch (error) {
         console.error("Error al cargar pedidos:", error);
         const grid = document.getElementById("grid");
@@ -665,6 +631,7 @@ async function cargarPedidos() {
     }
 }
 
+// Cargar historial por fecha
 async function cargarHistorial(fecha) {
     const historialGrid = document.getElementById("historial-grid");
     if (!historialGrid) return;
@@ -679,15 +646,12 @@ async function cargarHistorial(fecha) {
     try {
         const url = `/api/historial/?fecha=${fecha}`;
         const res = await fetch(url);
-        
         if (!res.ok) {
             const errorData = await res.json();
             throw new Error(errorData.error || 'Error al cargar historial');
         }
-        
         const data = await res.json();
         console.log("Historial recibido:", data);
-        
         if (data.length === 0) {
             historialGrid.innerHTML = `
                 <div class="sin-pedidos">
@@ -697,11 +661,9 @@ async function cargarHistorial(fecha) {
             `;
             return;
         }
-        
         historialGrid.innerHTML = "";
         data.forEach(mesaData => {
-            const { mesa, productos, total_mesa, pedidos } = mesaData; // Asegurar que pedidos venga
-            
+            const { mesa, productos, total_mesa, pedidos } = mesaData;
             let productosHtml = `
                 <table class="tabla-productos">
                     <thead>
@@ -714,9 +676,8 @@ async function cargarHistorial(fecha) {
                     </thead>
                     <tbody>
             `;
-            
             productos.forEach(p => {
-                // También aquí mostrar nombre original si es personalizado
+                // Mostrar nombre original en historial también
                 let nombreMostrar = p.nombre;
                 if (p.nombre && p.nombre.toLowerCase().includes('personalizado')) {
                     const match = p.nombre.match(/\(([^)]+)\)/);
@@ -735,33 +696,17 @@ async function cargarHistorial(fecha) {
                     </tr>
                 `;
             });
-            
             productosHtml += `
                     </tbody>
                 </table>
             `;
-
-            // ========== NUEVO: Métodos de pago en historial ==========
-            let metodosHtml = '';
-            if (pedidos && pedidos.length) {
-                const metodos = [...new Set(pedidos.map(p => p.metodo_pago).filter(Boolean))];
-                if (metodos.length) {
-                    metodosHtml = `
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-                            ${metodos.map(m => {
-                                const esTransferencia = m.toLowerCase() === 'transferencia';
-                                const icono = esTransferencia ? 'fa-university' : 'fa-money-bill-wave';
-                                const color = esTransferencia ? '#3b82f6' : '#22c55e';
-                                return `<span style="background:${color}22;padding:2px 10px;border-radius:12px;border:1px solid ${color};font-size:12px;"><i class="fa-solid ${icono}" style="color:${color};"></i> ${m}</span>`;
-                            }).join(' ')}
-                        </div>
-                    `;
-                }
-            }
-            
-            // Fecha local no aplica aquí porque el historial es por día, pero si quieres mostrar hora de cada pedido, podrías agregarlo.
-            // Por ahora mantenemos como está.
-            
+            // Método de pago en historial (siempre efectivo)
+            const metodoHistorialHtml = `
+                <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:4px 10px;background:rgba(34,197,94,0.1);border-radius:6px;border-left:3px solid #22c55e;">
+                    <i class="fa-solid fa-money-bill-wave" style="color:#22c55e;font-size:14px;"></i>
+                    <span style="font-weight:bold;color:#22c55e;font-size:13px;">Efectivo</span>
+                </div>
+            `;
             historialGrid.innerHTML += `
                 <div class="card-historial">
                     <div class="mesa-titulo">
@@ -771,14 +716,13 @@ async function cargarHistorial(fecha) {
                     <div class="total-mesa">
                         Total Mesa: $${total_mesa.toFixed(2)}
                     </div>
-                    ${metodosHtml}
+                    ${metodoHistorialHtml}
                     <div style="font-size:11px;color:#9ca3af;margin-top:8px;">
                         <i class="fa-solid fa-receipt"></i> Pedidos: ${mesaData.pedidos_ids.join(', ')}
                     </div>
                 </div>
             `;
         });
-        
     } catch (error) {
         console.error("Error al cargar historial:", error);
         historialGrid.innerHTML = `
@@ -790,6 +734,7 @@ async function cargarHistorial(fecha) {
     }
 }
 
+// Eventos DOM
 document.addEventListener('DOMContentLoaded', function() {
     cargarPedidos();
     setInterval(cargarPedidos, 5000);
