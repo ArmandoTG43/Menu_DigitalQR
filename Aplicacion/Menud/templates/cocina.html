@@ -560,6 +560,23 @@ async function cargarPedidos() {
                     `;
                 }
 
+                // =========================================================
+                // NUEVO: MÉTODO DE PAGO
+                // =========================================================
+                let metodoPagoHtml = '';
+                if (p.metodo_pago) {
+                    const esTransferencia = p.metodo_pago.toLowerCase() === 'transferencia';
+                    const icono = esTransferencia ? 'fa-university' : 'fa-money-bill-wave';
+                    const color = esTransferencia ? '#3b82f6' : '#22c55e';
+                    const label = esTransferencia ? 'Transferencia' : 'Efectivo';
+                    metodoPagoHtml = `
+                        <div style="display:flex;align-items:center;gap:8px;margin:10px 0;padding:6px 12px;background:rgba(255,255,255,0.05);border-radius:8px;border-left:3px solid ${color};">
+                            <i class="fa-solid ${icono}" style="color:${color};"></i>
+                            <span style="font-weight:bold;color:${color};">${label}</span>
+                        </div>
+                    `;
+                }
+
                 let boton = "";
                 if (!esAdmin) {
                     if (p.estado === "listo") {
@@ -583,6 +600,7 @@ async function cargarPedidos() {
                             ${estadoTexto}
                         </div>
                         ${domicilioHtml}
+                        ${metodoPagoHtml}  <!-- AQUÍ SE MUESTRA EL MÉTODO DE PAGO -->
                         <div class="productos-lista">
                             ${productosHtml}
                         </div>
