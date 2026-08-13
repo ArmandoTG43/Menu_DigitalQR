@@ -1925,16 +1925,30 @@ def agregar_carrito_personalizado(request):
         
         for item in productos:
             producto_id = str(item['id'])
+            # Obtener el producto de la base de datos para extraer su nombre original
+            try:
+                producto = Producto.objects.get(id=item['id'])
+            except Producto.DoesNotExist:
+                # Si no existe, saltar este producto (o manejar error)
+                continue
+            
+            # Construir el nombre completo: nombre original + " Personalizado"
+            nombre_completo = f"{producto.nombre} Personalizado"
+            
+            # Verificar si el producto ya está en el carrito
             if producto_id in carrito:
                 carrito[producto_id]['cantidad'] += item.get('cantidad', 1)
             else:
+                # Guardar el producto con el nombre completo y otros datos
                 carrito[producto_id] = {
                     'id': item['id'],
-                    'nombre': item.get('nombre', 'Producto'),
+                    'nombre': nombre_completo,  # ← Cambio aquí: nombre original + Personalizado
                     'descripcion': item.get('descripcion', ''),
                     'precio': float(item.get('precio', 0)),
                     'cantidad': item.get('cantidad', 1),
-                    'imagen': item.get('imagen', '')
+                    'imagen': item.get('imagen', ''),
+                    'es_personalizado': True,  # Opcional: para identificar
+                    'ingredientes': item.get('ingredientes', [])  # Guardar ingredientes si vienen
                 }
         
         request.session['carrito'] = carrito

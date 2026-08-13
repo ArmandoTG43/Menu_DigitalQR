@@ -145,6 +145,8 @@ class DetallePedido(MayusculasMixin, models.Model):
     cantidad = models.IntegerField(default=1)
     precio_unitario = models.DecimalField(max_digits=8, decimal_places=2, default=0.00)
     ingredientes_texto = models.TextField(blank=True, null=True)
+    # NUEVO CAMPO: nombre personalizado para mostrar (opcional)
+    nombre_mostrar = models.CharField(max_length=200, blank=True, null=True)
 
     def subtotal(self):
         return self.cantidad * self.precio_unitario
@@ -152,10 +154,13 @@ class DetallePedido(MayusculasMixin, models.Model):
     def save(self, *args, **kwargs):
         if not self.precio_unitario and self.producto:
             self.precio_unitario = self.producto.precio
+        if not self.nombre_mostrar and self.producto:
+            self.nombre_mostrar = self.producto.nombre
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.producto.nombre} x {self.cantidad} = ${self.subtotal():.2f}"
+        nombre = self.nombre_mostrar or self.producto.nombre
+        return f"{nombre} x {self.cantidad} = ${self.subtotal():.2f}"
 
 class Pago(models.Model):
     METODOS = [

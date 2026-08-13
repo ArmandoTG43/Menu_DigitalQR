@@ -123,7 +123,7 @@
         {% csrf_token %}
         <input type="hidden" name="pedido_id" value="{{ pedido.id }}">
 
-        <label for="metodo">Selecciona método de pago:</label>
+        <label for="metodo">Método de pago:</label>
         <select name="metodo" id="metodo" required>
             <option value="efectivo"> Efectivo (en el local)</option>
         </select>
