@@ -122,6 +122,15 @@ body {
     color: white;
 }
 
+/* Nuevo badge para el método de pago (celeste) */
+.badge-pago {
+    background: #3b82f6;
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .card .domicilio-info {
     background: rgba(59,130,246,0.15);
     border-radius: 10px;
@@ -179,6 +188,11 @@ body {
     border-bottom: 2px solid rgba(231, 110, 5, 0.3);
     padding-bottom: 10px;
     margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .card-historial .total-mesa {
@@ -570,14 +584,6 @@ async function cargarPedidos() {
                     `;
                 }
 
-                // ========== MÉTODO DE PAGO: SIEMPRE EFECTIVO ==========
-                const metodoPagoHtml = `
-                    <div style="display:flex;align-items:center;gap:8px;margin:10px 0;padding:6px 12px;background:rgba(34,197,94,0.15);border-radius:8px;border-left:3px solid #22c55e;">
-                        <i class="fa-solid fa-money-bill-wave" style="color:#22c55e;"></i>
-                        <span style="font-weight:bold;color:#22c55e;">Efectivo</span>
-                    </div>
-                `;
-
                 let boton = "";
                 if (!esAdmin) {
                     if (p.estado === "listo") {
@@ -587,21 +593,28 @@ async function cargarPedidos() {
                     }
                 }
                 const fechaLocal = formatearFechaLocal(p.fecha_hora);
+
+                // ========== NUEVO: Badge de pago al lado del badge de entrega ==========
                 grid.innerHTML += `
                     <div class="card">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:5px;">
                             <div class="pedido-id" style="margin:0;font-size:16px;">
                                 <i class="fa-solid fa-receipt"></i> Pedido #${p.id}
                             </div>
-                            <span class="badge-entrega ${p.es_domicilio ? 'badge-domicilio' : 'badge-local'}">
-                                ${p.es_domicilio ? ' Domicilio' : ` Mesa ${p.mesa}`}
-                            </span>
+                            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                                <span class="badge-entrega ${p.es_domicilio ? 'badge-domicilio' : 'badge-local'}">
+                                    ${p.es_domicilio ? ' Domicilio' : ` Mesa ${p.mesa}`}
+                                </span>
+                                <!-- Badge de método de pago (Efectivo) en color celeste -->
+                                <span class="badge-entrega badge-pago">
+                                    <i class="fa-solid fa-money-bill-wave"></i> Efectivo
+                                </span>
+                            </div>
                         </div>
                         <div class="estado ${p.estado}">
                             ${estadoTexto}
                         </div>
                         ${domicilioHtml}
-                        ${metodoPagoHtml}
                         <div class="productos-lista">
                             ${productosHtml}
                         </div>
@@ -677,7 +690,6 @@ async function cargarHistorial(fecha) {
                     <tbody>
             `;
             productos.forEach(p => {
-                // Mostrar nombre original en historial también
                 let nombreMostrar = p.nombre;
                 if (p.nombre && p.nombre.toLowerCase().includes('personalizado')) {
                     const match = p.nombre.match(/\(([^)]+)\)/);
@@ -700,23 +712,20 @@ async function cargarHistorial(fecha) {
                     </tbody>
                 </table>
             `;
-            // Método de pago en historial (siempre efectivo)
-            const metodoHistorialHtml = `
-                <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:4px 10px;background:rgba(34,197,94,0.1);border-radius:6px;border-left:3px solid #22c55e;">
-                    <i class="fa-solid fa-money-bill-wave" style="color:#22c55e;font-size:14px;"></i>
-                    <span style="font-weight:bold;color:#22c55e;font-size:13px;">Efectivo</span>
-                </div>
-            `;
+
             historialGrid.innerHTML += `
                 <div class="card-historial">
                     <div class="mesa-titulo">
-                        <i class="fa-solid fa-chair"></i> Mesa ${mesa}
+                        <span><i class="fa-solid fa-chair"></i> Mesa ${mesa}</span>
+                        <!-- Badge de pago en historial también -->
+                        <span class="badge-entrega badge-pago" style="font-size:12px;padding:3px 10px;">
+                            <i class="fa-solid fa-money-bill-wave"></i> Efectivo
+                        </span>
                     </div>
                     ${productosHtml}
                     <div class="total-mesa">
                         Total Mesa: $${total_mesa.toFixed(2)}
                     </div>
-                    ${metodoHistorialHtml}
                     <div style="font-size:11px;color:#9ca3af;margin-top:8px;">
                         <i class="fa-solid fa-receipt"></i> Pedidos: ${mesaData.pedidos_ids.join(', ')}
                     </div>
